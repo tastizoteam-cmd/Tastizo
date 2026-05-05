@@ -5,6 +5,7 @@ import { FoodDeliveryPartner } from '../../delivery/models/deliveryPartner.model
 import { FoodDeliveryCashDeposit } from '../../delivery/models/foodDeliveryCashDeposit.model.js';
 import { FoodDeliveryCashLimit } from '../../admin/models/deliveryCashLimit.model.js';
 import { ValidationError, NotFoundError } from '../../../../core/auth/errors.js';
+import { listOwnerTokens } from '../../../../core/notifications/firebase.service.js';
 import { logger } from '../../../../utils/logger.js';
 import { config } from '../../../../config/env.js';
 import { getIO, rooms } from '../../../../config/socket.js';
@@ -624,16 +625,50 @@ export async function tryAutoAssign(orderId, options = {}) {
       }
       await Promise.all(
         eligible.map(async (partner) => {
+          const partnerId = String(partner.partnerId || '');
+          const orderMongoId = order._id.toString();
           try {
-            await notifyOwnerSafely(
+            const tokens = await listOwnerTokens({
+              ownerType: 'DELIVERY_PARTNER',
+              ownerId: partner.partnerId,
+            });
+
+            logger.info('[DeliveryFCM] delivery boy token found', {
+              partnerId,
+              tokenCount: Array.isArray(tokens) ? tokens.length : 0,
+              orderId: orderMongoId,
+            });
+
+            const response = await notifyOwnerSafely(
               { ownerType: 'DELIVERY_PARTNER', ownerId: partner.partnerId },
               {
-                title: 'New order assigned!',
-                body: `You have 30 seconds to accept Order #${order.order_id || order._id}.`,
-                data: { type: 'new_order', orderId: order._id.toString(), orderZoneId: String(order.zoneId || '') },
+                title: 'New Order',
+                body: 'You have a new delivery request',
+                data: {
+                  type: 'NEW_ORDER',
+                  legacyType: 'new_order',
+                  orderId: orderMongoId,
+                  orderZoneId: String(order.zoneId || ''),
+                },
               },
             );
+
+            logger.info('[DeliveryFCM] notification sent', {
+              partnerId,
+              orderId: orderMongoId,
+              successCount: Number(response?.successCount || 0),
+              failureCount: Number(response?.failureCount || 0),
+            });
+            logger.info('[DeliveryFCM] orderId included', {
+              partnerId,
+              orderId: orderMongoId,
+            });
           } catch (err) {
+            logger.error('[DeliveryFCM] error if FCM failed', {
+              partnerId,
+              orderId: orderMongoId,
+              message: err?.message || err,
+            });
             logger.warn(`Push notification failed for partner ${partner.partnerId}: ${err.message}`);
           }
         }),

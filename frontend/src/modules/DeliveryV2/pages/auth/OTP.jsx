@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import AnimatedPage from "@food/components/user/AnimatedPage"
 import { Input } from "@food/components/ui/input"
@@ -9,10 +9,12 @@ import { clearModuleAuth, setAuthData as storeAuthData } from "@food/utils/auth"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
+const DELIVERY_PENDING_POPUP_ORDER_ID_KEY = "delivery_pending_popup_order_id"
 
 
 export default function DeliveryOTP() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [otp, setOtp] = useState(["", "", "", ""])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -29,6 +31,20 @@ export default function DeliveryOTP() {
   const [deviceToken, setDeviceToken] = useState(null)
   const [activePlatform, setActivePlatform] = useState("web")
   const inputRefs = useRef([])
+
+  const resolvePostLoginPath = () => {
+    const redirectFromState = String(location.state?.from || "").trim()
+    if (redirectFromState) return redirectFromState
+
+    try {
+      const pendingOrderId = String(localStorage.getItem(DELIVERY_PENDING_POPUP_ORDER_ID_KEY) || "").trim()
+      if (pendingOrderId) {
+        return `/food/delivery/feed?orderId=${encodeURIComponent(pendingOrderId)}`
+      }
+    } catch {}
+
+    return "/food/delivery"
+  }
 
   useEffect(() => {
     // Get auth data from sessionStorage (delivery module key)
@@ -294,7 +310,7 @@ export default function DeliveryOTP() {
         const storedAuth = localStorage.getItem("delivery_authenticated")
 
         if (storedToken && storedAuth === "true") {
-          navigate("/food/delivery", { replace: true })
+          navigate(resolvePostLoginPath(), { replace: true })
         } else if (retryCount < maxRetries) {
           retryCount++
           setTimeout(verifyAndNavigate, 100)
@@ -386,7 +402,7 @@ export default function DeliveryOTP() {
         if (storedToken && storedAuth === "true") {
           // Token is stored, navigate to delivery home
           debugLog("Token verified, navigating to /delivery")
-          navigate("/food/delivery", { replace: true })
+          navigate(resolvePostLoginPath(), { replace: true })
         } else if (retryCount < maxRetries) {
           // Token not stored yet, retry after short delay
           retryCount++

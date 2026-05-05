@@ -1,5 +1,5 @@
 import { useState, useRef } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, Link, useLocation } from "react-router-dom"
 import { motion } from "framer-motion"
 import { ShieldCheck, Truck, Star, Heart, ArrowRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
@@ -11,6 +11,7 @@ const DEFAULT_COUNTRY_CODE = "+91"
 
 export default function DeliverySignIn() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [phone, setPhone] = useState(() => {
     const stored = sessionStorage.getItem("deliveryAuthData")
     if (stored) {
@@ -54,7 +55,9 @@ export default function DeliverySignIn() {
       }
       sessionStorage.setItem("deliveryAuthData", JSON.stringify(authData))
       toast.success("Verification code sent to your phone!")
-      navigate("/food/delivery/otp")
+      navigate("/food/delivery/otp", {
+        state: { from: location.state?.from || null },
+      })
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Failed to send OTP."
       toast.error(msg)

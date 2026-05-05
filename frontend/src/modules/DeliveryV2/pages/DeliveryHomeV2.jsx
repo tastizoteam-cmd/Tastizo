@@ -31,10 +31,11 @@ import {
 
 import { getHaversineDistance, calculateETA, calculateHeading } from '@/modules/DeliveryV2/utils/geo';
 import { useCompanyName } from "@food/hooks/useCompanyName";
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import useNotificationInbox from "@food/hooks/useNotificationInbox";
 
 const INCOMING_ORDER_STORAGE_KEY = 'delivery_v2_incoming_order';
+const DELIVERY_PENDING_POPUP_ORDER_ID_KEY = 'delivery_pending_popup_order_id';
 const OFFER_TTL_SECONDS = 30;
 const DELIVERY_LAST_LOCATION_STORAGE_KEY = 'deliveryBoyLastLocation';
 
@@ -190,6 +191,7 @@ function BottomPopup({ isOpen, onClose, title, children }) {
  * Featuring logical tab switching for Feed, Pocket, History, and Profile.
  */
 export default function DeliveryHomeV2({ tab = 'feed' }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const { isOnline, toggleOnline, riderLocation, activeOrder, tripStatus, setRiderLocation, setActiveOrder, updateTripStatus, clearActiveOrder } = useDeliveryStore();
   const { isWithinRange, distanceToTarget } = useProximityCheck();
@@ -200,6 +202,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
 
   const [incomingOrder, setIncomingOrder] = useState(null);
   const [cashLimitNotice, setCashLimitNotice] = useState(null);
+  const [isDashboardBootstrapping, setIsDashboardBootstrapping] = useState(true);
   const [currentZoneId, setCurrentZoneId] = useState(() => {
     try {
       return localStorage.getItem('deliveryCurrentZoneId') || null;
@@ -237,6 +240,9 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const simInitializedRef = useRef(false);
   const deliveryPartnerIdRef = useRef('');
   const incomingOrderHydratedRef = useRef(false);
+  const pendingExternalOrderIdRef = useRef('');
+  const lastOpenedExternalOrderIdRef = useRef('');
+  const externalOrderFetchInFlightRef = useRef(false);
 
   const isLoggingOut = useRef(false);
   const handleLogout = useCallback(() => {
@@ -294,6 +300,35 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     setIncomingOrder(null);
     clearNewOrder();
     clearPersistedIncomingOrder();
+  }, []);
+
+  const persistPendingPopupOrderId = useCallback((orderId) => {
+    const normalizedOrderId = String(orderId || '').trim();
+    if (!normalizedOrderId) return;
+    pendingExternalOrderIdRef.current = normalizedOrderId;
+    try {
+      localStorage.setItem(DELIVERY_PENDING_POPUP_ORDER_ID_KEY, normalizedOrderId);
+    } catch {
+      // Ignore storage failures.
+    }
+  }, []);
+
+  const clearPendingPopupOrderId = useCallback(() => {
+    pendingExternalOrderIdRef.current = '';
+    try {
+      localStorage.removeItem(DELIVERY_PENDING_POPUP_ORDER_ID_KEY);
+    } catch {
+      // Ignore storage failures.
+    }
+  }, []);
+
+  const readPendingPopupOrderId = useCallback(() => {
+    if (pendingExternalOrderIdRef.current) return pendingExternalOrderIdRef.current;
+    try {
+      return String(localStorage.getItem(DELIVERY_PENDING_POPUP_ORDER_ID_KEY) || '').trim();
+    } catch {
+      return '';
+    }
   }, []);
 
   const hydrateAvailableOrder = useCallback(
@@ -401,6 +436,108 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
       }
     }, [setActiveOrder, updateTripStatus, setCashLimitNotice, setIncomingOrder]);
 
+  const openOrderPopupById = useCallback(async (orderId, source = 'external') => {
+    const normalizedOrderId = String(orderId || '').trim();
+    if (!normalizedOrderId) {
+      console.error('[DeliveryWebView] error if order not found', 'Missing orderId');
+      return;
+    }
+
+    const activeToken =
+      typeof localStorage !== 'undefined'
+        ? localStorage.getItem('delivery_accessToken') || localStorage.getItem('accessToken')
+        : '';
+
+    if (!activeToken) {
+      console.log('[DeliveryWebView] delivery boy not logged in, storing orderId temporarily', normalizedOrderId);
+      persistPendingPopupOrderId(normalizedOrderId);
+      return;
+    }
+
+    if (isDashboardBootstrapping) {
+      console.log('[DeliveryWebView] dashboard still loading, waiting before popup open', normalizedOrderId);
+      persistPendingPopupOrderId(normalizedOrderId);
+      return;
+    }
+
+    const currentIncomingId = getIncomingOrderIdentity(incomingOrder);
+    if (
+      normalizedOrderId === currentIncomingId ||
+      normalizedOrderId === lastOpenedExternalOrderIdRef.current
+    ) {
+      console.log('[DeliveryWebView] duplicate popup skipped for orderId', normalizedOrderId);
+      if (tab !== 'feed') {
+        navigate('/food/delivery/feed');
+      }
+      setIsModalMinimized(false);
+      clearPendingPopupOrderId();
+      return;
+    }
+
+    if (externalOrderFetchInFlightRef.current) {
+      persistPendingPopupOrderId(normalizedOrderId);
+      return;
+    }
+
+    externalOrderFetchInFlightRef.current = true;
+    try {
+      const partnerId = deliveryPartnerIdRef.current || resolveDeliveryPartnerIdFromClient();
+      const response = await deliveryAPI.getOrderDetails(normalizedOrderId);
+      const fetchedOrder = response?.data?.data || response?.data?.order || null;
+
+      console.log('[DeliveryWebView] order fetched', {
+        source,
+        orderId: normalizedOrderId,
+        fetched: Boolean(fetchedOrder),
+      });
+
+      if (!fetchedOrder || !(fetchedOrder._id || fetchedOrder.orderId)) {
+        console.error('[DeliveryWebView] error if order not found', normalizedOrderId);
+        return;
+      }
+
+      if (!shouldKeepIncomingOrder(fetchedOrder, partnerId)) {
+        console.error('[DeliveryWebView] error if order not found', {
+          orderId: normalizedOrderId,
+          reason: 'Order is stale, expired, or not eligible for this partner.',
+        });
+        return;
+      }
+
+      if (tab !== 'feed') {
+        navigate('/food/delivery/feed');
+      }
+
+      setIsModalMinimized(false);
+      setIncomingOrder((prev) => {
+        const prevId = getIncomingOrderIdentity(prev);
+        const nextId = getIncomingOrderIdentity(fetchedOrder);
+        return prevId === nextId && prev ? prev : fetchedOrder;
+      });
+      lastOpenedExternalOrderIdRef.current = normalizedOrderId;
+      persistIncomingOrder(fetchedOrder);
+      clearPendingPopupOrderId();
+      console.log('[DeliveryWebView] popup opened', {
+        source,
+        orderId: normalizedOrderId,
+      });
+    } catch (error) {
+      console.error('[DeliveryWebView] error if order not found', {
+        orderId: normalizedOrderId,
+        message: error?.response?.data?.message || error?.message || error,
+      });
+    } finally {
+      externalOrderFetchInFlightRef.current = false;
+    }
+  }, [
+    clearPendingPopupOrderId,
+    incomingOrder,
+    isDashboardBootstrapping,
+    navigate,
+    persistPendingPopupOrderId,
+    tab,
+  ]);
+
   const syncDeliveryZoneState = useCallback(async (latitude, longitude, onlineStatus, extras = {}) => {
     const response = await deliveryAPI.updateLocation(latitude, longitude, onlineStatus, extras);
     const payload =
@@ -474,6 +611,38 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   useEffect(() => {
     deliveryPartnerIdRef.current = resolveDeliveryPartnerIdFromClient();
   }, []);
+
+  useEffect(() => {
+    if (isDashboardBootstrapping) return;
+    const pendingOrderId = readPendingPopupOrderId();
+    if (!pendingOrderId) return;
+    void openOrderPopupById(pendingOrderId, 'pending-storage');
+  }, [isDashboardBootstrapping, openOrderPopupById, readPendingPopupOrderId]);
+
+  useEffect(() => {
+    const handleOpenOrderPopupEvent = (event) => {
+      console.log('[DeliveryWebView] OPEN_ORDER_POPUP event received', event);
+      const externalOrderId = String(event?.detail?.orderId || '').trim();
+      console.log('[DeliveryWebView] orderId received', externalOrderId);
+      if (!externalOrderId) {
+        console.error('[DeliveryWebView] error if order not found', 'No orderId received in OPEN_ORDER_POPUP event');
+        return;
+      }
+      void openOrderPopupById(externalOrderId, 'OPEN_ORDER_POPUP');
+    };
+
+    window.addEventListener('OPEN_ORDER_POPUP', handleOpenOrderPopupEvent);
+    return () => {
+      window.removeEventListener('OPEN_ORDER_POPUP', handleOpenOrderPopupEvent);
+    };
+  }, [openOrderPopupById]);
+
+  useEffect(() => {
+    const queryOrderId = String(new URLSearchParams(location.search || '').get('orderId') || '').trim();
+    if (!queryOrderId) return;
+    console.log('[DeliveryWebView] orderId received', queryOrderId);
+    void openOrderPopupById(queryOrderId, 'url-query');
+  }, [location.search, openOrderPopupById]);
 
   useEffect(() => {
     if (socketCurrentZoneId === undefined) return;
@@ -762,6 +931,8 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
       } catch (err) { 
         console.error('Order Sync Failed:', err); 
         clearActiveOrder();
+      } finally {
+        setIsDashboardBootstrapping(false);
       }
     };
     syncWithServer();
