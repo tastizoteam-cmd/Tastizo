@@ -285,11 +285,6 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const visibleIncomingOrder = hardPopupOrder || forcedPopupOrder || incomingOrder || stickyIncomingOrder;
   const shouldRenderStickyIncomingPopup =
     Boolean(visibleIncomingOrder) && (!isModalMinimized || externalPopupLockRef.current);
-  if (visibleIncomingOrder && !isModalMinimized) {
-    console.log('[DeliveryWebView] emergency portal render active', {
-      orderId: getIncomingOrderIdentity(visibleIncomingOrder),
-    });
-  }
 
   const isLoggingOut = useRef(false);
   const handleLogout = useCallback(() => {
@@ -1363,16 +1358,25 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
 
 
   useEffect(() => {
-    let cancelled = false;
+    const shouldPollAvailableOrder =
+      Boolean(useDeliveryStore.getState().activeOrder) || (isOnline && tab === 'feed');
+
+    if (!shouldPollAvailableOrder) return undefined;
+
     void hydrateAvailableOrder();
+
     const poller = window.setInterval(() => {
-      if (!document.hidden && !useDeliveryStore.getState().activeOrder) {
-        void hydrateAvailableOrder();
-      }
+      if (document.hidden) return;
+
+      const hasActiveOrder = Boolean(useDeliveryStore.getState().activeOrder);
+      const canPollFeed = isOnline && tab === 'feed';
+
+      if (!hasActiveOrder && !canPollFeed) return;
+
+      void hydrateAvailableOrder();
     }, isSocketConnected ? 12000 : 5000);
 
     return () => {
-      cancelled = true;
       window.clearInterval(poller);
     };
   }, [tab, isOnline, isSocketConnected, hydrateAvailableOrder]);
@@ -1593,8 +1597,16 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
       </div>
 
       {/* OVERLAYS (Persistent if active) - Outside flex container to avoid clipping and z-index issues */}
-      {(tab === 'feed' || activeOrder || incomingOrder) && (
+      {(tab === 'feed' || activeOrder || visibleIncomingOrder) && (
         <AnimatePresence>
+          {shouldRenderStickyIncomingPopup && !activeOrder && !hardPopupOrder && (
+            <NewOrderModal
+              order={visibleIncomingOrder}
+              onAccept={handleAcceptOrder}
+              onReject={handleRejectOrder}
+              onMinimize={() => setIsModalMinimized(true)}
+            />
+          )}
           {!isModalMinimized && !hardPopupOrder && (
             <motion.div
               key="modal-container"

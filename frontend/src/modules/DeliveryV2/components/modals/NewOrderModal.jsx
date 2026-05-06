@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import { User, MapPin, FastForward, Clock, Phone, ChefHat, ChevronDown } from 'lucide-react';
@@ -7,7 +7,7 @@ import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
 import { getHaversineDistance, calculateETA } from '@/modules/DeliveryV2/utils/geo';
 import { formatCurrency } from '@food/utils/currency';
 
-const DELIVERY_OFFER_TTL_SECONDS = 60;
+const DELIVERY_OFFER_TTL_SECONDS = 30;
 
 /**
  * NewOrderModal - Ported to Original 1:1 Theme with Slider Accept.
@@ -33,6 +33,7 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
   const partnerId = deliveryPartner?._id || deliveryPartner?.partnerId || deliveryPartner?.id;
 
   const [timeLeft, setTimeLeft] = useState(DELIVERY_OFFER_TTL_SECONDS);
+  const expiryHandledRef = useRef(false);
 
   useEffect(() => {
     console.log('[NewOrderModal] render', {
@@ -40,12 +41,11 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
     });
   }, [order]);
 
-  useEffect(() => {
-    if (!order) return;
+  const resolveOfferStartTime = useCallback(() => {
+    if (!order) return null;
 
     let startTime = order.offeredAt || order.createdAt;
 
-    // Try to find the exact time it was offered to THIS partner from the history
     if (partnerId && Array.isArray(order.dispatch?.offeredTo)) {
       const myOffer = [...order.dispatch.offeredTo]
         .reverse()
@@ -53,34 +53,52 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
       if (myOffer?.at) startTime = myOffer.at;
     }
 
-    if (startTime) {
-      const start = new Date(startTime).getTime();
-      const now = Date.now();
-      const diff = Math.floor((now - start) / 1000);
-      const remaining = Math.max(0, DELIVERY_OFFER_TTL_SECONDS - diff);
-      setTimeLeft(remaining);
+    const startedAt = new Date(startTime).getTime();
+    return Number.isFinite(startedAt) ? startedAt : null;
+  }, [order, partnerId]);
 
-      if (remaining <= 0) {
-        onReject();
-        return;
-      }
-    } else {
-      setTimeLeft(DELIVERY_OFFER_TTL_SECONDS);
+  useEffect(() => {
+    expiryHandledRef.current = false;
+  }, [order]);
+
+  useEffect(() => {
+    if (!order) return undefined;
+
+    const startedAt = resolveOfferStartTime();
+    const computeRemaining = () => {
+      if (!startedAt) return DELIVERY_OFFER_TTL_SECONDS;
+      const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+      return Math.max(0, DELIVERY_OFFER_TTL_SECONDS - elapsedSeconds);
+    };
+
+    const syncRemainingTime = () => {
+      setTimeLeft(computeRemaining());
+    };
+
+    syncRemainingTime();
+
+    const timer = window.setInterval(syncRemainingTime, 1000);
+    window.addEventListener('focus', syncRemainingTime);
+    window.addEventListener('pageshow', syncRemainingTime);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', syncRemainingTime);
     }
 
-    const timer = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timer);
-          onReject();
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', syncRemainingTime);
+      window.removeEventListener('pageshow', syncRemainingTime);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', syncRemainingTime);
+      }
+    };
+  }, [order, resolveOfferStartTime]);
 
-    return () => clearInterval(timer);
-  }, [order, partnerId, onReject]);
+  useEffect(() => {
+    if (!order || timeLeft > 0 || expiryHandledRef.current) return;
+    expiryHandledRef.current = true;
+    onReject();
+  }, [order, timeLeft, onReject]);
 
   const { distanceKm, etaMins } = useMemo(() => {
     if (!order) return { distanceKm: null, etaMins: null };
@@ -208,8 +226,8 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
             <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">Incoming Request</p>
             <h2 className="text-2xl sm:text-4xl font-bold tracking-tighter">{formatMoney(earnings)}</h2>
           </div>
-          <div className="bg-white/20 border border-white/30 rounded-2xl sm:rounded-3xl px-3 sm:px-6 py-2 sm:py-3 text-white font-bold text-lg sm:text-2xl shadow-inner tabular-nums">
-            {timeLeft}s
+          <div className="min-w-[72px] sm:min-w-[92px] min-h-[56px] sm:min-h-[68px] bg-white/20 border border-white/30 rounded-2xl sm:rounded-3xl px-3 sm:px-6 py-2 sm:py-3 text-white font-bold text-lg sm:text-2xl shadow-inner tabular-nums flex items-center justify-center leading-none text-center">
+            <span className="block leading-none">{timeLeft}s</span>
           </div>
         </div>
 

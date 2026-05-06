@@ -1850,7 +1850,32 @@ export const deliveryAPI = {
     };
   })(),
   /** GET /food/delivery/current - fallback for some UI hooks */
-  getCurrentDelivery: () => apiClient.get("/food/delivery/orders/current", { contextModule: "delivery" }),
+  getCurrentDelivery: (() => {
+    let inFlight = null;
+    let cached = null;
+    const CACHE_MS = 1200;
+
+    return () => {
+      const now = Date.now();
+      if (cached && now - cached.at < CACHE_MS) {
+        return Promise.resolve(cached.res);
+      }
+
+      if (inFlight) return inFlight;
+
+      inFlight = apiClient
+        .get("/food/delivery/orders/current", { contextModule: "delivery" })
+        .then((res) => {
+          cached = { at: Date.now(), res };
+          return res;
+        })
+        .finally(() => {
+          inFlight = null;
+        });
+
+      return inFlight;
+    };
+  })(),
   acceptOrder: (orderId, body = {}) =>
     apiClient.patch(
       `/food/delivery/orders/${String(orderId)}/accept`,
