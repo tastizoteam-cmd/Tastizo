@@ -71,7 +71,7 @@ const getApprovalDisplayMeta = (approvalStatus) => {
 
   return {
     label: "Approved",
-    className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    className: "bg-zinc-100 text-zinc-800 border border-zinc-200",
   }
 }
 
@@ -1784,8 +1784,8 @@ export default function Inventory() {
             onClick={() => setActiveTab("all-items")}
             className={`relative overflow-hidden rounded-[24px] border px-4 py-3 text-sm font-semibold ${
               activeTab === "all-items"
-                ? "border-[#2A9C64] text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.6)]"
-                : "border-[#ead6e3] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
+                ? "border-[#111111] text-white shadow-[0_18px_32px_-24px_rgba(17,17,17,0.45)]"
+                : "border-[#d4d4d8] bg-white/90 text-[#52525b] shadow-[0_16px_40px_-34px_rgba(24,24,27,0.2)]"
             }`}
             animate={{
               scale: activeTab === "all-items" ? 1.02 : 1,
@@ -1795,7 +1795,7 @@ export default function Inventory() {
             {activeTab === "all-items" && (
               <motion.div
                 layoutId="activeTabBackground"
-                className="absolute inset-0 rounded-[24px] bg-[#2A9C64] -z-10"
+                className="absolute inset-0 rounded-[24px] bg-[#111111] -z-10"
                 initial={false}
                 transition={{
                   type: "spring",
@@ -1807,7 +1807,7 @@ export default function Inventory() {
             <span className="relative z-10 flex min-h-7 items-center justify-center gap-2 leading-none">
               <span className="whitespace-nowrap">All items</span>
               <span className={`inline-flex min-h-5 min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                activeTab === "all-items" ? "bg-white text-[#2A9C64]" : "bg-[#f6ecf3] text-[#6d6470]"
+                activeTab === "all-items" ? "bg-white text-[#111111]" : "bg-[#f4f4f5] text-[#52525b]"
               }`}>
                 {totalItems}
               </span>
@@ -1818,8 +1818,8 @@ export default function Inventory() {
             onClick={() => setActiveTab("add-ons")}
             className={`relative overflow-hidden rounded-[24px] border px-4 py-3 text-sm font-semibold ${
               activeTab === "add-ons"
-                ? "border-[#2A9C64] text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.6)]"
-                : "border-[#ead6e3] bg-white/90 text-[#6d6470] shadow-[0_16px_40px_-34px_rgba(109,100,112,0.35)]"
+                ? "border-[#111111] text-white shadow-[0_18px_32px_-24px_rgba(17,17,17,0.45)]"
+                : "border-[#d4d4d8] bg-white/90 text-[#52525b] shadow-[0_16px_40px_-34px_rgba(24,24,27,0.2)]"
             }`}
             animate={{
               scale: activeTab === "add-ons" ? 1.02 : 1,
@@ -1829,7 +1829,7 @@ export default function Inventory() {
             {activeTab === "add-ons" && (
               <motion.div
                 layoutId="activeTabBackground"
-                className="absolute inset-0 rounded-[24px] bg-[#2A9C64] -z-10"
+                className="absolute inset-0 rounded-[24px] bg-[#111111] -z-10"
                 initial={false}
                 transition={{
                   type: "spring",
@@ -1841,7 +1841,7 @@ export default function Inventory() {
             <span className="relative z-10 flex min-h-7 items-center justify-center gap-2 leading-none">
               <span className="whitespace-nowrap">Add ons</span>
               <span className={`inline-flex min-h-5 min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                activeTab === "add-ons" ? "bg-white text-[#2A9C64]" : "bg-[#f6ecf3] text-[#6d6470]"
+                activeTab === "add-ons" ? "bg-white text-[#111111]" : "bg-[#f4f4f5] text-[#52525b]"
               }`}>
                 {addons.length}
               </span>
@@ -1936,7 +1936,7 @@ export default function Inventory() {
                     setSearchQuery("")
                     setSelectedFilter("all")
                   }}
-                  className="rounded-full border border-[#e7d5e0] px-3 py-1.5 text-xs font-semibold text-[#6b4d62] transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
+                  className="rounded-full border border-[#d4d4d8] px-3 py-1.5 text-xs font-semibold text-[#27272a] transition-colors hover:border-[#a1a1aa] hover:bg-[#f4f4f5]"
                 >
                   Clear all
                 </button>
@@ -1951,7 +1951,7 @@ export default function Inventory() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={activeTab === "add-ons" ? "Search add-ons by name or status" : "Search categories or menu items"}
-                  className="h-12 w-full rounded-[20px] border border-[#e7d5e0] bg-[#fcf7fb] pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#c796b8] focus:bg-white focus:outline-none"
+                  className="h-12 w-full rounded-[20px] border border-[#d4d4d8] bg-[#fafafa] pl-11 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#111111] focus:bg-white focus:outline-none"
                 />
                 {searchQuery ? (
                   <button
@@ -1967,19 +1967,19 @@ export default function Inventory() {
 
               <button
                 onClick={() => setFilterOpen(true)}
-                className="relative flex h-12 items-center justify-center gap-2 rounded-[20px] border border-[#e7d5e0] bg-white px-4 text-sm font-semibold text-[#1E7A4A] transition-colors hover:border-[#d5bdd0] hover:bg-[#f9f0f7]"
+                className="relative flex h-12 items-center justify-center gap-2 rounded-[20px] border border-[#d4d4d8] bg-white px-4 text-sm font-semibold text-[#18181b] transition-colors hover:border-[#a1a1aa] hover:bg-[#f4f4f5]"
               >
-                <SlidersHorizontal className="w-4 h-4 text-[#2A9C64]" />
+                <SlidersHorizontal className="w-4 h-4 text-[#18181b]" />
                 <span>Filters</span>
                 {selectedFilter !== "all" && (
-                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#2A9C64] ring-2 ring-white" />
+                  <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#18181b] ring-2 ring-white" />
                 )}
               </button>
 
               {activeTab === "add-ons" && (
                 <button
                   onClick={() => setIsAddAddonOpen((v) => !v)}
-                  className="h-12 rounded-[20px] bg-[#2A9C64] px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(126,56,102,0.7)] transition-colors hover:bg-[#1E7A4A]"
+                  className="h-12 rounded-[20px] bg-[#111111] px-4 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(17,17,17,0.45)] transition-colors hover:bg-[#27272a]"
                   style={{ minWidth: "128px" }}
                 >
                   {isAddAddonOpen ? "Close" : "Add Add-on"}
@@ -2001,13 +2001,13 @@ export default function Inventory() {
                     onClick={() => setSelectedFilter(option.value)}
                     className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors ${
                       isActive
-                        ? "border-[#2A9C64] bg-[#2A9C64] text-white shadow-[0_14px_28px_-24px_rgba(126,56,102,0.8)]"
-                        : "border-[#e7d5e0] bg-[#fcf7fb] text-[#6d6470] hover:border-[#d5bdd0] hover:bg-white"
+                        ? "border-[#111111] bg-[#111111] text-white shadow-[0_14px_28px_-24px_rgba(17,17,17,0.45)]"
+                        : "border-[#d4d4d8] bg-[#fafafa] text-[#52525b] hover:border-[#a1a1aa] hover:bg-white"
                     }`}
                   >
                     <span>{option.label}</span>
                     <span className={`ml-2 inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] ${
-                      isActive ? "bg-white/20 text-white" : "bg-white text-[#8a7a89]"
+                      isActive ? "bg-white/20 text-white" : "bg-white text-[#71717a]"
                     }`}>
                       {count}
                     </span>
@@ -2031,7 +2031,7 @@ export default function Inventory() {
                         type="text"
                         value={addonName}
                         onChange={(e) => setAddonName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2A9C64] focus:outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#111111] focus:outline-none"
                         placeholder="e.g., Coke, Chips"
                       />
                     </div>
@@ -2040,7 +2040,7 @@ export default function Inventory() {
                       <textarea
                         value={addonDescription}
                         onChange={(e) => setAddonDescription(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2A9C64] focus:outline-none resize-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#111111] focus:outline-none resize-none"
                         rows={3}
                         placeholder="Describe the add-on..."
                       />
@@ -2051,7 +2051,7 @@ export default function Inventory() {
                         type="number"
                         value={addonPrice}
                         onChange={(e) => setAddonPrice(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2A9C64] focus:outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#111111] focus:outline-none"
                         min="0"
                         step="0.01"
                         placeholder="0.00"
@@ -2106,7 +2106,7 @@ export default function Inventory() {
                         type="button"
                         onClick={handleSaveAddon}
                         disabled={savingAddon}
-                        className="px-4 py-2 bg-[#2A9C64] text-white rounded-md text-sm font-medium hover:bg-[#1E7A4A] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-4 py-2 bg-[#111111] text-white rounded-md text-sm font-medium hover:bg-[#27272a] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         {savingAddon && <Loader2 className="h-4 w-4 animate-spin" />}
                         <span>{savingAddon ? "Saving..." : "Submit for approval"}</span>
@@ -2143,13 +2143,13 @@ export default function Inventory() {
                             <h3 className="text-base font-semibold text-slate-950">{addon.name}</h3>
                             <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                               addon.isAvailable !== false
-                                ? "bg-emerald-50 text-emerald-700"
+                                ? "bg-zinc-100 text-zinc-800"
                                 : "bg-slate-100 text-slate-600"
                             }`}>
                               {addon.isAvailable !== false ? "Live" : "Paused"}
                             </span>
                             {addon.approvalStatus === 'approved' && (
-                              <span className="rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-800">Approved</span>
+                              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-800">Approved</span>
                             )}
                             {addon.approvalStatus === 'pending' && (
                               <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-[11px] font-semibold text-yellow-800">Pending</span>
@@ -2183,7 +2183,7 @@ export default function Inventory() {
                               onCheckedChange={(checked) =>
                                 handleAddonToggle(addon.id, checked)
                               }
-                              className="data-[state=checked]:bg-green-600"
+                              className="data-[state=checked]:bg-[#111111]"
                             />
                           </div>
                         </div>
@@ -2234,7 +2234,7 @@ export default function Inventory() {
 
                 {/* Category Header - Clickable */}
                 <div
-                  className="cursor-pointer bg-[linear-gradient(135deg,#f8fbff_0%,#ffffff_58%,#f1f5f9_100%)] p-5"
+                  className="cursor-pointer bg-[linear-gradient(135deg,#fafafa_0%,#ffffff_58%,#f4f4f5_100%)] p-5"
                   onClick={() => toggleCategory(category.id)}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -2248,8 +2248,8 @@ export default function Inventory() {
                         </span>
                         <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                           category.inStock
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-amber-50 text-amber-700"
+                            ? "bg-zinc-100 text-zinc-800"
+                            : "bg-zinc-200 text-zinc-700"
                         }`}>
                           {category.inStock ? "Healthy" : "Needs attention"}
                         </span>
@@ -2259,7 +2259,7 @@ export default function Inventory() {
                       ) : null}
                       <div className="mt-4 flex items-center gap-2 flex-wrap">
                         {category.inStock ? (
-                          <p className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                          <p className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-800">
                             All visible items are in stock
                           </p>
                         ) : (
@@ -2284,7 +2284,7 @@ export default function Inventory() {
                           onCheckedChange={(checked) =>
                             handleToggleChange("category", category.id, null, checked)
                           }
-                          className="data-[state=checked]:bg-green-600"
+                          className="data-[state=checked]:bg-[#111111]"
                         />
                       </div>
 
@@ -2355,7 +2355,7 @@ export default function Inventory() {
                                     ) : null}
                                   </div>
                                   <p className={`mt-1 text-xs font-medium ${
-                                    item.inStock ? "text-green-600" : "text-rose-600"
+                                    item.inStock ? "text-zinc-700" : "text-rose-600"
                                   }`}>
                                     {item.inStock ? "In stock" : getRuleStatusLabel(item.stockRule)}
                                   </p>
@@ -2404,7 +2404,7 @@ export default function Inventory() {
                                     onCheckedChange={(checked) =>
                                       handleToggleChange("item", category.id, item.id, checked)
                                     }
-                                    className="data-[state=checked]:bg-green-600"
+                                    className="data-[state=checked]:bg-[#111111]"
                                   />
                                 </div>
                               </div>
@@ -2472,7 +2472,7 @@ export default function Inventory() {
                             name="filter"
                             checked={selectedFilter === option.value}
                             onChange={() => setSelectedFilter(option.value)}
-                            style={{ accentColor: "#2A9C64" }}
+                            style={{ accentColor: "#111111" }}
                             className="w-5 h-5 border-gray-300"
                           />
                           <span className="text-base text-gray-900">{option.label}</span>
@@ -2496,7 +2496,7 @@ export default function Inventory() {
                   )}
                   <button
                     onClick={handleFilterApply}
-                    className={`${selectedFilter !== "all" ? 'flex-1' : 'w-full'} bg-[#2A9C64] text-white py-3 rounded-lg font-medium hover:bg-[#1E7A4A] transition-colors`}
+                    className={`${selectedFilter !== "all" ? 'flex-1' : 'w-full'} bg-[#111111] text-white py-3 rounded-lg font-medium hover:bg-[#27272a] transition-colors`}
                   >
                     Apply
                   </button>
@@ -2579,7 +2579,7 @@ export default function Inventory() {
                         name="outOfStockOption"
                         checked={selectedOption === "specific-time"}
                         onChange={() => setSelectedOption("specific-time")}
-                        style={{ accentColor: "#2A9C64" }}
+                        style={{ accentColor: "#111111" }}
                           className="ml-auto w-5 h-5 border-gray-300"
                       />
                     </div>
@@ -2595,7 +2595,7 @@ export default function Inventory() {
                         name="outOfStockOption"
                         checked={selectedOption === "next-business-day"}
                         onChange={() => setSelectedOption("next-business-day")}
-                        style={{ accentColor: "#2A9C64" }}
+                        style={{ accentColor: "#111111" }}
                         className="ml-auto w-5 h-5 border-gray-300"
                       />
                     </div>
@@ -2611,7 +2611,7 @@ export default function Inventory() {
                         name="outOfStockOption"
                         checked={selectedOption === "custom-date-time"}
                         onChange={() => setSelectedOption("custom-date-time")}
-                        style={{ accentColor: "#2A9C64" }}
+                        style={{ accentColor: "#111111" }}
                         className="ml-auto w-5 h-5 border-gray-300"
                       />
                     </div>
@@ -2646,7 +2646,7 @@ export default function Inventory() {
                           name="outOfStockOption"
                           checked={selectedOption === "manual"}
                           onChange={() => setSelectedOption("manual")}
-                          style={{ accentColor: "#2A9C64" }}
+                          style={{ accentColor: "#111111" }}
                           className="ml-auto w-5 h-5 border-gray-300"
                         />
                       </div>
@@ -2667,7 +2667,7 @@ export default function Inventory() {
                   </button>
                   <button
                     onClick={handleToggleConfirm}
-                    className="flex-1 bg-[#2A9C64] text-white py-3 rounded-lg font-medium hover:bg-[#1E7A4A] transition-colors"
+                    className="flex-1 bg-[#111111] text-white py-3 rounded-lg font-medium hover:bg-[#27272a] transition-colors"
                   >
                     Confirm
                   </button>
@@ -2744,7 +2744,7 @@ export default function Inventory() {
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={() => setIsAddPopupOpen(true)}
-            className="rounded-full bg-[#2A9C64] px-5 py-3 text-sm font-semibold text-white shadow-[0_22px_40px_-24px_rgba(126,56,102,0.72)]"
+            className="rounded-full bg-[#111111] px-5 py-3 text-sm font-semibold text-white shadow-[0_22px_40px_-24px_rgba(17,17,17,0.45)]"
           >
             + Add item
           </motion.button>
@@ -2752,13 +2752,13 @@ export default function Inventory() {
             type="button"
             whileTap={{ scale: 0.96 }}
             onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="flex items-center gap-2 rounded-full border border-[#ead6e3] bg-white/95 px-4 py-3 text-sm font-semibold text-[#1E7A4A] shadow-[0_18px_36px_-28px_rgba(126,56,102,0.45)]"
+            className="flex items-center gap-2 rounded-full border border-[#d4d4d8] bg-white/95 px-4 py-3 text-sm font-semibold text-[#18181b] shadow-[0_18px_36px_-28px_rgba(17,17,17,0.22)]"
           >
             <span className="w-5 h-5 flex items-center justify-center">
               {isMenuOpen ? (
-                <X className="w-4 h-4 text-[#1E7A4A]" />
+                <X className="w-4 h-4 text-[#18181b]" />
               ) : (
-                <Utensils className="w-4 h-4 text-[#2A9C64]" />
+                <Utensils className="w-4 h-4 text-[#18181b]" />
               )}
             </span>
             <span>{isMenuOpen ? "Close" : "Menu"}</span>
@@ -2782,11 +2782,11 @@ export default function Inventory() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.2 }}
-                  className="fixed right-4 bottom-36 z-30 h-[45vh] w-[60vw] max-w-sm overflow-hidden rounded-[28px] border border-[#ead6e3] bg-white shadow-[0_24px_60px_-30px_rgba(126,56,102,0.45)]"
+                  className="fixed right-4 bottom-36 z-30 h-[45vh] w-[60vw] max-w-sm overflow-hidden rounded-[28px] border border-[#d4d4d8] bg-white shadow-[0_24px_60px_-30px_rgba(17,17,17,0.22)]"
                 >
                   <div className="h-full flex flex-col">
-                    <div className="bg-[linear-gradient(135deg,#f2faf6_0%,#f6e8f1_100%)] px-4 pt-4 pb-3">
-                      <p className="text-sm font-semibold text-[#1E7A4A]">Jump to category</p>
+                    <div className="bg-[linear-gradient(135deg,#fafafa_0%,#f4f4f5_100%)] px-4 pt-4 pb-3">
+                      <p className="text-sm font-semibold text-[#18181b]">Jump to category</p>
                     </div>
                     <div className="mx-4 h-px bg-slate-200" />
                     <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
@@ -2829,7 +2829,9 @@ export default function Inventory() {
       )}
 
       {/* Bottom Navigation */}
-      <BottomNavOrders />
+      <div className="lg:hidden">
+        <BottomNavOrders />
+      </div>
     </div>
   )
 }

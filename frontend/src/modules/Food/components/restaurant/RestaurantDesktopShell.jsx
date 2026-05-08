@@ -3,15 +3,16 @@ import { Link, useLocation, useNavigate } from "react-router-dom"
 import {
   Bell,
   BookOpen,
+  CalendarDays,
   ChevronDown,
   CircleHelp,
   CirclePercent,
+  Clock3,
   FileText,
-  HandPlatter,
   LayoutList,
-  LineChart,
   Megaphone,
   MessageCircleWarning,
+  MapPin,
   Package,
   Settings,
   Store,
@@ -24,17 +25,22 @@ const DESKTOP_QUERY = "(min-width: 1024px)"
 
 const menuItems = [
   { label: "Orders", icon: Package, to: "/restaurant", match: (pathname) => pathname === "/restaurant" },
-  { label: "Menu", icon: FileText, to: "/restaurant/hub-menu", match: (pathname) => pathname.startsWith("/restaurant/hub-menu") },
+  { label: "Menu", icon: FileText, to: "/restaurant/inventory", match: (pathname) => pathname.startsWith("/restaurant/inventory") || pathname.startsWith("/restaurant/hub-menu") },
+  { label: "Menu categories", icon: Settings, to: "/restaurant/menu-categories", match: (pathname) => pathname.startsWith("/restaurant/menu-categories") },
   { label: "Order history", icon: LayoutList, to: "/restaurant/orders/all", match: (pathname) => pathname.startsWith("/restaurant/orders/all") },
-  { label: "Reporting", icon: LineChart, to: "/restaurant/hub-finance", match: (pathname) => pathname.startsWith("/restaurant/hub-finance") || pathname.startsWith("/restaurant/finance-details") },
   { label: "Offers", icon: CirclePercent, to: "/restaurant/offers", match: (pathname) => pathname.startsWith("/restaurant/offers") },
-  { label: "Hyperpure", icon: HandPlatter, to: "/restaurant/hyperpure", match: (pathname) => pathname.startsWith("/restaurant/hyperpure") },
   { label: "Ads", icon: Megaphone, to: "/restaurant/explore", match: (pathname) => pathname.startsWith("/restaurant/explore") },
   { label: "Finance", icon: Wallet, to: "/restaurant/hub-finance", match: (pathname) => pathname.startsWith("/restaurant/hub-finance") || pathname.startsWith("/restaurant/withdrawal-history") },
+  { label: "Bank details", icon: Wallet, to: "/restaurant/update-bank-details", match: (pathname) => pathname.startsWith("/restaurant/update-bank-details") },
   { label: "Outlet info", icon: Store, to: "/restaurant/outlet-info", match: (pathname) => pathname.startsWith("/restaurant/outlet-info") },
+  { label: "Outlet timings", icon: Clock3, to: "/restaurant/outlet-timings", match: (pathname) => pathname.startsWith("/restaurant/outlet-timings") },
+  { label: "Dining reservations", icon: CalendarDays, to: "/restaurant/reservations", match: (pathname) => pathname.startsWith("/restaurant/reservations") },
+  { label: "Delivery settings", icon: Package, to: "/restaurant/delivery-settings", match: (pathname) => pathname.startsWith("/restaurant/delivery-settings") },
+  { label: "Zone setup", icon: MapPin, to: "/restaurant/zone-setup", match: (pathname) => pathname.startsWith("/restaurant/zone-setup") },
   { label: "Customer complaints", icon: MessageCircleWarning, to: "/restaurant/customer-complaints", match: (pathname) => pathname.startsWith("/restaurant/customer-complaints") || pathname.startsWith("/restaurant/feedback?tab=complaints") },
   { label: "Reviews", icon: BookOpen, to: "/restaurant/reviews", match: (pathname) => pathname.startsWith("/restaurant/reviews") || pathname.startsWith("/restaurant/feedback") },
   { label: "Help centre", icon: CircleHelp, to: "/restaurant/help-centre/support", match: (pathname) => pathname.startsWith("/restaurant/help-centre/support") },
+  { label: "Share your feedback", icon: FileText, to: "/restaurant/share-feedback", match: (pathname) => pathname.startsWith("/restaurant/share-feedback") },
   { label: "Learning centre", icon: CircleHelp, to: "/restaurant/explore", match: (pathname) => pathname.startsWith("/restaurant/explore") },
 ]
 
@@ -183,18 +189,28 @@ export default function RestaurantDesktopShell({
                 >
                   Share feedback
                 </button>
-                <div className="flex items-center gap-2 rounded-xl border border-[#e7eaf1] px-3 py-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate("/restaurant/status")}
+                  className="flex items-center gap-2 rounded-xl border border-[#e7eaf1] px-3 py-2 text-sm transition hover:bg-[#f6f7fb]"
+                  aria-label="Restaurant online status"
+                >
                   <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-[#23b26b]" : "bg-[#f97316]"}`} />
                   <span className={`${isOnline ? "text-[#239960]" : "text-[#d46a11]"}`}>{isOnline ? "Online" : "Offline"}</span>
                   <ChevronDown className="h-4 w-4 text-[#7e8798]" />
-                </div>
-                <div className="flex items-center gap-3 rounded-xl border border-[#e7eaf1] px-3 py-2">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/restaurant/outlet-info")}
+                  className="flex items-center gap-3 rounded-xl border border-[#e7eaf1] px-3 py-2 transition hover:bg-[#f6f7fb]"
+                  aria-label="Restaurant profile and outlet info"
+                >
                   <div className="grid h-7 w-7 place-items-center rounded-full bg-[#7165f0] text-xs font-semibold text-white">
                     {profileInitial}
                   </div>
                   <span className="max-w-[120px] truncate text-sm font-medium text-[#3b4353]">{restaurantName}</span>
                   <ChevronDown className="h-4 w-4 text-[#7e8798]" />
-                </div>
+                </button>
               </div>
             </div>
           </header>

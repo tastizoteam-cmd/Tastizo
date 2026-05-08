@@ -259,6 +259,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const [stickyIncomingOrder, setStickyIncomingOrder] = useState(null);
   const [forcedPopupOrder, setForcedPopupOrder] = useState(null);
   const [hardPopupOrder, setHardPopupOrder] = useState(null);
+  const [hardPopupTimeLeft, setHardPopupTimeLeft] = useState(OFFER_TTL_SECONDS);
   const [cashLimitNotice, setCashLimitNotice] = useState(null);
   const [isDashboardBootstrapping, setIsDashboardBootstrapping] = useState(true);
   const [currentZoneId, setCurrentZoneId] = useState(() => {
@@ -303,6 +304,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const lastOpenedExternalOrderIdRef = useRef('');
   const externalOrderFetchInFlightRef = useRef(false);
   const externalPopupLockRef = useRef(false);
+  const hardPopupExpiryHandledRef = useRef(false);
   const visibleIncomingOrder = hardPopupOrder || forcedPopupOrder || incomingOrder || stickyIncomingOrder;
   const shouldRenderStickyIncomingPopup =
     Boolean(visibleIncomingOrder) && (!isModalMinimized || externalPopupLockRef.current);
@@ -376,6 +378,46 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     clearNewOrder();
     clearPersistedIncomingOrder();
   }, []);
+
+  useEffect(() => {
+    hardPopupExpiryHandledRef.current = false;
+  }, [hardPopupOrder]);
+
+  useEffect(() => {
+    if (!hardPopupOrder) {
+      setHardPopupTimeLeft(OFFER_TTL_SECONDS);
+      return undefined;
+    }
+
+    const syncRemainingTime = () => {
+      const partnerId = deliveryPartnerIdRef.current || resolveDeliveryPartnerIdFromClient();
+      setHardPopupTimeLeft(getIncomingOrderRemainingSeconds(hardPopupOrder, partnerId));
+    };
+
+    syncRemainingTime();
+
+    const timer = window.setInterval(syncRemainingTime, 1000);
+    window.addEventListener('focus', syncRemainingTime);
+    window.addEventListener('pageshow', syncRemainingTime);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', syncRemainingTime);
+    }
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', syncRemainingTime);
+      window.removeEventListener('pageshow', syncRemainingTime);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', syncRemainingTime);
+      }
+    };
+  }, [hardPopupOrder]);
+
+  useEffect(() => {
+    if (!hardPopupOrder || hardPopupTimeLeft > 0 || hardPopupExpiryHandledRef.current) return;
+    hardPopupExpiryHandledRef.current = true;
+    handleRejectOrder();
+  }, [hardPopupOrder, hardPopupTimeLeft, handleRejectOrder]);
 
   const persistPendingPopupOrderId = useCallback((orderId) => {
     const normalizedOrderId = String(orderId || '').trim();
@@ -1915,8 +1957,25 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
 
               return (
                 <>
-            <div style={{ fontSize: '12px', fontWeight: 900, color: '#ef4444', textTransform: 'uppercase' }}>
-              New Order Request
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 900, color: '#ef4444', textTransform: 'uppercase' }}>
+                New Order Request
+              </div>
+              <div
+                style={{
+                  minWidth: '62px',
+                  padding: '8px 10px',
+                  borderRadius: '12px',
+                  background: '#111827',
+                  color: '#ffffff',
+                  fontSize: '18px',
+                  fontWeight: 900,
+                  textAlign: 'center',
+                  lineHeight: 1,
+                }}
+              >
+                {hardPopupTimeLeft}s
+              </div>
             </div>
             <div style={{ marginTop: '10px', fontSize: '22px', fontWeight: 900, color: '#111827', lineHeight: 1.2 }}>
               {restaurantName}

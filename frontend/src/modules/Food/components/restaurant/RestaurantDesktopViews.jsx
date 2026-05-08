@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
 import {
   ArrowRight,
   CalendarDays,
@@ -13,6 +15,7 @@ import {
   Minus,
   Phone,
   Plus,
+  Printer,
   Search,
   Star,
   Truck,
@@ -22,8 +25,10 @@ import {
   Wallet,
 } from "lucide-react"
 import { restaurantAPI } from "@food/api"
+import { exportToCSV as exportOrdersToCSV } from "@food/components/admin/orders/ordersExportUtils"
 import ResendNotificationButton from "@food/components/restaurant/ResendNotificationButton"
 import RestaurantDesktopShell from "./RestaurantDesktopShell"
+import { useRestaurantDesktopFrame } from "./RestaurantDesktopLayout"
 
 const toNumber = (value) => {
   const num = Number(value)
@@ -41,6 +46,15 @@ const firstFiniteNumber = (...values) => {
 const currency = (value) => `₹${Number(value || 0).toFixed(0)}`
 
 const normalizeStatus = (status) => String(status || "").trim().toLowerCase().replace(/\s+/g, "_")
+const NEW_ORDER_COUNTDOWN_SECONDS = 240
+const notificationSound = "/zomato_sms.mp3"
+const getOrderStatusToken = (order) =>
+  normalizeStatus(
+    order?.status ||
+      order?.orderStatus ||
+      order?.deliveryState?.status ||
+      order?.deliveryState?.currentPhase,
+  )
 
 const formatDateLabel = (value) => {
   if (!value) return "Today"
@@ -54,6 +68,15 @@ const formatTimeLabel = (value) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "--:--"
   return date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })
+}
+
+const formatToolbarDateLabel = (value) => {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  const day = date.getDate()
+  const suffix = day % 10 === 1 && day !== 11 ? "st" : day % 10 === 2 && day !== 12 ? "nd" : day % 10 === 3 && day !== 13 ? "rd" : "th"
+  return `${day}${suffix} ${date.toLocaleDateString("en-IN", { month: "short" })}`
 }
 
 const formatRelativePlacedLabel = (value) => {
@@ -72,6 +95,129 @@ const formatRelativePlacedLabel = (value) => {
 
   const diffDays = Math.round(diffHours / 24)
   return diffDays === 1 ? "Placed 1 day ago" : `Placed ${diffDays} days ago`
+}
+
+const getOrderCountdownSeconds = (order) => {
+  const createdAt = new Date(order?.createdAt || order?.updatedAt || "")
+  if (Number.isNaN(createdAt.getTime())) return NEW_ORDER_COUNTDOWN_SECONDS
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / 1000))
+  return Math.max(0, NEW_ORDER_COUNTDOWN_SECONDS - elapsedSeconds)
+}
+
+const printOrderReceipt = async (order) => {
+  if (!order) return
+
+  const doc = new jsPDF()
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(20)
+  doc.text("Order Receipt", 105, 20, { align: "center" })
+
+  doc.setFontSize(14)
+  doc.setFont("helvetica", "normal")
+  doc.text(order.restaurantName || "Restaurant", 105, 30, { align: "center" })
+
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "bold")
+  doc.text(`Order ID: ${order.orderId || "N/A"}`, 20, 45)
+  doc.setFont("helvetica", "normal")
+
+  const orderDate = order.createdAt
+    ? new Date(order.createdAt).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : new Date().toLocaleString("en-GB")
+
+  doc.text(`Date: ${orderDate}`, 20, 52)
+
+  if (order.customerAddress) {
+    doc.setFont("helvetica", "bold")
+    doc.text("Delivery Address:", 20, 62)
+    doc.setFont("helvetica", "normal")
+    const addressText =
+      [
+        order.customerAddress.street,
+        order.customerAddress.city,
+        order.customerAddress.state,
+      ]
+        .filter(Boolean)
+        .join(", ") || "Address not available"
+    const addressLines = doc.splitTextToSize(addressText, 170)
+    doc.text(addressLines, 20, 69)
+  }
+
+  let yPos = 85
+  if (order.items && order.items.length > 0) {
+    doc.setFont("helvetica", "bold")
+    doc.text("Items:", 20, yPos)
+    yPos += 8
+
+    const tableData = order.items.map((item) => [
+      item.name || "Item",
+      item.quantity || 1,
+      `Rs. ${(item.price || 0).toFixed(2)}`,
+      `Rs. ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`,
+    ])
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [["Item", "Qty", "Price", "Total"]],
+      body: tableData,
+      theme: "striped",
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 30, halign: "center" },
+        2: { cellWidth: 35, halign: "right" },
+        3: { cellWidth: 35, halign: "right" },
+      },
+    })
+
+    yPos = doc.lastAutoTable.finalY + 10
+  }
+
+  doc.setFontSize(12)
+  doc.text(`Total: Rs. ${(getOrderTotalValue(order) || 0).toFixed(2)}`, 20, yPos)
+
+  yPos += 10
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "normal")
+  doc.text(`Payment Status: ${getOrderPaymentStatusLabel(order)}`, 20, yPos)
+
+  if (order.estimatedDeliveryTime) {
+    yPos += 8
+    doc.text(`Estimated Delivery: ${order.estimatedDeliveryTime} minutes`, 20, yPos)
+  }
+
+  if (order.note) {
+    yPos += 10
+    doc.setFont("helvetica", "bold")
+    doc.text("Note:", 20, yPos)
+    doc.setFont("helvetica", "normal")
+    const noteLines = doc.splitTextToSize(order.note, 170)
+    doc.text(noteLines, 20, yPos + 7)
+  }
+
+  yPos += 15
+  doc.setFont("helvetica", "normal")
+  doc.text(order.sendCutlery === false ? "Don't send cutlery" : "Send cutlery requested", 20, yPos)
+
+  const pageHeight = doc.internal.pageSize.height
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "italic")
+  doc.text(`Generated on ${new Date().toLocaleString("en-GB")}`, 105, pageHeight - 10, { align: "center" })
+
+  const fileName = `Order-${order.orderId || "Receipt"}-${Date.now()}.pdf`
+  doc.save(fileName)
 }
 
 const addMinutes = (value, minutes) => {
@@ -94,7 +240,7 @@ const getOrderDiscountValue = (order) =>
 const getOrderPaymentStatusLabel = (order) => {
   const paymentStatus = String(order?.payment?.status || order?.paymentStatus || "").toLowerCase()
   const paymentMethod = String(order?.payment?.method || order?.paymentMethod || "").toLowerCase()
-  const orderStatus = normalizeStatus(order?.status)
+  const orderStatus = getOrderStatusToken(order)
 
   if (["completed", "paid", "captured", "success", "succeeded"].includes(paymentStatus)) return "PAID"
   if (["refunded", "refund"].includes(paymentStatus)) return "REFUNDED"
@@ -106,36 +252,107 @@ const getOrderPaymentStatusLabel = (order) => {
 }
 
 const getOrderTimelineSteps = (order) => {
-  const normalizedStatus = normalizeStatus(order?.status)
+  const normalizedStatus = getOrderStatusToken(order)
+  const dispatchStatus = normalizeStatus(order?.dispatch?.status)
+  const deliveryPhase = normalizeStatus(order?.deliveryState?.currentPhase)
+  const deliveryStatus = normalizeStatus(order?.deliveryState?.status)
   const createdAt = order?.createdAt
   const prepMinutes = firstFiniteNumber(order?.preparationTime, order?.estimatedPreparationTime, order?.etaMins, 15)
   const deliveryMinutes = firstFiniteNumber(order?.estimatedDeliveryTime, 30)
 
   const estimatedPickup =
+    order?.deliveryState?.reachedPickupAt ||
     order?.estimatedPickupTime ||
     order?.tracking?.ready?.timestamp ||
     order?.tracking?.preparing?.timestamp ||
     addMinutes(createdAt, prepMinutes)
 
   const estimatedDelivery =
+    order?.deliveryState?.pickedUpAt ||
     order?.estimatedDeliveryAt ||
     order?.tracking?.delivered?.timestamp ||
     order?.tracking?.outForDelivery?.timestamp ||
     addMinutes(createdAt, deliveryMinutes)
 
-  return [
+  const completedAt =
+    order?.completedAt ||
+    order?.deliveredAt ||
+    order?.deliveryState?.deliveredAt ||
+    order?.tracking?.completed?.timestamp ||
+    order?.tracking?.delivered?.timestamp ||
+    order?.updatedAt
+
+  const isCompletedOrder =
+    ["delivered", "completed"].includes(normalizedStatus) ||
+    deliveryPhase === "delivered" ||
+    deliveryStatus === "delivered"
+
+  const steps = [
     { label: "Placed", time: formatTimeLabel(createdAt), active: true },
     {
       label: "Estimated pickup",
       time: formatTimeLabel(estimatedPickup),
-      active: ["confirmed", "pending", "preparing", "ready", "ready_for_pickup", "out_for_delivery", "delivered", "completed"].includes(normalizedStatus),
+      active:
+        ["confirmed", "pending", "preparing", "ready", "ready_for_pickup", "reached_pickup", "picked_up", "out_for_delivery", "delivered", "completed"].includes(normalizedStatus) ||
+        dispatchStatus === "accepted" ||
+        ["at_pickup", "en_route_to_delivery", "at_drop", "delivered"].includes(deliveryPhase) ||
+        ["reached_pickup", "picked_up", "reached_drop", "delivered"].includes(deliveryStatus),
     },
     {
       label: "Estimated delivery",
       time: formatTimeLabel(estimatedDelivery),
-      active: ["ready", "ready_for_pickup", "out_for_delivery", "delivered", "completed"].includes(normalizedStatus),
+      active:
+        ["picked_up", "out_for_delivery", "delivered", "completed"].includes(normalizedStatus) ||
+        ["en_route_to_delivery", "at_drop", "delivered"].includes(deliveryPhase) ||
+        ["picked_up", "reached_drop", "delivered"].includes(deliveryStatus),
     },
   ]
+
+  if (isCompletedOrder) {
+    steps.push({
+      label: "Completed",
+      time: formatTimeLabel(completedAt),
+      active: true,
+    })
+  }
+
+  return steps
+}
+
+const getOrderCancellationMeta = (order) => {
+  const statusToken = getOrderStatusToken(order)
+  if (!statusToken.startsWith("cancelled")) {
+    return null
+  }
+
+  const latestCancelledEntry = Array.isArray(order?.statusHistory)
+    ? [...order.statusHistory]
+        .reverse()
+        .find((entry) => String(entry?.to || "").toLowerCase().startsWith("cancelled"))
+    : null
+
+  const cancelledByMap = {
+    cancelled_by_user: "Customer",
+    cancelled_by_restaurant: "Restaurant",
+    cancelled_by_admin: "Admin",
+  }
+
+  return {
+    statusToken,
+    cancelledBy:
+      cancelledByMap[statusToken] ||
+      cancelledByMap[String(latestCancelledEntry?.to || "").toLowerCase()] ||
+      "System",
+    note:
+      String(
+        latestCancelledEntry?.note ||
+          order?.cancellationReason ||
+          order?.cancelReason ||
+          order?.reason ||
+          "",
+      ).trim() || "No cancellation reason was provided.",
+    cancelledAt: latestCancelledEntry?.at || order?.updatedAt || order?.cancelledAt || null,
+  }
 }
 
 const formatStatusLabel = (value) =>
@@ -430,15 +647,22 @@ function DesktopStatPill({ active, children, onClick }) {
   )
 }
 
-export function DesktopOrdersView() {
+export function DesktopOrdersView({ embedded = false }) {
+  const desktopFrame = useRestaurantDesktopFrame()
   const { orders, loading, reloadOrders } = useRestaurantOrders()
   const [activeTab, setActiveTab] = useState("requests")
   const [query, setQuery] = useState("")
   const [actingOrderId, setActingOrderId] = useState("")
   const [desktopPopupOrderId, setDesktopPopupOrderId] = useState("")
   const [desktopPopupPrepTime, setDesktopPopupPrepTime] = useState(18)
-  const [desktopPopupCountdown, setDesktopPopupCountdown] = useState(292)
   const [desktopPopupMuted, setDesktopPopupMuted] = useState(false)
+  const [countdownTick, setCountdownTick] = useState(Date.now())
+  const [rejectModalOrder, setRejectModalOrder] = useState(null)
+  const [rejectReason, setRejectReason] = useState("")
+  const [showCancellationPopup, setShowCancellationPopup] = useState(false)
+  const [cancellationPopupText, setCancellationPopupText] = useState("")
+  const audioRef = useRef(null)
+  const audioUnlockedRef = useRef(false)
   const shownDesktopPopupOrdersRef = useMemo(() => new Set(), [])
 
   const orderGroups = useMemo(
@@ -477,20 +701,65 @@ export function DesktopOrdersView() {
     shownDesktopPopupOrdersRef.add(nextKey)
     setDesktopPopupOrderId(nextKey)
     setDesktopPopupPrepTime(Number(nextPopupOrder.preparationTime || nextPopupOrder.estimatedPreparationTime || nextPopupOrder.etaMins || 18))
-    setDesktopPopupCountdown(292)
   }, [desktopPopupOrder, requestOrders, shownDesktopPopupOrdersRef])
 
   useEffect(() => {
-    if (!desktopPopupOrderId) return undefined
+    if (!requestOrders.length) return undefined
     const intervalId = setInterval(() => {
-      setDesktopPopupCountdown((current) => (current > 0 ? current - 1 : 0))
+      setCountdownTick(Date.now())
     }, 1000)
     return () => clearInterval(intervalId)
-  }, [desktopPopupOrderId])
+  }, [requestOrders.length])
+
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(notificationSound)
+      audioRef.current.preload = "auto"
+    }
+  }, [])
+
+  useEffect(() => {
+    const unlockAudio = async () => {
+      if (audioUnlockedRef.current || !audioRef.current) return
+      try {
+        audioRef.current.muted = true
+        await audioRef.current.play()
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+        audioRef.current.muted = false
+        audioRef.current.volume = 1
+        audioUnlockedRef.current = true
+
+        if (desktopPopupOrderId && !desktopPopupMuted) {
+          audioRef.current.loop = true
+          audioRef.current.currentTime = 0
+          audioRef.current.play().catch(() => {})
+        }
+      } catch (_) {
+        if (audioRef.current) audioRef.current.muted = false
+      }
+    }
+
+    window.addEventListener("pointerdown", unlockAudio, { once: true, passive: true })
+    window.addEventListener("keydown", unlockAudio, { once: true })
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio)
+      window.removeEventListener("keydown", unlockAudio)
+    }
+  }, [desktopPopupMuted, desktopPopupOrderId])
+
+  const desktopPopupCountdown = useMemo(
+    () => (desktopPopupOrder ? getOrderCountdownSeconds(desktopPopupOrder) : NEW_ORDER_COUNTDOWN_SECONDS),
+    [countdownTick, desktopPopupOrder],
+  )
 
   const closeDesktopPopup = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
     setDesktopPopupOrderId("")
-    setDesktopPopupCountdown(292)
   }, [])
 
   const handleAcceptOrder = useCallback(
@@ -511,23 +780,82 @@ export function DesktopOrdersView() {
     [closeDesktopPopup, desktopPopupOrderId, reloadOrders],
   )
 
+  const openRejectModal = useCallback((order) => {
+    setRejectModalOrder(order || null)
+    setRejectReason("")
+  }, [])
+
+  const closeRejectModal = useCallback(() => {
+    setRejectModalOrder(null)
+    setRejectReason("")
+  }, [])
+
   const handleRejectOrder = useCallback(
-    async (order) => {
+    async (order, reason = "Rejected from desktop order requests") => {
       const orderId = order?._id || order?.orderId
       if (!orderId) return
       setActingOrderId(String(orderId))
       try {
-        await restaurantAPI.rejectOrder(orderId, "Rejected from desktop order requests")
+        await restaurantAPI.rejectOrder(orderId, reason)
         await reloadOrders()
         if (String(orderId) === String(desktopPopupOrderId)) {
           closeDesktopPopup()
         }
+        setCancellationPopupText(`Order ${order.orderId || String(orderId).slice(-6)} cancelled successfully`)
+        setShowCancellationPopup(true)
       } finally {
         setActingOrderId("")
       }
     },
     [closeDesktopPopup, desktopPopupOrderId, reloadOrders],
   )
+
+  const handleRejectConfirm = useCallback(async () => {
+    if (!rejectModalOrder || !rejectReason.trim()) return
+    await handleRejectOrder(rejectModalOrder, rejectReason.trim())
+    closeRejectModal()
+  }, [closeRejectModal, handleRejectOrder, rejectModalOrder, rejectReason])
+
+  useEffect(() => {
+    if (!desktopPopupOrder) return
+    if (desktopPopupCountdown > 0) return
+    if (actingOrderId === String(desktopPopupOrder._id || desktopPopupOrder.orderId)) return
+    handleRejectOrder(desktopPopupOrder)
+  }, [actingOrderId, desktopPopupCountdown, desktopPopupOrder, handleRejectOrder])
+
+  useEffect(() => {
+    if (desktopPopupOrderId && !desktopPopupMuted) {
+      if (audioRef.current) {
+        audioRef.current.loop = true
+        audioRef.current.muted = false
+        audioRef.current.volume = 1
+        audioRef.current.currentTime = 0
+        audioRef.current.play().catch(() => {})
+      }
+    } else if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+  }, [desktopPopupMuted, desktopPopupOrderId])
+
+  useEffect(
+    () => () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+      }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (!showCancellationPopup) return undefined
+    const timeoutId = setTimeout(() => {
+      setShowCancellationPopup(false)
+      setCancellationPopupText("")
+    }, 2500)
+    return () => clearTimeout(timeoutId)
+  }, [showCancellationPopup])
 
   const handleMarkReady = useCallback(
     async (order) => {
@@ -583,27 +911,34 @@ export function DesktopOrdersView() {
     }
   }, [desktopPopupOrder])
 
-  return (
-    <RestaurantDesktopShell
-      title="Orders"
-      subtitle="Desktop preparing queue with compact live-order cards."
-      toolbar={
-        <>
-          <DesktopStatPill active={activeTab === "requests"} onClick={() => setActiveTab("requests")}>
-            Order requests ({orders.filter((order) => orderGroups.requests.includes(normalizeStatus(order.status))).length})
-          </DesktopStatPill>
-          <DesktopStatPill active={activeTab === "preparing"} onClick={() => setActiveTab("preparing")}>
-            Preparing ({orders.filter((order) => orderGroups.preparing.includes(normalizeStatus(order.status))).length})
-          </DesktopStatPill>
-          <DesktopStatPill active={activeTab === "ready"} onClick={() => setActiveTab("ready")}>
-            Ready ({orders.filter((order) => orderGroups.ready.includes(normalizeStatus(order.status))).length})
-          </DesktopStatPill>
-          <DesktopStatPill active={activeTab === "picked"} onClick={() => setActiveTab("picked")}>
-            Picked up ({orders.filter((order) => orderGroups.picked.includes(normalizeStatus(order.status))).length})
-          </DesktopStatPill>
-        </>
-      }
-    >
+  const toolbar = (
+    <>
+      <DesktopStatPill active={activeTab === "requests"} onClick={() => setActiveTab("requests")}>
+        Order requests ({orders.filter((order) => orderGroups.requests.includes(normalizeStatus(order.status))).length})
+      </DesktopStatPill>
+      <DesktopStatPill active={activeTab === "preparing"} onClick={() => setActiveTab("preparing")}>
+        Preparing ({orders.filter((order) => orderGroups.preparing.includes(normalizeStatus(order.status))).length})
+      </DesktopStatPill>
+      <DesktopStatPill active={activeTab === "ready"} onClick={() => setActiveTab("ready")}>
+        Ready ({orders.filter((order) => orderGroups.ready.includes(normalizeStatus(order.status))).length})
+      </DesktopStatPill>
+      <DesktopStatPill active={activeTab === "picked"} onClick={() => setActiveTab("picked")}>
+        Picked up ({orders.filter((order) => orderGroups.picked.includes(normalizeStatus(order.status))).length})
+      </DesktopStatPill>
+    </>
+  )
+
+  useEffect(() => {
+    if (!embedded || !desktopFrame?.setHeader) return
+    desktopFrame.setHeader({
+      title: "Orders",
+      subtitle: "Desktop preparing queue with compact live-order cards.",
+      toolbar,
+    })
+  }, [desktopFrame, embedded, toolbar])
+
+  const content = (
+    <div className="space-y-5">
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4">
           <div className="relative w-full max-w-[360px]">
@@ -650,6 +985,7 @@ export function DesktopOrdersView() {
               const dispatchStatus = String(order?.dispatch?.status || "").toLowerCase()
               const showResendAction = (isPreparing || isReady) && dispatchStatus !== "accepted"
               const statusLabel = isPicked ? "PICKED UP" : isReady ? "READY" : isPreparing ? "PREPARING" : "ORDER"
+              const requestCountdown = getOrderCountdownSeconds(order)
               return (
                 <article
                   key={orderKey}
@@ -691,7 +1027,7 @@ export function DesktopOrdersView() {
                             {isPreparing && (
                               <button
                                 type="button"
-                                onClick={() => handleRejectOrder(order)}
+                                onClick={() => openRejectModal(order)}
                                 disabled={isActing}
                                 className="rounded-full bg-rose-50 p-1.5 text-rose-500 disabled:opacity-50"
                                 title="Cancel order"
@@ -746,8 +1082,16 @@ export function DesktopOrdersView() {
                             <>
                               <button
                                 type="button"
+                                onClick={() => printOrderReceipt(order)}
+                                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
+                              >
+                                <Printer className="h-3.5 w-3.5" />
+                                PRINT
+                              </button>
+                              <button
+                                type="button"
                                 disabled={isActing}
-                                onClick={() => handleRejectOrder(order)}
+                                onClick={() => openRejectModal(order)}
                                 className="rounded-xl border border-[#f2c3c3] px-4 py-2 text-[11px] font-black text-[#d55252] disabled:opacity-60"
                               >
                                 {isActing ? "..." : "REJECT"}
@@ -758,7 +1102,7 @@ export function DesktopOrdersView() {
                                 onClick={() => handleAcceptOrder(order)}
                                 className="rounded-xl bg-[#4771ea] px-4 py-2 text-[11px] font-black text-white disabled:opacity-60"
                               >
-                                {isActing ? "..." : "ACCEPT"}
+                                {isActing ? "..." : `ACCEPT (${formatCountdownLabel(requestCountdown)})`}
                               </button>
                             </>
                           ) : isPreparing ? (
@@ -812,7 +1156,7 @@ export function DesktopOrdersView() {
 
             <div className="p-5">
               <div className="rounded-[6px] bg-[#dccfff] px-4 py-2 text-[11px] font-black uppercase tracking-[0.28em] text-[#6b59bf]">
-                Zomato delivery
+                Tastizo delivery
               </div>
 
               <div className="mt-4 flex items-start justify-between gap-4 border-b border-[#edf1f6] pb-3">
@@ -907,7 +1251,15 @@ export function DesktopOrdersView() {
             <div className="flex gap-4 border-t border-[#edf1f6] px-5 py-4">
               <button
                 type="button"
-                onClick={() => handleRejectOrder(desktopPopupOrder)}
+                onClick={() => printOrderReceipt(desktopPopupOrder)}
+                className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#d8deea] bg-white px-4 py-3 text-[16px] font-medium text-[#495263] transition hover:border-[#bfc8db] hover:text-[#252b36]"
+              >
+                <Printer className="h-4 w-4" />
+                Print receipt
+              </button>
+              <button
+                type="button"
+                onClick={() => openRejectModal(desktopPopupOrder)}
                 disabled={actingOrderId === String(desktopPopupOrder._id || desktopPopupOrder.orderId)}
                 className="flex-1 rounded-[10px] border border-[#ff8f8f] bg-white py-3 text-[18px] font-medium text-[#ef4444] disabled:opacity-60"
               >
@@ -927,20 +1279,119 @@ export function DesktopOrdersView() {
           </div>
         </div>
       ) : null}
+
+      {rejectModalOrder ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-6">
+          <div className="w-full max-w-[460px] rounded-[22px] border border-[#e6eaf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-[24px] font-semibold text-[#252b36]">
+                  {orderGroups.requests.includes(normalizeStatus(rejectModalOrder?.status)) ? "Reject order" : "Cancel order"}
+                </h3>
+                <p className="mt-1 text-sm text-[#6e7688]">
+                  Please add a reason before continuing for order {rejectModalOrder?.orderId || String(rejectModalOrder?._id || "").slice(-6)}.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                className="text-[#70798c] transition hover:text-[#252b36]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-semibold text-[#495263]">Reason</label>
+              <textarea
+                value={rejectReason}
+                onChange={(event) => setRejectReason(event.target.value)}
+                placeholder="Write the rejection or cancellation reason"
+                rows={4}
+                className="w-full rounded-[14px] border border-[#d6dce8] px-4 py-3 text-sm text-[#252b36] outline-none transition focus:border-[#8aa3f5]"
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                className="rounded-[12px] border border-[#d6dce8] px-5 py-3 text-sm font-semibold text-[#586173]"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectConfirm}
+                disabled={!rejectReason.trim() || actingOrderId === String(rejectModalOrder?._id || rejectModalOrder?.orderId)}
+                className="rounded-[12px] bg-[#ef4444] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {actingOrderId === String(rejectModalOrder?._id || rejectModalOrder?.orderId) ? "Submitting..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showCancellationPopup ? (
+        <div className="fixed right-6 top-6 z-50 w-full max-w-[360px] rounded-[18px] border border-[#fecaca] bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fef2f2] text-[#ef4444]">
+              <X className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[18px] font-semibold text-[#252b36]">Order cancelled</p>
+              <p className="mt-1 text-sm text-[#6e7688]">
+                {cancellationPopupText || "The order has been cancelled successfully."}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <RestaurantDesktopShell
+      title="Orders"
+      subtitle="Desktop preparing queue with compact live-order cards."
+      toolbar={toolbar}
+    >
+      {content}
     </RestaurantDesktopShell>
   )
 }
 
-export function DesktopMenuView() {
+export function DesktopMenuView({ embedded = false }) {
+  const desktopFrame = useRestaurantDesktopFrame()
+  const navigate = useNavigate()
   const sections = useRestaurantMenuSections()
 
-  const menuStats = useMemo(() => {
-    const items = sections.flatMap((section) => [
+  const menuItems = useMemo(
+    () =>
+      sections.flatMap((section) => [
       ...(Array.isArray(section?.items) ? section.items : []),
       ...(Array.isArray(section?.subsections)
-        ? section.subsections.flatMap((subsection) => subsection?.items || [])
+        ? section.subsections.flatMap((subsection) =>
+            (subsection?.items || []).map((item) => ({
+              ...item,
+              categoryName: subsection?.name || section?.name || "Menu item",
+            })),
+          )
         : []),
-    ])
+      ]).map((item) => ({
+        ...item,
+        categoryName: item?.categoryName || item?.category || sections.find((section) => (section?.items || []).includes(item))?.name || "Menu item",
+      })),
+    [sections],
+  )
+
+  const menuStats = useMemo(() => {
+    const items = menuItems
     const total = items.length
     const withImages = items.filter((item) => item?.image || item?.photoCount > 0).length
     const withDescriptions = items.filter((item) => String(item?.description || "").trim()).length
@@ -954,92 +1405,122 @@ export function DesktopMenuView() {
       missingDescriptions: Math.max(total - withDescriptions, 0),
       pricingReady: withPricing,
     }
-  }, [sections])
+  }, [menuItems])
 
-  const insightCards = [
-    { title: "Simplify your menu structure", body: "Organize categories to mirror how guests actually order on desktop.", icon: CalendarDays },
-    { title: "Add photos of your top selling items", body: `${menuStats.missingImages} items still need gallery-ready images.`, icon: Camera },
-    { title: "Most of your items have descriptions", body: `${menuStats.missingDescriptions} items can be improved with short taste-forward copy.`, icon: ImageIcon },
-    { title: "Add relevant add-ons to boost love", body: "Bundle beverages, extras, and upsells where they fit naturally.", icon: UtensilsCrossed },
-  ]
-
-  return (
-    <RestaurantDesktopShell title="Menu" subtitle="A Zomato-inspired desktop view for catalog operations.">
-      <div className="grid grid-cols-[1.75fr_0.85fr] gap-5">
+  const content = (
+    <div>
         <section className="overflow-hidden rounded-[24px] border border-[#e5e8f0] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-          <div className="flex items-start justify-between border-b border-[#edf0f5] px-6 py-6">
-            <div>
-              <h2 className="text-[32px] font-bold leading-tight tracking-[-0.04em] text-[#2a3240]">Your menu score is good</h2>
-              <p className="mt-2 text-[15px] text-[#677085]">Top restaurants in your area keep descriptions, images, and add-ons consistently polished.</p>
-              <p className="mt-2 text-xs text-[#98a1b3]">Updated from {menuStats.total || 0} items currently in your catalog.</p>
-            </div>
-            <div className="grid h-28 w-28 place-items-center rounded-full border-[10px] border-[#f4c524] border-b-[#edf0f5] border-l-[#f4c524] text-[18px] font-bold text-[#1f2735]">
-              {menuStats.score}%
-            </div>
-          </div>
-
           <div className="px-6 py-5">
-            <p className="mb-4 text-sm font-semibold text-[#384152]">Top opportunities to grow your business</p>
-            <div className="grid grid-cols-2 gap-4">
-              {insightCards.map((card) => {
-                const Icon = card.icon
-                return (
-                  <div key={card.title} className="rounded-2xl border border-[#e7ebf4] p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-[17px] font-semibold leading-snug text-[#2a3240]">{card.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[#687185]">{card.body}</p>
-                        <button type="button" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#4c73e8]">
-                          View insights <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <Icon className="h-10 w-10 text-[#c0c7d8]" />
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-[#384152]">Showing your current inventory food items</p>
+              <button
+                type="button"
+                onClick={() => navigate("/restaurant/inventory")}
+                className="inline-flex items-center gap-1 text-sm font-semibold text-[#4c73e8]"
+              >
+                Open inventory <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
-          </div>
-
-          <div className="mx-6 mb-6 rounded-2xl bg-[#e9eeff] px-5 py-4 text-sm font-medium text-[#4a5e97]">
-            Your menu tool has a new desktop layout. Use it to prioritize images, descriptions, and pricing gaps faster.
+            <div className="grid grid-cols-2 gap-4">
+              {menuItems.length ? (
+                menuItems.slice(0, 8).map((item, index) => {
+                  const itemPrice = Number(item?.price || item?.basePrice || 0)
+                  const itemImage = item?.image || item?.photo || ""
+                  const itemName = item?.name || `Food item ${index + 1}`
+                  const itemStatus = item?.isAvailable === false ? "Out of stock" : "In stock"
+                  return (
+                    <div key={item?._id || item?.id || `${itemName}-${index}`} className="rounded-2xl border border-[#e7ebf4] p-5">
+                      <div className="flex items-start gap-4">
+                        <div className="h-16 w-16 overflow-hidden rounded-2xl border border-[#eef2f7] bg-[#f8fafc]">
+                          {itemImage ? (
+                            <img src={itemImage} alt={itemName} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-[0.16em] text-[#b1b9ca]">
+                              Food
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="truncate text-[17px] font-semibold leading-snug text-[#2a3240]">{itemName}</h3>
+                              <p className="mt-1 text-sm text-[#687185]">{item?.categoryName || "Menu item"}</p>
+                            </div>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${item?.isAvailable === false ? "bg-[#fff1f1] text-[#d14d4d]" : "bg-[#eefbf3] text-[#1d9b57]"}`}>
+                              {itemStatus}
+                            </span>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <span className="text-[18px] font-bold text-[#2a3240]">{currency(itemPrice)}</span>
+                            <button
+                              type="button"
+                              onClick={() => navigate("/restaurant/inventory")}
+                              className="text-sm font-semibold text-[#4c73e8]"
+                            >
+                              View item
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="col-span-2 rounded-2xl border border-dashed border-[#d7deea] bg-[#fbfcff] px-5 py-10 text-center text-sm text-[#7a8397]">
+                  No inventory food items found yet.
+                </div>
+              )}
+            </div>
           </div>
         </section>
+    </div>
+  )
 
-        <aside className="space-y-4">
-          <div className="rounded-[24px] border border-[#e5e8f0] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-[28px] font-bold tracking-[-0.04em] text-[#2a3240]">Go to Menu Editor</h3>
-                <p className="mt-2 text-sm leading-6 text-[#6b7386]">Edit items, tax slabs, availability, and visuals with your desktop workflow.</p>
-              </div>
-              <ArrowRight className="mt-1 h-5 w-5 text-[#1d2433]" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-[24px] border border-[#e5e8f0] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-              <div className="flex items-start justify-between">
-                <h3 className="max-w-[110px] text-[24px] font-bold leading-tight tracking-[-0.04em] text-[#2a3240]">Request photoshoot</h3>
-                <Camera className="h-7 w-7 text-[#f2994a]" />
-              </div>
-            </div>
-            <div className="rounded-[24px] border border-[#e5e8f0] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
-              <div className="flex items-start justify-between">
-                <h3 className="max-w-[110px] text-[24px] font-bold leading-tight tracking-[-0.04em] text-[#2a3240]">Add videos on menu</h3>
-                <ImageIcon className="h-7 w-7 text-[#4c73e8]" />
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
+  useEffect(() => {
+    if (!embedded || !desktopFrame?.setHeader) return
+    desktopFrame.setHeader({
+      title: "Menu",
+      subtitle: "",
+      toolbar: null,
+    })
+  }, [desktopFrame, embedded])
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <RestaurantDesktopShell title="Menu" subtitle="">
+      {content}
     </RestaurantDesktopShell>
   )
 }
 
-export function DesktopOrderHistoryView() {
+export function DesktopOrderHistoryView({ embedded = false }) {
+  const desktopFrame = useRestaurantDesktopFrame()
   const { orders, loading } = useRestaurantOrders()
   const [query, setQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [dateFilterOpen, setDateFilterOpen] = useState(false)
+  const [statusFilterOpen, setStatusFilterOpen] = useState(false)
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
   const [selectedId, setSelectedId] = useState("")
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState(null)
+  const [selectedOrderDetailLoading, setSelectedOrderDetailLoading] = useState(false)
+
+  const orderStatusOptions = useMemo(
+    () => [
+      { id: "all", label: "All orders" },
+      { id: "preparing", label: "Preparing" },
+      { id: "ready", label: "Ready" },
+      { id: "picked_up", label: "Picked up" },
+      { id: "out_for_delivery", label: "Out for delivery" },
+      { id: "delivered", label: "Delivered" },
+      { id: "cancelled", label: "Cancelled" },
+    ],
+    [],
+  )
 
   const historyOrders = useMemo(
     () =>
@@ -1050,40 +1531,230 @@ export function DesktopOrderHistoryView() {
           if (!query.trim()) return true
           const haystack = `${order.orderId || ""} ${order.userId?.name || ""} ${(order.items || []).map((item) => item?.name).join(" ")}`
           return haystack.toLowerCase().includes(query.trim().toLowerCase())
+        })
+        .filter((order) => {
+          if (statusFilter === "all") return true
+          return getOrderStatusToken(order) === statusFilter
+        })
+        .filter((order) => {
+          if (!fromDate && !toDate) return true
+          const createdAt = new Date(order.createdAt || "")
+          if (Number.isNaN(createdAt.getTime())) return false
+
+          if (fromDate) {
+            const start = new Date(`${fromDate}T00:00:00`)
+            if (createdAt < start) return false
+          }
+
+          if (toDate) {
+            const end = new Date(`${toDate}T23:59:59.999`)
+            if (createdAt > end) return false
+          }
+
+          return true
         }),
-    [orders, query],
+    [orders, query, statusFilter, fromDate, toDate],
   )
 
   useEffect(() => {
-    if (!selectedId && historyOrders[0]) {
+    if (selectedId && historyOrders.some((order) => String(order._id || order.orderId) === String(selectedId))) {
+      return
+    }
+
+    if (historyOrders[0]) {
       setSelectedId(historyOrders[0]._id || historyOrders[0].orderId)
+      return
+    }
+
+    if (selectedId) {
+      setSelectedId("")
     }
   }, [historyOrders, selectedId])
 
-  const selectedOrder = useMemo(
+  const selectedOrderSummary = useMemo(
     () => historyOrders.find((order) => String(order._id || order.orderId) === String(selectedId)) || null,
     [historyOrders, selectedId],
   )
 
-  return (
-    <RestaurantDesktopShell
-      title="Order History"
-      toolbar={
-        <>
-          <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]">
-            <CalendarDays className="h-4 w-4" />
-            24th to 25th Apr
-          </button>
-          <button type="button" className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]">
-            Filter
-          </button>
-          <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]">
-            <Download className="h-4 w-4" />
-            Download data
-          </button>
-        </>
+  useEffect(() => {
+    if (!selectedOrderSummary) {
+      setSelectedOrderDetail(null)
+      setSelectedOrderDetailLoading(false)
+      return
+    }
+
+    let isMounted = true
+
+    const loadSelectedOrderDetail = async () => {
+      setSelectedOrderDetailLoading(true)
+      try {
+        let response
+        try {
+          response = await restaurantAPI.getOrderById(selectedOrderSummary.orderId || selectedOrderSummary._id)
+        } catch {
+          const fallbackId = selectedOrderSummary._id || selectedOrderSummary.orderMongoId
+          if (!fallbackId || fallbackId === selectedOrderSummary.orderId) throw new Error("Fallback order lookup failed")
+          response = await restaurantAPI.getOrderById(fallbackId)
+        }
+
+        const nextOrder = response?.data?.data?.order || response?.data?.data || null
+        if (isMounted) {
+          setSelectedOrderDetail(nextOrder)
+        }
+      } catch {
+        if (isMounted) {
+          setSelectedOrderDetail(selectedOrderSummary)
+        }
+      } finally {
+        if (isMounted) {
+          setSelectedOrderDetailLoading(false)
+        }
       }
-    >
+    }
+
+    loadSelectedOrderDetail()
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedOrderSummary])
+
+  const selectedOrder = selectedOrderDetail || selectedOrderSummary
+
+  const dateFilterLabel = useMemo(() => {
+    if (!fromDate && !toDate) return "All dates"
+    if (fromDate && toDate) return `${formatToolbarDateLabel(fromDate)} to ${formatToolbarDateLabel(toDate)}`
+    if (fromDate) return `From ${formatToolbarDateLabel(fromDate)}`
+    return `Until ${formatToolbarDateLabel(toDate)}`
+  }, [fromDate, toDate])
+
+  const selectedStatusLabel = useMemo(
+    () => orderStatusOptions.find((option) => option.id === statusFilter)?.label || "Filter",
+    [orderStatusOptions, statusFilter],
+  )
+
+  const handleExportOrders = useCallback(() => {
+    const exportOrders = historyOrders.map((order) => ({
+      ...order,
+      customerName: order.userId?.name || order.customerName || "Customer",
+      total: order.pricing?.total || order.total || 0,
+    }))
+    exportOrdersToCSV(exportOrders, "restaurant_order_history")
+  }, [historyOrders])
+
+  const toolbar = (
+    <>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => {
+            setDateFilterOpen((prev) => !prev)
+            setStatusFilterOpen(false)
+          }}
+          className="inline-flex items-center gap-2 rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578] transition hover:bg-[#f6f7fb]"
+        >
+          <CalendarDays className="h-4 w-4" />
+          {dateFilterLabel}
+        </button>
+        {dateFilterOpen ? (
+          <div className="absolute right-0 top-[calc(100%+10px)] z-40 w-[280px] rounded-2xl border border-[#dce1eb] bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#7b8498]">
+                From date
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(event) => setFromDate(event.target.value)}
+                  className="mt-2 h-10 w-full rounded-xl border border-[#dce1eb] px-3 text-sm text-[#2b3343] outline-none focus:border-[#8aa3f5]"
+                />
+              </label>
+              <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#7b8498]">
+                To date
+                <input
+                  type="date"
+                  value={toDate}
+                  min={fromDate || undefined}
+                  onChange={(event) => setToDate(event.target.value)}
+                  className="mt-2 h-10 w-full rounded-xl border border-[#dce1eb] px-3 text-sm text-[#2b3343] outline-none focus:border-[#8aa3f5]"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setFromDate("")
+                  setToDate("")
+                }}
+                className="text-sm font-medium text-[#667085]"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setDateFilterOpen(false)}
+                className="rounded-xl bg-[#4f78ee] px-4 py-2 text-sm font-semibold text-white"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => {
+            setStatusFilterOpen((prev) => !prev)
+            setDateFilterOpen(false)
+          }}
+          className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578] transition hover:bg-[#f6f7fb]"
+        >
+          {selectedStatusLabel}
+        </button>
+        {statusFilterOpen ? (
+          <div className="absolute right-0 top-[calc(100%+10px)] z-40 min-w-[210px] rounded-2xl border border-[#dce1eb] bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+            {orderStatusOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(option.id)
+                  setStatusFilterOpen(false)
+                }}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
+                  statusFilter === option.id ? "bg-[#edf3ff] font-semibold text-[#365dc9]" : "text-[#596275] hover:bg-[#f6f7fb]"
+                }`}
+              >
+                <span>{option.label}</span>
+                {statusFilter === option.id ? <span className="text-xs">Active</span> : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={handleExportOrders}
+        className="inline-flex items-center gap-2 rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578] transition hover:bg-[#f6f7fb]"
+      >
+        <Download className="h-4 w-4" />
+        Download data
+      </button>
+    </>
+  )
+
+  useEffect(() => {
+    if (!embedded || !desktopFrame?.setHeader) return
+    desktopFrame.setHeader({
+      title: "Order History",
+      subtitle: "",
+      toolbar,
+    })
+  }, [desktopFrame, embedded, toolbar])
+
+  const content = (
+    <div className="space-y-5">
       <div className="grid grid-cols-[360px_1fr] overflow-hidden rounded-[24px] border border-[#e5e8f0] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
         <div className="border-r border-[#edf0f5]">
           <div className="border-b border-[#edf0f5] p-4">
@@ -1144,6 +1815,13 @@ export function DesktopOrderHistoryView() {
                 <p className="mt-4 text-lg font-medium text-[#576074]">No order selected</p>
               </div>
             </div>
+          ) : selectedOrderDetailLoading ? (
+            <div className="grid h-full min-h-[720px] place-items-center text-center text-[#7b8498]">
+              <div>
+                <Loader2 className="mx-auto h-10 w-10 animate-spin text-[#9da6ba]" />
+                <p className="mt-4 text-lg font-medium text-[#576074]">Loading order details...</p>
+              </div>
+            </div>
           ) : (
             <>
               {(() => {
@@ -1151,22 +1829,74 @@ export function DesktopOrderHistoryView() {
                 const selectedPaymentStatus = getOrderPaymentStatusLabel(selectedOrder)
                 const selectedTaxValue = getOrderTaxValue(selectedOrder)
                 const selectedDiscountValue = getOrderDiscountValue(selectedOrder)
+                const cancellationMeta = getOrderCancellationMeta(selectedOrder)
+                const isCancelledOrder = Boolean(cancellationMeta)
                 const selectedCustomerName = selectedOrder.userId?.name || selectedOrder.customerName || "Customer"
                 const selectedCustomerOrderCount = Number(selectedOrder.userId?.orderCount || selectedOrder.customer?.orderCount || 0)
                 const customerOrderLabel = selectedCustomerOrderCount > 0 ? `${selectedCustomerOrderCount}${selectedCustomerOrderCount === 1 ? "st" : selectedCustomerOrderCount === 2 ? "nd" : selectedCustomerOrderCount === 3 ? "rd" : "th"} order` : "Order"
+                const deliveryPartnerProfile =
+                  selectedOrder.deliveryPartnerId ||
+                  selectedOrder.dispatch?.deliveryPartnerId ||
+                  selectedOrder.dispatch?.assignedTo ||
+                  {}
                 const deliveryPartnerName =
-                  selectedOrder.deliveryPartnerId?.name ||
+                  deliveryPartnerProfile?.fullName ||
+                  deliveryPartnerProfile?.name ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.fullName ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.name ||
                   selectedOrder.dispatch?.assignedTo?.name ||
                   selectedOrder.dispatch?.deliveryPartnerName ||
                   ""
+                const deliveryPartnerPhone =
+                  deliveryPartnerProfile?.phone ||
+                  deliveryPartnerProfile?.phoneNumber ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.phone ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.phoneNumber ||
+                  selectedOrder.dispatch?.assignedTo?.phone ||
+                  selectedOrder.dispatch?.assignedTo?.phoneNumber ||
+                  ""
+                const deliveryPartnerVehicle =
+                  deliveryPartnerProfile?.vehicleNumber ||
+                  deliveryPartnerProfile?.bikeNumber ||
+                  deliveryPartnerProfile?.vehicle?.number ||
+                  deliveryPartnerProfile?.vehicleNo ||
+                  selectedOrder.dispatch?.vehicleNumber ||
+                  selectedOrder.dispatch?.bikeNumber ||
+                  ""
+                const deliveryPartnerPhoto =
+                  deliveryPartnerProfile?.profileImage?.url ||
+                  deliveryPartnerProfile?.profileImage ||
+                  deliveryPartnerProfile?.avatar?.url ||
+                  deliveryPartnerProfile?.avatar ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.profileImage?.url ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.profileImage ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.avatar?.url ||
+                  selectedOrder.dispatch?.deliveryPartnerId?.avatar ||
+                  ""
+                const riderAssigned =
+                  Boolean(deliveryPartnerName) ||
+                  Boolean(deliveryPartnerPhone) ||
+                  Boolean(deliveryPartnerVehicle) ||
+                  Boolean(selectedOrder.dispatch?.deliveryPartnerId) ||
+                  ["accepted", "assigned"].includes(normalizeStatus(selectedOrder.dispatch?.status))
+                const statusPillLabel = formatStatusLabel(
+                  selectedOrder.status ||
+                    selectedOrder.orderStatus ||
+                    selectedOrder.deliveryState?.status ||
+                    selectedOrder.deliveryState?.currentPhase ||
+                    "preparing",
+                ).toUpperCase()
+                const statusPillClassName = isCancelledOrder
+                  ? "mt-3 inline-flex rounded-md bg-[#e45b66] px-2 py-1 text-[11px] font-bold text-white"
+                  : "mt-3 inline-flex rounded-md bg-[#6d78d6] px-2 py-1 text-[11px] font-bold text-white"
 
                 return (
                   <>
               <div className="flex items-start justify-between border-b border-[#edf0f5] px-6 py-5">
                 <div>
                   <p className="text-[24px] font-bold tracking-[-0.03em] text-[#2b3343]">ID: {selectedOrder.orderId || String(selectedOrder._id).slice(-10)}</p>
-                  <span className="mt-3 inline-flex rounded-md bg-[#6d78d6] px-2 py-1 text-[11px] font-bold text-white">
-                    {String(selectedOrder.status || "preparing").replace(/_/g, " ").toUpperCase()}
+                  <span className={statusPillClassName}>
+                    {statusPillLabel}
                   </span>
                 </div>
                 <div className="text-right text-sm text-[#6b7386]">
@@ -1178,20 +1908,66 @@ export function DesktopOrderHistoryView() {
               <div className="border-b border-[#edf0f5] px-6 py-6">
                 <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.24em] text-[#6d7488]">
                   <span>Order timeline</span>
-                  <span>{formatRelativePlacedLabel(selectedOrder.createdAt)}</span>
+                  <span>
+                    {isCancelledOrder && cancellationMeta?.cancelledAt
+                      ? `Cancelled ${formatRelativePlacedLabel(cancellationMeta.cancelledAt).replace(/^Placed/i, "").trim()}`
+                      : formatRelativePlacedLabel(selectedOrder.createdAt)}
+                  </span>
                 </div>
-                <div className="mt-8 grid grid-cols-3 items-center gap-4">
-                  {selectedTimelineSteps.map((step, index) => (
-                    <div key={step.label} className="relative text-center">
-                      {index < 2 ? <div className="absolute left-1/2 top-3 h-[2px] w-full bg-[#cfd7e7]" /> : null}
-                      <div className={`relative mx-auto grid h-6 w-6 place-items-center rounded-full border-2 ${step.active ? "border-[#41b36d] bg-[#e8f7ee]" : "border-[#cfd7e7] bg-white"}`}>
-                        <div className={`h-2.5 w-2.5 rounded-full ${step.active ? "bg-[#41b36d]" : "bg-[#cfd7e7]"}`} />
+                {isCancelledOrder ? (
+                  <div className="mt-8 rounded-[22px] border border-[#f2c7cb] bg-[#fff5f6] p-5">
+                    <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <div className="grid h-7 w-7 place-items-center rounded-full border-2 border-[#e45b66] bg-white">
+                            <div className="h-2.5 w-2.5 rounded-full bg-[#e45b66]" />
+                          </div>
+                          <div className="h-[2px] flex-1 bg-[#ef9ca4]" />
+                          <div className="grid h-7 w-7 place-items-center rounded-full border-2 border-[#e45b66] bg-[#ffe5e8]">
+                            <X className="h-4 w-4 text-[#e45b66]" />
+                          </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-[#5f6778]">Placed</p>
+                            <p className="text-sm font-semibold text-[#2b3343]">{formatTimeLabel(selectedOrder.createdAt)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-[#d24d59]">Order cancelled</p>
+                            <p className="text-sm font-semibold text-[#a73b46]">{formatTimeLabel(cancellationMeta?.cancelledAt)}</p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="mt-4 text-sm font-medium text-[#5f6778]">{step.label}</p>
-                      <p className="text-sm font-semibold text-[#2b3343]">{step.time}</p>
                     </div>
-                  ))}
-                </div>
+                    <div className="mt-5 rounded-2xl border border-[#f4d3d7] bg-white px-4 py-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#d24d59]">
+                        Cancel field
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-[#2b3343]">
+                        Cancelled by {cancellationMeta?.cancelledBy || "System"}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[#6f7688]">
+                        {cancellationMeta?.note}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="mt-8 grid items-center gap-4"
+                    style={{ gridTemplateColumns: `repeat(${selectedTimelineSteps.length}, minmax(0, 1fr))` }}
+                  >
+                    {selectedTimelineSteps.map((step, index) => (
+                      <div key={step.label} className="relative text-center">
+                        {index < selectedTimelineSteps.length - 1 ? <div className="absolute left-1/2 top-3 h-[2px] w-full bg-[#cfd7e7]" /> : null}
+                        <div className={`relative mx-auto grid h-6 w-6 place-items-center rounded-full border-2 ${step.active ? "border-[#41b36d] bg-[#e8f7ee]" : "border-[#cfd7e7] bg-white"}`}>
+                          <div className={`h-2.5 w-2.5 rounded-full ${step.active ? "bg-[#41b36d]" : "bg-[#cfd7e7]"}`} />
+                        </div>
+                        <p className="mt-4 text-sm font-medium text-[#5f6778]">{step.label}</p>
+                        <p className="text-sm font-semibold text-[#2b3343]">{step.time}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="px-6 py-6">
@@ -1221,16 +1997,61 @@ export function DesktopOrderHistoryView() {
                   <span>{currency(selectedOrder.pricing?.total || selectedOrder.total || 0)}</span>
                 </div>
 
-                <div className="mt-6 flex items-center justify-between rounded-2xl border border-[#e7ebf4] bg-white p-4">
-                  <div>
-                    <p className="text-sm font-semibold text-[#2b3343]">
-                      {deliveryPartnerName ? `${deliveryPartnerName} is on the way` : "Delivery partner updates will appear here"}
-                    </p>
-                    <p className="mt-1 text-xs text-[#7b8498]">
-                      {deliveryPartnerName ? "Delivery details and support actions stay visible here." : "Assign a rider to show live delivery details for this order."}
-                    </p>
-                  </div>
-                  <Truck className="h-6 w-6 text-[#4f78ee]" />
+                <div className="mt-6 rounded-2xl border border-[#e7ebf4] bg-white p-4">
+                  {riderAssigned ? (
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-start gap-4">
+                        {deliveryPartnerPhoto ? (
+                          <img
+                            src={deliveryPartnerPhoto}
+                            alt={deliveryPartnerName}
+                            className="h-14 w-14 rounded-2xl object-cover ring-1 ring-[#dde4f2]"
+                          />
+                        ) : (
+                          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#eef3ff] text-lg font-bold text-[#4f78ee]">
+                            {deliveryPartnerName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#2b3343]">
+                            {deliveryPartnerName || "Delivery partner assigned"}
+                            {normalizeStatus(selectedOrder.orderStatus || selectedOrder.status) === "picked_up" ||
+                            normalizeStatus(selectedOrder.deliveryState?.status) === "picked_up" ||
+                            normalizeStatus(selectedOrder.deliveryState?.currentPhase) === "en_route_to_delivery"
+                              ? " picked this order"
+                              : " accepted this order"}
+                          </p>
+                          <p className="mt-1 text-xs text-[#7b8498]">Delivery partner details are now available for quick coordination.</p>
+
+                          <div className="mt-3 grid gap-2 text-sm text-[#4f586d]">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-[#2b3343]">Contact:</span>
+                              <span>{deliveryPartnerPhone || "Not available"}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-[#2b3343]">Bike number:</span>
+                              <span>{deliveryPartnerVehicle || "Not available"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Truck className="mt-1 h-6 w-6 flex-shrink-0 text-[#4f78ee]" />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-[#2b3343]">
+                          Delivery partner updates will appear here
+                        </p>
+                        <p className="mt-1 text-xs text-[#7b8498]">
+                          Assign a rider to show live delivery details for this order.
+                        </p>
+                      </div>
+                      <Truck className="h-6 w-6 text-[#4f78ee]" />
+                    </div>
+                  )}
                 </div>
               </div>
                   </>
@@ -1240,11 +2061,25 @@ export function DesktopOrderHistoryView() {
           )}
         </div>
       </div>
+    </div>
+  )
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <RestaurantDesktopShell
+      title="Order History"
+      toolbar={toolbar}
+    >
+      {content}
     </RestaurantDesktopShell>
   )
 }
 
-export function DesktopComplaintsView() {
+export function DesktopComplaintsView({ embedded = false }) {
+  const desktopFrame = useRestaurantDesktopFrame()
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState("")
@@ -1290,27 +2125,35 @@ export function DesktopComplaintsView() {
     [complaints, selectedId],
   )
 
-  return (
-    <RestaurantDesktopShell
-      title="Customer complaints"
-      toolbar={
-        <>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
-          >
-            <CalendarDays className="h-4 w-4" />
-            Last 30 days
-          </button>
-          <button
-            type="button"
-            className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
-          >
-            Filter
-          </button>
-        </>
-      }
-    >
+  const toolbar = (
+    <>
+      <button
+        type="button"
+        className="inline-flex items-center gap-2 rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
+      >
+        <CalendarDays className="h-4 w-4" />
+        Last 30 days
+      </button>
+      <button
+        type="button"
+        className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
+      >
+        Filter
+      </button>
+    </>
+  )
+
+  useEffect(() => {
+    if (!embedded || !desktopFrame?.setHeader) return
+    desktopFrame.setHeader({
+      title: "Customer complaints",
+      subtitle: "",
+      toolbar,
+    })
+  }, [desktopFrame, embedded, toolbar])
+
+  const content = (
+    <div className="space-y-5">
       <div className="grid grid-cols-[360px_1fr] overflow-hidden rounded-[24px] border border-[#e5e8f0] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
         <div className="border-r border-[#edf0f5]">
           <div className="border-b border-[#edf0f5] p-4">
@@ -1479,11 +2322,25 @@ export function DesktopComplaintsView() {
           )}
         </div>
       </div>
+    </div>
+  )
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <RestaurantDesktopShell
+      title="Customer complaints"
+      toolbar={toolbar}
+    >
+      {content}
     </RestaurantDesktopShell>
   )
 }
 
-export function DesktopReviewsView() {
+export function DesktopReviewsView({ embedded = false }) {
+  const desktopFrame = useRestaurantDesktopFrame()
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState("")
@@ -1594,26 +2451,34 @@ export function DesktopReviewsView() {
     setReplyDraft("")
   }, [selectedId])
 
-  return (
-    <RestaurantDesktopShell
-      title="Customer reviews"
-      toolbar={
-        <>
-          <button
-            type="button"
-            className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
-          >
-            Detailed reviews
-          </button>
-          <button
-            type="button"
-            className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
-          >
-            Filter
-          </button>
-        </>
-      }
-    >
+  const toolbar = (
+    <>
+      <button
+        type="button"
+        className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
+      >
+        Detailed reviews
+      </button>
+      <button
+        type="button"
+        className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-medium text-[#5b6578]"
+      >
+        Filter
+      </button>
+    </>
+  )
+
+  useEffect(() => {
+    if (!embedded || !desktopFrame?.setHeader) return
+    desktopFrame.setHeader({
+      title: "Customer reviews",
+      subtitle: "",
+      toolbar,
+    })
+  }, [desktopFrame, embedded, toolbar])
+
+  const content = (
+    <div className="space-y-5">
       <div className="grid grid-cols-[360px_1fr] overflow-hidden rounded-[24px] border border-[#e5e8f0] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
         <div className="border-r border-[#edf0f5]">
           <div className="border-b border-[#edf0f5] p-4">
@@ -1738,11 +2603,25 @@ export function DesktopReviewsView() {
           )}
         </div>
       </div>
+    </div>
+  )
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <RestaurantDesktopShell
+      title="Customer reviews"
+      toolbar={toolbar}
+    >
+      {content}
     </RestaurantDesktopShell>
   )
 }
 
-export function DesktopOffersView() {
+export function DesktopOffersView({ embedded = false }) {
+  const desktopFrame = useRestaurantDesktopFrame()
   const navigate = useNavigate()
   const { offers, restaurantName, loading: offersLoading } = useRestaurantOffers()
   const { orders, loading: ordersLoading } = useRestaurantOrders()
@@ -1869,12 +2748,8 @@ export function DesktopOffersView() {
     }
   }, [])
 
-  return (
-    <RestaurantDesktopShell
-      title="Offers"
-      subtitle={restaurantName ? `Track offer performance for ${restaurantName}.` : "Track offer performance in a desktop operations layout."}
-    >
-      <div className="space-y-5">
+  const content = (
+    <div className="space-y-5">
         <div className="overflow-hidden rounded-[24px] border border-[#e5e8f0] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
           <div className="border-b border-[#edf0f5] px-6 py-4">
             <div className="flex items-center gap-8 text-sm font-semibold text-[#6b7386]">
@@ -2103,7 +2978,28 @@ export function DesktopOffersView() {
             )}
           </div>
         </div>
-      </div>
+    </div>
+  )
+
+  useEffect(() => {
+    if (!embedded || !desktopFrame?.setHeader) return
+    desktopFrame.setHeader({
+      title: "Offers",
+      subtitle: restaurantName ? `Track offer performance for ${restaurantName}.` : "Track offer performance in a desktop operations layout.",
+      toolbar: null,
+    })
+  }, [desktopFrame, embedded, restaurantName])
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <RestaurantDesktopShell
+      title="Offers"
+      subtitle={restaurantName ? `Track offer performance for ${restaurantName}.` : "Track offer performance in a desktop operations layout."}
+    >
+      {content}
     </RestaurantDesktopShell>
   )
 }

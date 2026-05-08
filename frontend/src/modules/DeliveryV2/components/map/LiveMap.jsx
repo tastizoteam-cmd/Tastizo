@@ -50,7 +50,6 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
   });
 
   const [directions, setDirections] = useState(null);
-  const [baselineDirections, setBaselineDirections] = useState(null);
   const [map, setMapInternal] = useState(null);
   const [zones, setZones] = useState([]);
   const [lastDirectionsAt, setLastDirectionsAt] = useState(0);
@@ -72,14 +71,12 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
   useEffect(() => {
     setLastDirectionsAt(0);
     setDirections(null);
-    setBaselineDirections(null);
   }, [tripStatus, activeOrder?._id]);
 
   // Ensure we don't keep old directions if target is lost or trip is complete/idle
   useEffect(() => {
     if (!isRouteActive) {
       setDirections(null);
-      setBaselineDirections(null);
       // Use refs or stable callbacks to avoid loop
       if (typeof onPathReceived === 'function') onPathReceived([]);
       if (typeof onPolylineReceived === 'function') onPolylineReceived(null);
@@ -160,12 +157,6 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     }
   }, [onPolylineReceived, isRouteActive]);
 
-  const baselineDirectionsCallback = useCallback((result, status) => {
-    if (status === 'OK' && result) {
-      setBaselineDirections(result);
-    }
-  }, []);
-
   useEffect(() => {
     (async () => {
       try {
@@ -237,12 +228,6 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     travelMode: 'DRIVING',
   } : null;
 
-  const baselineServiceOptions = (isRouteActive && restaurantPoint && customerPoint && (tripStatus === 'PICKING_UP' || tripStatus === 'REACHED_PICKUP')) ? {
-    origin: restaurantPoint,
-    destination: customerPoint,
-    travelMode: 'DRIVING',
-  } : null;
-
   const defaultCenter = (() => {
     try {
       const raw = localStorage.getItem('deliveryBoyLastLocation');
@@ -276,24 +261,8 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
           <DirectionsService options={directionsServiceOptions} callback={directionsCallback} />
         )}
 
-        {baselineServiceOptions && !baselineDirections && (
-          <DirectionsService options={baselineServiceOptions} callback={baselineDirectionsCallback} />
-        )}
-
         {directionsServiceOptions && remainingPath.length > 0 && (
           <Polyline path={remainingPath} options={{ strokeColor: '#22c55e', strokeOpacity: 0.98, strokeWeight: 7, zIndex: 12 }} />
-        )}
-
-        {baselineServiceOptions && baselineDirections && (
-          <Polyline
-            path={baselineDirections.routes[0].overview_path}
-            options={{
-              strokeColor: '#9ca3af',
-              strokeOpacity: 0.9,
-              strokeWeight: 5,
-              zIndex: 4,
-            }}
-          />
         )}
 
         {parsedRiderLocation && (

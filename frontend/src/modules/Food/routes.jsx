@@ -85,6 +85,8 @@ export default function App() {
         <PushSoundEnableButton />
         <Suspense fallback={<Loader />}>
           <Routes>
+            <Route path="resturant/*" element={<Navigate to="/restaurant" replace />} />
+
             {/* Restaurant Module - Already mapped to /restaurant */}
             <Route
               path="restaurant/*"
