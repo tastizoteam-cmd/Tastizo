@@ -36,15 +36,27 @@ export function generateFourDigitDeliveryOtp() {
 export function sanitizeOrderForExternal(orderDoc) {
   const o = orderDoc?.toObject ? orderDoc.toObject() : { ...(orderDoc || {}) };
   delete o.deliveryOtp;
+  delete o.pickupOtp;
   const dv = o.deliveryVerification;
-  if (dv && dv.dropOtp != null) {
-    const d = dv.dropOtp;
+  if (dv && (dv.dropOtp != null || dv.pickupOtp != null)) {
     o.deliveryVerification = {
       ...dv,
-      dropOtp: {
-        required: Boolean(d.required),
-        verified: Boolean(d.verified),
-      },
+      ...(dv.pickupOtp != null
+        ? {
+            pickupOtp: {
+              required: Boolean(dv.pickupOtp?.required),
+              verified: Boolean(dv.pickupOtp?.verified),
+            },
+          }
+        : {}),
+      ...(dv.dropOtp != null
+        ? {
+            dropOtp: {
+              required: Boolean(dv.dropOtp?.required),
+              verified: Boolean(dv.dropOtp?.verified),
+            },
+          }
+        : {}),
     };
   }
   o.orderMongoId = (o._id || orderDoc?._id || "").toString();
@@ -127,6 +139,17 @@ export function normalizeOrderForClient(orderDoc) {
   const order = orderDoc?.toObject ? orderDoc.toObject() : orderDoc || {};
   const mongoId = (order._id || orderDoc?._id || "").toString();
   const displayId = order.order_id || mongoId;
+  const deliveryPartner = order?.dispatch?.deliveryPartnerId;
+  const deliveryPartnerId =
+    deliveryPartner?._id?.toString?.() ||
+    deliveryPartner?.toString?.() ||
+    order?.deliveryPartnerId ||
+    null;
+  const deliveryPartnerName =
+    deliveryPartner?.name ||
+    deliveryPartner?.fullName ||
+    order?.deliveryPartnerName ||
+    "";
   return {
     ...order,
     orderMongoId: mongoId,
@@ -134,8 +157,8 @@ export function normalizeOrderForClient(orderDoc) {
     status: order?.orderStatus || order?.status || "",
     deliveredAt:
       order?.deliveryState?.deliveredAt || order?.deliveredAt || null,
-    deliveryPartnerId:
-      order?.dispatch?.deliveryPartnerId || order?.deliveryPartnerId || null,
+    deliveryPartnerId,
+    deliveryPartnerName,
     rating: order?.ratings?.restaurant?.rating ?? order?.rating ?? null,
     deliveryState: {
       ...(order?.deliveryState || {}),
@@ -143,7 +166,26 @@ export function normalizeOrderForClient(orderDoc) {
         lat: order.lastRiderLocation.coordinates[1],
         lng: order.lastRiderLocation.coordinates[0]
       } : (order?.deliveryState?.currentLocation || null)
-    }
+    },
+    deliveryVerification: {
+      ...(order?.deliveryVerification || {}),
+      ...(order?.deliveryVerification?.pickupOtp
+        ? {
+            pickupOtp: {
+              required: Boolean(order.deliveryVerification.pickupOtp?.required),
+              verified: Boolean(order.deliveryVerification.pickupOtp?.verified),
+            },
+          }
+        : {}),
+      ...(order?.deliveryVerification?.dropOtp
+        ? {
+            dropOtp: {
+              required: Boolean(order.deliveryVerification.dropOtp?.required),
+              verified: Boolean(order.deliveryVerification.dropOtp?.verified),
+            },
+          }
+        : {}),
+    },
   };
 }
 

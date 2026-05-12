@@ -1908,6 +1908,14 @@ export const deliveryAPI = {
       {},
       { contextModule: "delivery" },
     ),
+  verifyPickupOtp: (orderId, otp) =>
+    apiClient.post(
+      `/food/delivery/orders/${String(orderId)}/verify-pickup-otp`,
+      { otp: String(otp) },
+      {
+        contextModule: "delivery",
+      },
+    ),
   /**
    * Confirm order ID and upload bill image (Picked Up slide).
    * Backend endpoint: PATCH /food/delivery/orders/:id/confirm-pickup

@@ -966,7 +966,6 @@ export function DesktopOrdersView({ embedded = false }) {
               const total = order?.pricing?.total || order?.total || 0
               const customer = order?.userId?.name || order?.customerName || "Customer"
               const items = Array.isArray(order?.items) ? order.items.slice(0, 3) : []
-              const rider = order?.deliveryPartnerId?.name || order?.dispatch?.assignedTo?.name || "Delivery partner updating"
               const normalizedStatus = normalizeStatus(order.status)
               const isRequest = orderGroups.requests.includes(normalizedStatus)
               const isPreparing = orderGroups.preparing.includes(normalizedStatus)
@@ -986,6 +985,15 @@ export function DesktopOrdersView({ embedded = false }) {
               const showResendAction = (isPreparing || isReady) && dispatchStatus !== "accepted"
               const statusLabel = isPicked ? "PICKED UP" : isReady ? "READY" : isPreparing ? "PREPARING" : "ORDER"
               const requestCountdown = getOrderCountdownSeconds(order)
+              const rider =
+                order?.deliveryPartnerName ||
+                order?.deliveryPartnerId?.fullName ||
+                order?.deliveryPartnerId?.name ||
+                order?.dispatch?.deliveryPartnerId?.fullName ||
+                order?.dispatch?.deliveryPartnerId?.name ||
+                order?.dispatch?.assignedTo?.name ||
+                "Delivery partner updating"
+              const pickupOtp = String(order?.pickupOtp || "").trim()
               return (
                 <article
                   key={orderKey}
@@ -1057,10 +1065,15 @@ export function DesktopOrdersView({ embedded = false }) {
                           {!isRequest && (
                             <>
                               {order?.deliveryPartnerId ? (
-                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title={rider}>
-                                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
+                                <div className="flex flex-col items-end gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-right" title={rider}>
+                                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">
+                                    {rider || "Delivery Partner"}
+                                  </span>
+                                  {pickupOtp ? (
+                                    <span className="text-[12px] font-black tracking-[0.28em] text-emerald-900">
+                                      OTP {pickupOtp}
+                                    </span>
+                                  ) : null}
                                 </div>
                               ) : isPreparing ? (
                                 <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1 text-[9px] font-black uppercase tracking-tight text-slate-400">
@@ -1873,6 +1886,7 @@ export function DesktopOrderHistoryView({ embedded = false }) {
                   selectedOrder.dispatch?.deliveryPartnerId?.avatar?.url ||
                   selectedOrder.dispatch?.deliveryPartnerId?.avatar ||
                   ""
+                const selectedPickupOtp = String(selectedOrder.pickupOtp || "").trim()
                 const riderAssigned =
                   Boolean(deliveryPartnerName) ||
                   Boolean(deliveryPartnerPhone) ||
@@ -2023,6 +2037,11 @@ export function DesktopOrderHistoryView({ embedded = false }) {
                               : " accepted this order"}
                           </p>
                           <p className="mt-1 text-xs text-[#7b8498]">Delivery partner details are now available for quick coordination.</p>
+                          {selectedPickupOtp ? (
+                            <div className="mt-3 inline-flex rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-[13px] font-black tracking-[0.28em] text-emerald-900">
+                              OTP {selectedPickupOtp}
+                            </div>
+                          ) : null}
 
                           <div className="mt-3 grid gap-2 text-sm text-[#4f586d]">
                             <div className="flex flex-wrap items-center gap-2">

@@ -55,6 +55,28 @@ import {
   isStatusAdvance,
 } from './order.helpers.js';
 
+function buildRestaurantOrderForClient(orderDoc) {
+  const order = normalizeOrderForClient(orderDoc);
+  const raw = orderDoc?.toObject ? orderDoc.toObject() : orderDoc || {};
+  const pickupMeta = raw?.deliveryVerification?.pickupOtp || {};
+  const pickupSecret = String(raw?.pickupOtp || "").trim();
+
+  order.deliveryVerification = {
+    ...(order.deliveryVerification || {}),
+    pickupOtp: {
+      required: Boolean(pickupMeta.required),
+      verified: Boolean(pickupMeta.verified),
+    },
+  };
+
+  if (pickupSecret && order.deliveryPartnerId) {
+    order.pickupOtp = pickupSecret;
+  }
+
+  delete order.deliveryOtp;
+  return order;
+}
+
 
 
 
@@ -620,7 +642,7 @@ export async function getOrderById(
     )
     .populate("dispatch.deliveryPartnerId", "name fullName phone phoneNumber rating totalRatings profileImage avatar vehicleNumber vehicleType vehicleName")
     .populate("userId", "name fullName phone email")
-    .select("+deliveryOtp")
+    .select("+deliveryOtp +pickupOtp")
     .lean();
   if (!order) throw new NotFoundError("Order not found");
 
@@ -637,7 +659,11 @@ export async function getOrderById(
   if (deliveryPartnerId && orderPartnerId !== deliveryPartnerId.toString())
     throw new ForbiddenError("Not assigned to you");
 
-  if (deliveryPartnerId || restaurantId) {
+  if (restaurantId) {
+    return buildRestaurantOrderForClient(order);
+  }
+
+  if (deliveryPartnerId) {
     return sanitizeOrderForExternal(order);
   }
 
@@ -1208,14 +1234,24 @@ export async function listOrdersRestaurant(restaurantId, query) {
   };
   const [docs, total] = await Promise.all([
     FoodOrder.find(filter)
+      .populate(
+        "dispatch.deliveryPartnerId",
+        "name fullName phone phoneNumber rating totalRatings profileImage avatar vehicleNumber vehicleType vehicleName",
+      )
       .populate("userId", "name phone email profileImage")
+      .select("+pickupOtp")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
     FoodOrder.countDocuments(filter),
   ]);
-  return buildPaginatedResult({ docs: docs.map(d => normalizeOrderForClient(d)), total, page, limit });
+  return buildPaginatedResult({
+    docs: docs.map((doc) => buildRestaurantOrderForClient(doc)),
+    total,
+    page,
+    limit,
+  });
 }
 
 export async function updateOrderStatusRestaurant(
@@ -1537,6 +1573,10 @@ export async function confirmPickupDelivery(
 
 export async function confirmReachedDropDelivery(orderId, deliveryPartnerId) {
   return deliveryService.confirmReachedDropDelivery(orderId, deliveryPartnerId);
+}
+
+export async function verifyPickupOtpDelivery(orderId, deliveryPartnerId, otp) {
+  return deliveryService.verifyPickupOtpDelivery(orderId, deliveryPartnerId, otp);
 }
 
 export async function verifyDropOtpDelivery(orderId, deliveryPartnerId, otp) {

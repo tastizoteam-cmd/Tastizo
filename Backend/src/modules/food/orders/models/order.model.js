@@ -183,6 +183,10 @@ const orderRatingsSchema = new mongoose.Schema(
 
 const deliveryVerificationSchema = new mongoose.Schema(
     {
+        pickupOtp: {
+            required: { type: Boolean, default: false },
+            verified: { type: Boolean, default: false }
+        },
         dropOtp: {
             required: { type: Boolean, default: false },
             verified: { type: Boolean, default: false }
@@ -289,6 +293,8 @@ const orderSchema = new mongoose.Schema(
         scheduledAt: { type: Date, default: null },
         riderEarning: { type: Number, default: 0, min: 0 },
         platformProfit: { type: Number, default: 0, min: 0 },
+        /** Plain 4-digit OTP for restaurant pickup handover; never expose to delivery partner responses. */
+        pickupOtp: { type: String, default: '', select: false },
         /** Plain 4-digit OTP for handover; cleared after successful verify (never expose to partner in API responses). */
         deliveryOtp: { type: String, default: '', select: false },
         deliveryVerification: {

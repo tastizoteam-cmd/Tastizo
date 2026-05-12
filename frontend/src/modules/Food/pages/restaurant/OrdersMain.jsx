@@ -116,6 +116,8 @@ const transformOrderForList = (order) => ({
   total: getOrderTotalValue(order),
   sendCutlery: order.sendCutlery,
   deliveryPartnerId: order.deliveryPartnerId || null,
+  deliveryPartnerName: order.deliveryPartnerName || "",
+  pickupOtp: order.pickupOtp || "",
   dispatchStatus: order.dispatch?.status || null,
   preparingTimestamp: order.tracking?.preparing?.timestamp
     ? new Date(order.tracking.preparing.timestamp)
@@ -3247,6 +3249,8 @@ function OrderCard({
   photoUrl,
   photoAlt,
   deliveryPartnerId,
+  deliveryPartnerName,
+  pickupOtp,
   dispatchStatus,
   onSelect,
   onCancel,
@@ -3294,7 +3298,7 @@ function OrderCard({
     : null;
 
   const riderStatusLabel = deliveryPartnerId
-    ? "Delivery partner updating is on the way"
+    ? deliveryPartnerName || "Delivery partner assigned"
     : "Delivery partner not assigned";
 
   const timelineLabel = isPreparing
@@ -3408,10 +3412,15 @@ function OrderCard({
               {(isPreparing || isReady || normalizedStatus === "confirmed") && (
                 <>
                   {deliveryPartnerId && (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 md:h-7 md:w-7" title="Driver Assigned">
-                      <svg className="h-3 w-3 md:h-4 md:w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                    <div className="flex flex-col items-end gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-1 text-right">
+                      <span className="text-[8px] font-black uppercase tracking-tight text-emerald-700 md:text-[9px]">
+                        {deliveryPartnerName || "Delivery Partner"}
+                      </span>
+                      {pickupOtp ? (
+                        <span className="text-[9px] font-black tracking-[0.22em] text-emerald-800 md:text-[10px]">
+                          OTP {pickupOtp}
+                        </span>
+                      ) : null}
                     </div>
                   )}
                   
@@ -3510,10 +3519,15 @@ function OrderCard({
               {(isPreparing || isReady || normalizedStatus === "confirmed") && (
                 <>
                   {deliveryPartnerId ? (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title="Driver Assigned">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                    <div className="flex flex-col items-end gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-right" title={riderStatusLabel}>
+                      <span className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">
+                        {deliveryPartnerName || "Delivery Partner"}
+                      </span>
+                      {pickupOtp ? (
+                        <span className="text-[12px] font-black tracking-[0.28em] text-emerald-900">
+                          OTP {pickupOtp}
+                        </span>
+                      ) : null}
                     </div>
                   ) : isPreparing ? (
                     <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1 text-[9px] font-black uppercase tracking-tight text-slate-400">
@@ -3614,6 +3628,8 @@ function PreparingOrders({
               photoUrl: order.items?.[0]?.image || null,
               photoAlt: order.items?.[0]?.name || "Order",
               deliveryPartnerId: order.deliveryPartnerId || null,
+              deliveryPartnerName: order.deliveryPartnerName || "",
+              pickupOtp: order.pickupOtp || "",
               dispatchStatus: order.dispatch?.status || null,
               paymentMethod:
                 order.paymentMethod || order.payment?.method || null,
@@ -3927,6 +3943,8 @@ function ReadyOrders({ onSelectOrder, refreshToken = 0 }) {
             photoAlt: order.items?.[0]?.name || "Order",
             paymentMethod: order.paymentMethod || order.payment?.method || null,
             deliveryPartnerId: order.deliveryPartnerId || null,
+            deliveryPartnerName: order.deliveryPartnerName || "",
+            pickupOtp: order.pickupOtp || "",
             dispatchStatus: order.dispatch?.status || null,
             scheduledAt: order.scheduledAt || null,
           }));
@@ -4046,6 +4064,8 @@ const OutForDeliveryOrders = ({ onSelectOrder, refreshToken = 0 }) => {
             photoAlt: order.items?.[0]?.name || "Order",
             paymentMethod: order.paymentMethod || order.payment?.method || null,
             deliveryPartnerId: order.deliveryPartnerId || null,
+            deliveryPartnerName: order.deliveryPartnerName || "",
+            pickupOtp: order.pickupOtp || "",
             dispatchStatus: order.dispatch?.status || null,
             scheduledAt: order.scheduledAt || null,
           }));

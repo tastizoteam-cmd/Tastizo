@@ -233,6 +233,18 @@ export async function confirmPickupDeliveryController(req, res, next) {
     }
 }
 
+export async function verifyPickupOtpDeliveryController(req, res, next) {
+    try {
+        const deliveryPartnerId = req.user?.userId;
+        const orderId = req.params.orderId;
+        const { otp } = req.body;
+        const result = await orderService.verifyPickupOtpDelivery(orderId, deliveryPartnerId, otp);
+        return sendResponse(res, 200, 'Pickup OTP verified', { order: result.order });
+    } catch (err) {
+        next(err);
+    }
+}
+
 export async function confirmReachedDropDeliveryController(req, res, next) {
     try {
         const deliveryPartnerId = req.user?.userId;

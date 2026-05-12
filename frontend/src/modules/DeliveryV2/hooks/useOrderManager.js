@@ -103,6 +103,33 @@ export const useOrderManager = () => {
     }
   };
 
+  const verifyPickupOtp = async (otp) => {
+    const orderId = resolveOrderId();
+    if (!orderId) {
+      toast.error('Order id not found. Please refresh current trip.');
+      throw new Error('Missing order id');
+    }
+
+    try {
+      const response = await deliveryAPI.verifyPickupOtp(orderId, otp);
+      if (response?.data?.success) {
+        const verifiedOrder = response.data?.data?.order;
+        if (verifiedOrder) {
+          setActiveOrder({
+            ...(activeOrder || {}),
+            ...verifiedOrder,
+            deliveryVerification: verifiedOrder.deliveryVerification || activeOrder?.deliveryVerification,
+          });
+        }
+        return response;
+      }
+      throw new Error('Pickup OTP verification failed');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.response?.data?.message || 'Pickup OTP verification failed');
+      throw error;
+    }
+  };
+
   /**
    * Mark "Picked Up" (Confirm order ID & start delivery)
    */
@@ -122,6 +149,13 @@ export const useOrderManager = () => {
       );
       
       if (response?.data?.success) {
+        const pickedUpOrder = response.data?.data?.order;
+        if (pickedUpOrder) {
+          setActiveOrder({
+            ...(activeOrder || {}),
+            ...pickedUpOrder,
+          });
+        }
         updateTripStatus('PICKED_UP');
         // toast.success('Order Collected! Heading to Drop-off');
       } else {
@@ -234,6 +268,7 @@ export const useOrderManager = () => {
   return {
     acceptOrder,
     reachPickup,
+    verifyPickupOtp,
     pickUpOrder,
     reachDrop,
     completeDelivery,

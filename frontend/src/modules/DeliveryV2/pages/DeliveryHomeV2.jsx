@@ -258,7 +258,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const navigate = useNavigate();
   const { isOnline, toggleOnline, riderLocation, activeOrder, tripStatus, setRiderLocation, setActiveOrder, updateTripStatus, clearActiveOrder } = useDeliveryStore();
   const { isWithinRange, distanceToTarget } = useProximityCheck();
-  const { acceptOrder, reachPickup, pickUpOrder, reachDrop, completeDelivery, resetTrip } = useOrderManager();
+  const { acceptOrder, reachPickup, verifyPickupOtp, pickUpOrder, reachDrop, completeDelivery, resetTrip } = useOrderManager();
   const { newOrder, clearNewOrder, orderStatusUpdate, clearOrderStatusUpdate, claimedOrderId, clearClaimedOrderId, adminNotification, clearAdminNotification, isConnected: isSocketConnected, currentZoneId: socketCurrentZoneId, emitLocation } = useDeliveryNotifications();
   const companyName = useCompanyName();
   const { items: broadcastItems, unreadCount: notificationUnreadCount, markAsRead: markBroadcastAsRead, dismissAll: dismissAllBroadcast } = useNotificationInbox("delivery", { limit: 20 });
@@ -1750,6 +1750,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                     distanceToTarget={distanceToTarget}
                     eta={eta}
                     onReachedPickup={reachPickup} 
+                    onVerifyPickupOtp={verifyPickupOtp}
                     onPickedUp={(billImageUrl) => pickUpOrder(billImageUrl)} 
                     onMinimize={() => setIsModalMinimized(true)}
                   />

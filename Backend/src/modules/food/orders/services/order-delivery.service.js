@@ -599,6 +599,7 @@ export async function acceptOrderDelivery(orderId, deliveryPartnerId) {
     note: 'Delivery partner accepted order',
     at: now,
   };
+  const pickupOtp = generateFourDigitDeliveryOtp();
 
   const order = await FoodOrder.findOneAndUpdate(
     {
@@ -619,6 +620,9 @@ export async function acceptOrderDelivery(orderId, deliveryPartnerId) {
         'dispatch.status': 'accepted',
         'dispatch.assignedAt': now,
         'dispatch.acceptedAt': now,
+        pickupOtp,
+        'deliveryVerification.pickupOtp.required': true,
+        'deliveryVerification.pickupOtp.verified': false,
       },
       $push: {
         statusHistory: statusHistoryEntry,
@@ -813,6 +817,11 @@ export async function rejectOrderDelivery(orderId, deliveryPartnerId) {
   order.dispatch.deliveryPartnerId = undefined;
   order.dispatch.assignedAt = undefined;
   order.dispatch.acceptedAt = undefined;
+  order.pickupOtp = '';
+  order.deliveryVerification = {
+    ...(order.deliveryVerification?.toObject?.() || order.deliveryVerification || {}),
+    pickupOtp: { required: false, verified: false },
+  };
   pushStatusHistory(order, {
     byRole: 'DELIVERY_PARTNER',
     byId: deliveryPartnerId,
@@ -920,12 +929,15 @@ export async function confirmReachedPickupDelivery(orderId, deliveryPartnerId) {
 
 export async function confirmPickupDelivery(orderId, deliveryPartnerId, billImageUrl) {
   const identity = buildOrderIdentityFilter(orderId);
-  const order = await FoodOrder.findOne(identity).select('+deliveryOtp');
+  const order = await FoodOrder.findOne(identity).select('+deliveryOtp +pickupOtp');
   if (!order) throw new NotFoundError('Order not found');
   if (
     order.dispatch?.deliveryPartnerId?.toString() !== deliveryPartnerId.toString()
   ) {
     throw new ForbiddenError('Not your order');
+  }
+  if (order.deliveryVerification?.pickupOtp?.required && !order.deliveryVerification?.pickupOtp?.verified) {
+    throw new ValidationError('Pickup OTP verification is required before bill upload or pickup confirmation.');
   }
 
   const from = order.orderStatus;
@@ -961,6 +973,49 @@ export async function confirmPickupDelivery(orderId, deliveryPartnerId, billImag
     billImageUrl: billImageUrl || null,
   });
   return order.toObject();
+}
+
+export async function verifyPickupOtpDelivery(orderId, deliveryPartnerId, otp) {
+  const identity = buildOrderIdentityFilter(orderId);
+  const order = await FoodOrder.findOne(identity).select('+pickupOtp');
+  if (!order) throw new NotFoundError('Order not found');
+  if (
+    order.dispatch?.deliveryPartnerId?.toString() !== deliveryPartnerId.toString()
+  ) {
+    throw new ForbiddenError('Not your order');
+  }
+
+  const otpStr = normalizeOtpValue(otp);
+  if (!otpStr) throw new ValidationError('OTP is required');
+
+  if (!order.deliveryVerification?.pickupOtp?.required) {
+    throw new ValidationError('Pickup OTP is not active for this order.');
+  }
+
+  if (order.deliveryVerification?.pickupOtp?.verified) {
+    return { order: sanitizeOrderForExternal(order) };
+  }
+
+  if (!isOtpMatch(order.pickupOtp, otpStr)) {
+    throw new ValidationError('Invalid pickup OTP. Please check the code shown to the restaurant.');
+  }
+
+  if (!order.deliveryVerification) order.deliveryVerification = {};
+  order.deliveryVerification.pickupOtp = {
+    ...(order.deliveryVerification?.pickupOtp || {}),
+    required: true,
+    verified: true,
+  };
+  order.markModified('deliveryVerification.pickupOtp');
+  await order.save();
+
+  emitOrderUpdate(order, deliveryPartnerId, { sendMilestonePush: false });
+  enqueueOrderEvent('pickup_otp_verified', {
+    orderMongoId: order._id?.toString?.(),
+    orderId: order._id.toString(),
+    deliveryPartnerId,
+  });
+  return { order: sanitizeOrderForExternal(order) };
 }
 
 export async function confirmReachedDropDelivery(orderId, deliveryPartnerId) {

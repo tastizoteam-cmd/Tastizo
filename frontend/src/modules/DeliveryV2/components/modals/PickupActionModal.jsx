@@ -21,6 +21,7 @@ export const PickupActionModal = ({
   distanceToTarget,
   eta,
   onReachedPickup, 
+  onVerifyPickupOtp,
   onPickedUp,
   onMinimize
 }) => {
@@ -28,6 +29,8 @@ export const PickupActionModal = ({
   const [isUploadingBill, setIsUploadingBill] = useState(false);
   const [billImageUploaded, setBillImageUploaded] = useState(false);
   const [billImageUrl, setBillImageUrl] = useState(null);
+  const [pickupOtp, setPickupOtp] = useState('');
+  const [isVerifyingPickupOtp, setIsVerifyingPickupOtp] = useState(false);
   const cameraInputRef = useRef(null);
 
   if (!order) return null;
@@ -71,11 +74,25 @@ export const PickupActionModal = ({
   }
 
   const isAtPickup = status === 'REACHED_PICKUP';
+  const isPickupOtpVerified = !!order?.deliveryVerification?.pickupOtp?.verified;
+  const needsPickupOtp = !!order?.deliveryVerification?.pickupOtp?.required;
   const restaurantName = order.restaurantName || order.restaurant_name || 'Restaurant';
   const restaurantAddress = order.restaurantAddress || order.restaurant_address || order.restaurantLocation?.address || 'Address not available';
   const restaurantPhone = order.restaurantPhone || order.restaurant_phone || order.restaurantId?.phone || '';
   const items = order.items || [];
   const restaurantLogo = order.restaurantImage || order.restaurant?.logo || order.restaurant?.profileImage || 'https://cdn-icons-png.flaticon.com/512/3170/3170733.png';
+
+  const handleVerifyPickupOtp = async () => {
+    if (!pickupOtp || pickupOtp.length < 4 || !onVerifyPickupOtp) return;
+    setIsVerifyingPickupOtp(true);
+    try {
+      await onVerifyPickupOtp(pickupOtp);
+      setPickupOtp('');
+      toast.success('Pickup OTP verified');
+    } finally {
+      setIsVerifyingPickupOtp(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-110 p-0 sm:p-4 flex items-end justify-center">
@@ -156,11 +173,51 @@ export const PickupActionModal = ({
             </div>
           ) : (
             <div className="space-y-4">
+              {needsPickupOtp && (
+                <div className={`rounded-2xl border p-4 ${isPickupOtpVerified ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50'}`}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600 mb-2">
+                    Restaurant Pickup OTP
+                  </p>
+                  {isPickupOtpVerified ? (
+                    <div className="flex items-center gap-2 text-sm font-bold text-green-700">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Pickup OTP verified. Bill upload unlocked.</span>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-gray-700 mb-3">
+                        Ask the restaurant for the 4-digit pickup OTP before uploading the receipt or picking up the order.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={pickupOtp}
+                          onChange={(e) => setPickupOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                          placeholder="Enter OTP"
+                          className="flex-1 rounded-xl border border-orange-200 bg-white px-4 py-3 text-center text-lg font-bold tracking-[0.35em] text-gray-900 outline-none focus:border-orange-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyPickupOtp}
+                          disabled={pickupOtp.length !== 4 || isVerifyingPickupOtp}
+                          className="rounded-xl bg-gray-900 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-white disabled:opacity-50"
+                        >
+                          {isVerifyingPickupOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               <div className="flex justify-center items-center gap-3 w-full">
                  {!billImageUploaded && !isUploadingBill && (
                    <>
                       <button
                         onClick={handleTakeCameraPhoto}
+                        disabled={needsPickupOtp && !isPickupOtpVerified}
                         className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-4 rounded-2xl bg-gray-900 text-white font-bold text-[11px] sm:text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                       >
                         <Camera className="w-5 h-5" />
@@ -168,6 +225,7 @@ export const PickupActionModal = ({
                       </button>
                       <button
                         onClick={handlePickFromGallery}
+                        disabled={needsPickupOtp && !isPickupOtpVerified}
                         className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-4 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 font-bold text-[11px] sm:text-xs uppercase tracking-widest active:scale-95 transition-all"
                       >
                         <ImageIcon className="w-5 h-5" />
@@ -201,13 +259,17 @@ export const PickupActionModal = ({
 
               <div>
                 <p className={`text-center text-[10px] font-bold uppercase tracking-widest mb-3 ${billImageUploaded ? 'text-green-600' : 'text-gray-400'}`}>
-                  {billImageUploaded ? "Check the restaurant logo - Swipe to pick up" : "Capture bill to unlock swipe"}
+                  {needsPickupOtp && !isPickupOtpVerified
+                    ? "Verify pickup otp to unlock bill upload"
+                    : billImageUploaded
+                      ? "Check the restaurant logo - Swipe to pick up"
+                      : "Capture bill to unlock swipe"}
                 </p>
                 <ActionSlider 
                   key="action-pickup"
                   label="Slide to Pick Up" 
                   successLabel="Picked Up!"
-                  disabled={!billImageUploaded}
+                  disabled={!billImageUploaded || (needsPickupOtp && !isPickupOtpVerified)}
                   onConfirm={() => onPickedUp(billImageUrl)}
                   color="bg-orange-500"
                 />
