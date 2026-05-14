@@ -8,6 +8,7 @@ import { Input } from "@food/components/ui/input"
 import { restaurantAPI } from "@food/api"
 const REMEMBER_LOGIN_KEY = "restaurant_login_phone"
 const TASTIZO_BG = "#239858"
+const LOGIN_SURFACE_BG = "#ffffff"
 const headingWords = ["India's", "#1", "Restaurant", "Partner", "Management", "Platform"]
 
 export default function RestaurantLogin() {
@@ -117,19 +118,22 @@ export default function RestaurantLogin() {
   return (
     <AnimatedPage
       className="min-h-screen flex items-start justify-center overflow-hidden"
-      style={{ backgroundColor: TASTIZO_BG }}
+      style={{ backgroundColor: LOGIN_SURFACE_BG }}
     >
       <div className="mx-auto flex min-h-screen w-full sm:max-w-[400px] flex-col overflow-hidden">
         <div className="flex flex-1 flex-col bg-white">
           <div>
             <div
               className="flex min-h-[360px] w-full items-center justify-center rounded-b-[2rem] pt-6 pb-10"
-              style={{ backgroundColor: TASTIZO_BG }}
+              style={{ backgroundColor: LOGIN_SURFACE_BG }}
             >
-              <img
+              <motion.img
                 src="/image.png"
                 alt="Tastizo"
-                className="h-[14.4rem] w-auto object-contain sm:h-[16.8rem]"
+                initial={{ opacity: 0, y: 18, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="h-[17.28rem] w-auto object-contain sm:h-[20.16rem]"
               />
             </div>
 
