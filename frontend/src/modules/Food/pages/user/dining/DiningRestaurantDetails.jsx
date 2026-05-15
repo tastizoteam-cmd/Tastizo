@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { restaurantAPI, diningAPI } from "@food/api"
 import { useProfile } from "@food/context/ProfileContext"
 import { getMenuFromResponse } from "@food/utils/menuItems"
+import { shareContent } from "@food/utils/share"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import {
     ArrowLeft,
@@ -238,15 +239,14 @@ export default function DiningRestaurantDetails() {
   ]
 
   const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: restaurantName,
-          text: `Check out ${restaurantName}`,
-          url: window.location.href,
-        })
-      }
-    } catch {}
+    await shareContent(
+      {
+        title: restaurantName,
+        text: `Check out ${restaurantName}`,
+        url: window.location.href,
+      },
+      { successMessage: "Restaurant link copied" },
+    )
   }
 
   const restaurantFavoriteSlug =

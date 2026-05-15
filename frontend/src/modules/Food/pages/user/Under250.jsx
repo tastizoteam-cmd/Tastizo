@@ -20,6 +20,7 @@ import { restaurantAPI, adminAPI } from "@food/api"
 import { isModuleAuthenticated } from "@food/utils/auth"
 import { flattenMenuItems, getMenuFromResponse } from "@food/utils/menuItems"
 import { calculateDistance, formatDistance } from "@food/utils/common"
+import { shareContent } from "@food/utils/share"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -914,20 +915,14 @@ export default function Under250() {
       ? `${window.location.origin}/user/restaurants/${restaurantSlug}${itemId ? `?dish=${encodeURIComponent(itemId)}` : ""}`
       : window.location.href
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: item.name || "Dish",
-          text: `Check out ${item.name || "this dish"} from ${item.restaurant || "Under 250"}`,
-          url: shareUrl,
-        })
-        return
-      }
-    } catch (error) {
-      if (error?.name === "AbortError") return
-    }
-
-    setShowShareOptions(true)
+    await shareContent(
+      {
+        title: item.name || "Dish",
+        text: `Check out ${item.name || "this dish"} from ${item.restaurant || "Under 250"}`,
+        url: shareUrl,
+      },
+      { successMessage: "Dish link copied" },
+    )
   }
 
   const handleShareOption = async (type) => {

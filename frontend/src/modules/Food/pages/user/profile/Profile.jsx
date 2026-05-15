@@ -28,6 +28,7 @@ import {
 
 import AnimatedPage from "@food/components/user/AnimatedPage";
 import { Card, CardContent } from "@food/components/ui/card";
+import { shareContent } from "@food/utils/share";
 import { Button } from "@food/components/ui/button";
 import { useProfile } from "@food/context/ProfileContext";
 import { useLocationSelector } from "@food/components/user/UserLayout";
@@ -280,20 +281,14 @@ export default function Profile() {
     if (!referralLink) return;
     const rewardText = referralReward > 0 ? `\u20B9${referralReward}` : "rewards";
     const shareText = `Join ${companyName} and earn ${rewardText}.`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `${companyName} referral`,
-          text: shareText,
-          url: referralLink,
-        });
-      } else {
-        const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${referralLink}`)}`;
-        window.open(fallbackUrl, "_blank", "noopener,noreferrer");
-      }
-    } catch (error) {
-      debugError("Failed to share referral:", error);
-    }
+    await shareContent(
+      {
+        title: `${companyName} referral`,
+        text: shareText,
+        url: referralLink,
+      },
+      { successMessage: "Referral link copied" },
+    );
   };
 
   // Handle logout

@@ -5,6 +5,7 @@ import { orderAPI } from "@food/api"
 import { useCart } from "@food/context/CartContext"
 import { toast } from "sonner"
 import { getCompanyNameAsync } from "@food/utils/businessSettings"
+import { shareContent } from "@food/utils/share"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -560,18 +561,7 @@ Order again from this restaurant in the ${companyName} app.`
     }
 
     try {
-      const shared = await tryNativeShare(payload)
-      if (shared) {
-        toast.success("Restaurant shared successfully")
-        return
-      }
-
-      openShareModal(payload)
-    } catch (error) {
-      if (error?.name !== "AbortError") {
-        debugError("Error sharing restaurant:", error)
-        toast.error("Failed to share restaurant")
-      }
+      await shareContent(payload, { successMessage: "Restaurant link copied" })
     } finally {
       setActiveMenuOrderId(null)
     }

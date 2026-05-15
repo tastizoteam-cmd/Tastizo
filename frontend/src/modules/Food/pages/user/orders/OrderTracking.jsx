@@ -22,6 +22,7 @@ import {
   Calendar
 } from "lucide-react"
 import AnimatedPage from "@food/components/user/AnimatedPage"
+import { shareContent } from "@food/utils/share"
 import { Card, CardContent } from "@food/components/ui/card"
 import { Button } from "@food/components/ui/button"
 import {
@@ -1214,23 +1215,14 @@ export default function OrderTracking() {
   };
 
   const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Track my order from ${order?.restaurant || companyName}`,
-          text: `Hey! Track my order from ${order?.restaurant || companyName} with ID #${order?.orderId || order?.id}.`,
-          url: window.location.href,
-        });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success("Tracking link copied to clipboard!");
-      }
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        debugError('Error sharing:', error);
-        toast.error("Failed to share link");
-      }
-    }
+    await shareContent(
+      {
+        title: `Track my order from ${order?.restaurant || companyName}`,
+        text: `Hey! Track my order from ${order?.restaurant || companyName} with ID #${order?.orderId || order?.id}.`,
+        url: window.location.href,
+      },
+      { successMessage: "Tracking link copied" },
+    )
   };
 
   const handleRefresh = async () => {

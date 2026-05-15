@@ -7,6 +7,7 @@ import { API_BASE_URL } from "@food/api/config"
 import { toast } from "sonner"
 import { useLocation } from "@food/hooks/useLocation"
 import { useZone } from "@food/hooks/useZone"
+import { shareContent } from "@food/utils/share"
 import {
   ArrowLeft,
   Search,
@@ -1741,20 +1742,7 @@ function RestaurantDetailsContent() {
       url: shareUrl,
     }
 
-    if (isMobileDevice()) {
-      openShareModal(payload)
-      setShowMenuOptionsSheet(false)
-      return
-    }
-
-    const shared = await tryNativeShare(payload)
-    if (shared) {
-      toast.success("Restaurant shared successfully")
-      setShowMenuOptionsSheet(false)
-      return
-    }
-
-    openShareModal(payload)
+    await shareContent(payload, { successMessage: "Restaurant link copied" })
     setShowMenuOptionsSheet(false)
   }
 
@@ -1775,18 +1763,7 @@ function RestaurantDetailsContent() {
       url: shareUrl,
     }
 
-    if (isMobileDevice()) {
-      openShareModal(payload)
-      return
-    }
-
-    const shared = await tryNativeShare(payload)
-    if (shared) {
-      toast.success("Dish shared successfully")
-      return
-    }
-
-    openShareModal(payload)
+    await shareContent(payload, { successMessage: "Dish link copied" })
   }
 
   // Copy to clipboard helper

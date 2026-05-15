@@ -23,6 +23,7 @@ import { useCompanyName } from "@food/hooks/useCompanyName"
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import { formatAddressLine } from "@food/utils/address"
+import { shareContent } from "@food/utils/share"
 const zoopSound = "/zomato_sms.mp3"
 const debugLog = (...args) => { }
 const debugWarn = (...args) => { }
@@ -1272,18 +1273,7 @@ export default function Cart() {
       url: shareUrl,
     }
 
-    if (isMobileDevice()) {
-      openShareModal(payload)
-      return
-    }
-
-    const shared = await tryNativeShare(payload)
-    if (shared) {
-      toast.success("Link shared successfully")
-      return
-    }
-
-    openShareModal(payload)
+    await shareContent(payload, { successMessage: "Cart link copied" })
   }
 
   const openShareModal = (payload) => {
