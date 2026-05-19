@@ -19,7 +19,9 @@ function App() {
       pathname.startsWith('/user') ||
       pathname.startsWith('/food/') ||
       pathname.startsWith('/restaurant') ||
-      pathname.startsWith('/food/restaurant')
+      pathname.startsWith('/food/restaurant') ||
+      pathname.startsWith('/delivery') ||
+      pathname.startsWith('/food/delivery')
     )
   }, [location.pathname])
 

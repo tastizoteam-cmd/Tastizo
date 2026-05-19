@@ -215,6 +215,17 @@ export const createDiningPaymentController = async (req, res, next) => {
         const grossBill = Number(totalAmount);
         const commPct = Number(commissionPct) ?? 10;
         const fullCommission = Number((grossBill * (commPct / 100)).toFixed(2));
+
+        // Enforce cap: coupon discount must not exceed the admin commission
+        if (discountAmount > fullCommission) {
+            discountAmount = fullCommission;
+            effectiveTotal = Number((grossBill - discountAmount).toFixed(2));
+            if (appliedCoupon) {
+                appliedCoupon.discount = discountAmount;
+                appliedCoupon.capped = true;
+            }
+        }
+
         const restaurantShare = Number((grossBill - fullCommission).toFixed(2));
         const customerPays = Number((grossBill - discountAmount).toFixed(2));
         const adminNetCommission = Number((fullCommission - discountAmount).toFixed(2));
@@ -354,18 +365,45 @@ export const validateDiningCouponController = async (req, res, next) => {
             discountAmount = Math.min(offer.discountValue, amount);
         }
 
+        // Cap dining coupon discount to the admin commission so admin doesn't give off more than commission
+        let commPct = 10;
+        if (restaurantId) {
+            const { FoodDiningRestaurant } = await import('../../modules/food/dining/models/diningRestaurant.model.js');
+            const diningRest = await FoodDiningRestaurant.findOne({ restaurantId }).lean();
+            if (diningRest && typeof diningRest.commissionPct === 'number') {
+                commPct = diningRest.commissionPct;
+            } else {
+                const { FoodRestaurant } = await import('../../modules/food/restaurant/models/restaurant.model.js');
+                const rest = await FoodRestaurant.findById(restaurantId).lean();
+                if (rest && rest.diningSettings && typeof rest.diningSettings.commissionPct === 'number') {
+                    commPct = rest.diningSettings.commissionPct;
+                }
+            }
+        }
+
+        const fullCommission = Number((amount * (commPct / 100)).toFixed(2));
+        let isCappedByCommission = false;
+        if (discountAmount > fullCommission) {
+            discountAmount = fullCommission;
+            isCappedByCommission = true;
+        }
+
         const finalAmount = Number((amount - discountAmount).toFixed(2));
 
         return res.status(200).json({
             success: true,
-            message: 'Coupon applied successfully',
+            message: isCappedByCommission 
+                ? `Coupon discount capped at platform commission (₹${fullCommission})`
+                : 'Coupon applied successfully',
             data: {
                 couponCode: offer.couponCode,
                 discountType: offer.discountType,
                 discountValue: offer.discountValue,
                 discountAmount,
                 finalAmount,
-                originalAmount: amount
+                originalAmount: amount,
+                isCappedByCommission,
+                platformCommission: fullCommission
             }
         });
     } catch (err) {

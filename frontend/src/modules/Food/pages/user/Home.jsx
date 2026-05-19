@@ -215,8 +215,52 @@ const RestaurantImageCarousel = React.memo(
         ? ((currentIndex % images.length) + images.length) % images.length
         : 0;
     const primarySrc = images[safeIndex] || "";
-    const displaySrc = primarySrc;
-    const renderSrc = displaySrc || lastGoodSrc;
+
+    const [candidateIndex, setCandidateIndex] = useState(0);
+
+    // Reset candidateIndex when active slide changes
+    useEffect(() => {
+      setCandidateIndex(0);
+    }, [safeIndex]);
+
+    const candidates = useMemo(() => {
+      if (!primarySrc) return [];
+
+      let base = primarySrc;
+      // Strip any existing transforms in /image/upload/...
+      if (
+        /res\.cloudinary\.com/i.test(primarySrc) &&
+        /\/image\/upload\//i.test(primarySrc)
+      ) {
+        base = primarySrc.replace(
+          /\/image\/upload\/(?:f_[^,/]+|q_[^,/]+|w_\d+|h_\d+|c_[^,/]+|dpr_[^,/]+|g_[^,/]+|,)*\//i,
+          "/image/upload/",
+        );
+      }
+
+      if (
+        /res\.cloudinary\.com/i.test(base) &&
+        /\/image\/upload\//i.test(base)
+      ) {
+        return Array.from(
+          new Set([
+            base.replace(
+              "/image/upload/",
+              "/image/upload/f_jpg,q_auto,w_1080/",
+            ),
+            base.replace(
+              "/image/upload/",
+              "/image/upload/f_auto,q_auto,w_1080/",
+            ),
+            base,
+          ]),
+        );
+      }
+      return [primarySrc];
+    }, [primarySrc]);
+
+    const activeCandidate = candidates[candidateIndex] || candidates[0] || "";
+    const renderSrc = activeCandidate || lastGoodSrc;
     const isImageLoaded = Boolean(loadedBySrc[renderSrc] || lastGoodSrc);
 
     // Reset transient image state when restaurant or source list changes.
@@ -339,22 +383,28 @@ const RestaurantImageCarousel = React.memo(
                 setShowShimmer(false);
               }}
               onError={() => {
-                setAttemptedSrcs((prev) => {
-                  const next = { ...prev, [primarySrc]: true };
-                  const attemptedCount = Object.keys(next).length;
+                if (candidateIndex + 1 < candidates.length) {
+                  // Try the next Cloudinary fallback candidate for the current slide
+                  setCandidateIndex((prev) => prev + 1);
+                } else {
+                  // All candidates for this slide failed. Proceed to next slide or mark unavailable
+                  setAttemptedSrcs((prev) => {
+                    const next = { ...prev, [primarySrc]: true };
+                    const attemptedCount = Object.keys(next).length;
 
-                  if (attemptedCount >= images.length) {
+                    if (attemptedCount >= images.length) {
+                      setIsImageUnavailable(true);
+                    } else if (images.length > 1) {
+                      setCurrentIndex(
+                        (prevIndex) => (prevIndex + 1) % images.length,
+                      );
+                    }
+
+                    return next;
+                  });
+                  if (images.length === 1) {
                     setIsImageUnavailable(true);
-                  } else if (images.length > 1) {
-                    setCurrentIndex(
-                      (prevIndex) => (prevIndex + 1) % images.length,
-                    );
                   }
-
-                  return next;
-                });
-                if (images.length === 1) {
-                  setIsImageUnavailable(true);
                 }
               }}
             />
@@ -668,8 +718,8 @@ export default function Home() {
       if (!source) return [];
 
       const normalizedImages = (Array.isArray(source)
-        ? source.flatMap((entry) => buildRestaurantImageCandidates(entry))
-        : buildRestaurantImageCandidates(source)
+        ? source.map((entry) => extractImageFromValue(entry))
+        : [extractImageFromValue(source)]
       )
         .filter(Boolean)
         .map((value) => String(value).trim())
@@ -679,9 +729,8 @@ export default function Home() {
       return normalizedImages.filter(
         (value, index) => normalizedImages.indexOf(value) === index,
       );
-
     },
-    [buildRestaurantImageCandidates],
+    [extractImageFromValue],
   );
 
   const extractRestaurantCardImages = useCallback(
