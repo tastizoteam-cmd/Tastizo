@@ -27,7 +27,7 @@ import {
   Bell, HelpCircle, AlertTriangle, 
   Wallet, History, User as UserIcon, LayoutGrid,
   Plus, Minus, Navigation2, Target, CheckCircle2, Clock, ChevronDown,
-  Contact, Package
+  Contact, Package, MapPin
 } from 'lucide-react';
 
 import { getHaversineDistance, calculateETA, calculateHeading } from '@/modules/DeliveryV2/utils/geo';
@@ -1963,22 +1963,26 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
             position: 'fixed',
             inset: 0,
             zIndex: 2147483647,
-            background: 'rgba(0,0,0,0.88)',
+            background: 'rgba(0, 0, 0, 0.6)',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-end',
             justifyContent: 'center',
-            padding: '16px',
+            padding: 0,
             fontFamily: 'sans-serif',
           }}
         >
           <div
             style={{
-              width: 'min(92vw, 420px)',
+              width: '100%',
+              maxWidth: '32rem',
               background: '#ffffff',
-              border: '5px solid #ef4444',
-              borderRadius: '24px',
-              boxShadow: '0 18px 60px rgba(0,0,0,0.45)',
-              padding: '20px',
+              borderTopLeftRadius: '1.5rem',
+              borderTopRightRadius: '1.5rem',
+              overflow: 'hidden',
+              boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              paddingTop: '0.25rem',
             }}
           >
             {(() => {
@@ -2017,93 +2021,95 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
               ]
                 .map((value) => String(value || '').trim())
                 .find(Boolean) || 'Drop address not available';
+              const timeText = `${hardPopupTimeLeft}s`;
 
               return (
                 <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 900, color: '#ef4444', textTransform: 'uppercase' }}>
-                New Order Request
-              </div>
-              <div
-                style={{
-                  minWidth: '62px',
-                  padding: '8px 10px',
-                  borderRadius: '12px',
-                  background: '#111827',
-                  color: '#ffffff',
-                  fontSize: '18px',
-                  fontWeight: 900,
-                  textAlign: 'center',
-                  lineHeight: 1,
-                }}
-              >
-                {hardPopupTimeLeft}s
-              </div>
-            </div>
-            <div style={{ marginTop: '10px', fontSize: '22px', fontWeight: 900, color: '#111827', lineHeight: 1.2 }}>
-              {restaurantName}
-            </div>
-            <div style={{ marginTop: '8px', fontSize: '14px', color: '#4b5563' }}>
-              Order: {orderId}
-            </div>
-            <div style={{ marginTop: '8px', fontSize: '14px', color: '#4b5563' }}>
-              Customer: {customerName}
-            </div>
-            <div style={{ marginTop: '12px', padding: '12px', background: '#fff5f5', borderRadius: '14px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase' }}>
-                Earning
-              </div>
-              <div style={{ marginTop: '4px', fontSize: '20px', fontWeight: 900, color: '#111827' }}>
-                {formatEmergencyPopupCurrency(earningAmount)}
-              </div>
-            </div>
-            <div style={{ marginTop: '12px', display: 'grid', gap: '10px' }}>
-              <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '14px', border: '1px solid #e5e7eb' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase' }}>
-                  Pickup
-                </div>
-                <div style={{ marginTop: '4px', fontSize: '13px', lineHeight: 1.4, color: '#111827' }}>
-                  {pickupLocation}
-                </div>
-              </div>
-              <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '14px', border: '1px solid #e5e7eb' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase' }}>
-                  Drop
-                </div>
-                <div style={{ marginTop: '4px', fontSize: '13px', lineHeight: 1.4, color: '#111827' }}>
-                  {dropLocation}
-                </div>
-              </div>
-            </div>
-            <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+            <div className="w-full flex justify-center pb-1.5 pt-1 bg-white relative z-10 rounded-t-3xl sm:rounded-t-[3rem] -mb-1">
               <button
-                onClick={handleRejectOrder}
-                style={{
-                  flex: 1,
-                  height: '48px',
-                  borderRadius: '14px',
-                  border: '1px solid #d1d5db',
-                  background: '#f9fafb',
-                  color: '#111827',
-                  fontWeight: 800,
-                }}
+                onClick={() => setIsModalMinimized(true)}
+                className="p-1 hover:bg-gray-100 active:scale-95 transition-all rounded-full flex flex-col items-center"
               >
-                Pass
+                 <ChevronDown className="w-6 h-6 text-gray-400 stroke-[3]" />
               </button>
-              <button
-                onClick={() => handleAcceptOrder(hardPopupOrder)}
-                style={{
-                  flex: 1,
-                  height: '48px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  background: '#111827',
-                  color: '#ffffff',
-                  fontWeight: 900,
-                }}
-              >
-                Accept
-              </button>
+            </div>
+
+            <div
+              className="p-4 sm:p-8 flex justify-between items-center text-white border-b border-white/10"
+              style={{ background: 'linear-gradient(33deg, #15498b 0%, #000000 100%)' }}
+            >
+              <div>
+                <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1">
+                  Incoming Request
+                </p>
+                <h2 className="text-2xl sm:text-4xl font-bold tracking-tighter">
+                  {formatEmergencyPopupCurrency(earningAmount)}
+                </h2>
+              </div>
+              <div className="min-w-[72px] sm:min-w-[92px] min-h-[56px] sm:min-h-[68px] bg-white/20 border border-white/30 rounded-2xl sm:rounded-3xl px-3 sm:px-6 py-2 sm:py-3 text-white font-bold text-lg sm:text-2xl shadow-inner tabular-nums flex items-center justify-center leading-none text-center">
+                <span className="block leading-none">{timeText}</span>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-8 pb-6 sm:pb-12 space-y-5 sm:space-y-10 overflow-y-auto max-h-[78vh]">
+              <div className="flex gap-3 sm:gap-6">
+                <div className="flex flex-col items-center gap-1.5 mt-2 py-1">
+                  <div className="w-5 h-5 rounded-full bg-green-500 border-4 border-green-50 shadow-lg shadow-green-500/20" />
+                  <div className="w-0.5 h-16 bg-dashed border-l-2 border-gray-100" />
+                  <div className="w-5 h-5 rounded-full bg-blue-500 border-4 border-blue-50 shadow-lg shadow-blue-500/20" />
+                </div>
+                <div className="flex-1 space-y-5 sm:space-y-10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 font-bold text-[10px] uppercase tracking-widest text-green-600">
+                      <Contact className="w-4 h-4" />
+                      <span>Restaurant Pickup</span>
+                    </div>
+                    <p className="text-gray-950 font-bold text-base sm:text-xl leading-tight">{restaurantName}</p>
+                    <p className="text-gray-500 text-sm font-medium leading-relaxed">{pickupLocation}</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 font-bold text-[10px] uppercase tracking-widest text-blue-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>Customer Drop</span>
+                    </div>
+                    <p className="text-gray-950 font-bold text-base sm:text-xl leading-tight">Customer Location</p>
+                    <p className="text-gray-500 text-sm font-medium line-clamp-2">{dropLocation}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-2.5 sm:gap-3">
+                  <Clock className="w-5 h-5 text-orange-500" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Time</span>
+                    <span className="text-sm font-bold text-gray-900">{hardPopupTimeLeft} SEC</span>
+                  </div>
+                </div>
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-2.5 sm:gap-3">
+                  <MapPin className="w-5 h-5 text-gray-400" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Order</span>
+                    <span className="text-sm font-bold text-gray-900">{orderId}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 sm:space-y-6 pt-1 sm:pt-2">
+                <ActionSlider
+                  label="Slide to Accept"
+                  onConfirm={() => handleAcceptOrder(hardPopupOrder)}
+                  color="bg-black"
+                  successLabel="Order Accepted"
+                />
+
+                <button
+                  onClick={handleRejectOrder}
+                  className="w-full text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-red-500 transition-colors py-2 active:scale-95"
+                >
+                  Pass this task
+                </button>
+              </div>
             </div>
                 </>
               );

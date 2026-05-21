@@ -246,7 +246,7 @@ export default function DeliverySignIn() {
 
                 <Button
                   type="submit"
-                  className="mt-2 h-14 w-full rounded-2xl border border-transparent bg-[#1E7A4A] text-lg font-bold text-white transition-all hover:bg-[#0A2B1D] active:scale-[0.99]"
+                  className="mt-2 h-14 w-full rounded-2xl border border-transparent bg-[#2A9C64] text-lg font-bold text-white transition-all hover:bg-[#248454] active:scale-[0.99]"
                   disabled={isLoading}
                 >
                   {isLoading ? (

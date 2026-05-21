@@ -2844,12 +2844,12 @@ export default function Home() {
                   className="sticky top-0 z-[40] -mx-4 w-[calc(100%+2rem)] bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md transition-colors duration-300"
                 >
                   {/* "What's on your mind today?" Section - Now with Sticky Logic */}
-                  <div className="px-4 pt-2.5 pb-2 space-y-3 bg-white dark:bg-[#0a0a0a]">
+                  <div className="px-2 pt-2.5 pb-2 space-y-3 bg-white dark:bg-[#0a0a0a]">
                     {!isStickyHeaderVisible && (
-                      <div className="flex items-center gap-2 min-w-0">
-                        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white min-w-0 flex-shrink leading-tight">What's on your mind today?</h2>
+                      <div className="flex items-center gap-2 min-w-0 px-1 sm:px-2">
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white min-w-0 flex-shrink leading-tight pl-5">What's on your mind today?</h2>
                         <div className="h-[1px] bg-gray-100 dark:bg-gray-800 flex-1"></div>
-                        <Link to="/food/user/categories" className="text-sm font-bold text-gray-400 dark:text-gray-500 flex items-center gap-0.5 whitespace-nowrap shrink-0">
+                        <Link to="/food/user/categories" className="text-sm font-bold text-gray-400 dark:text-gray-500 flex items-center gap-0.5 whitespace-nowrap shrink-0 pr-2">
                           View All <ArrowDownUp className="h-3 w-3 rotate-90" />
                         </Link>
                       </div>
