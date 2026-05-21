@@ -19,7 +19,9 @@ export default function Coupons() {
         const list = res?.data?.data?.allOffers || res?.data?.allOffers || []
         if (!cancelled) {
           // Only show offers meant to be visible to users (default true)
-          const visible = Array.isArray(list) ? list.filter((o) => o?.showInCart !== false) : []
+          const visible = Array.isArray(list)
+            ? list.filter((o) => o?.showInCart !== false && String(o?.couponType || "delivery").toLowerCase() !== "dining")
+            : []
           setOffers(visible)
         }
       } catch (e) {

@@ -259,6 +259,11 @@ export default function Cart() {
   const [userOrderCount, setUserOrderCount] = useState(0)
   const [addressZoneMap, setAddressZoneMap] = useState({})
 
+  const visibleCoupons = useMemo(
+    () => availableCoupons.filter((coupon) => String(coupon?.couponType || "delivery").toLowerCase() !== "dining"),
+    [availableCoupons],
+  )
+
   // Fee settings from database (used for platform fee and GST fallback only)
   const [feeSettings, setFeeSettings] = useState({
     deliveryFee: 25,
@@ -975,17 +980,20 @@ export default function Cart() {
           debugLog(`[CART-COUPONS] Fetching coupons for itemId: ${couponItemId}, name: ${cartItem.name}`)
           const response = await restaurantAPI.getCouponsByItemIdPublic(restaurantId, couponItemId)
 
-          if (response?.data?.success && response?.data?.data?.coupons) {
-            const coupons = response.data.data.coupons
-            debugLog(`[CART-COUPONS] Found ${coupons.length} coupons for item ${couponItemId}`)
+            if (response?.data?.success && response?.data?.data?.coupons) {
+              const coupons = response.data.data.coupons
+              debugLog(`[CART-COUPONS] Found ${coupons.length} coupons for item ${couponItemId}`)
 
-            // Add coupons, avoiding duplicates
-            coupons.forEach(coupon => {
-              if (!uniqueCouponCodes.has(coupon.couponCode)) {
-                uniqueCouponCodes.add(coupon.couponCode)
-                // Convert backend coupon format to frontend format
-                allCoupons.push({
-                  code: coupon.couponCode,
+              // Add coupons, avoiding duplicates
+              coupons.forEach(coupon => {
+                if (String(coupon?.couponType || "delivery").toLowerCase() === "dining") {
+                  return
+                }
+                if (!uniqueCouponCodes.has(coupon.couponCode)) {
+                  uniqueCouponCodes.add(coupon.couponCode)
+                  // Convert backend coupon format to frontend format
+                  allCoupons.push({
+                    code: coupon.couponCode,
                   discount: coupon.originalPrice - coupon.discountedPrice,
                   discountPercentage: coupon.discountPercentage,
                   discountDisplay: coupon.discountType === "percentage"
@@ -1488,7 +1496,7 @@ export default function Cart() {
       return
     }
 
-    const matchedCoupon = availableCoupons.find(
+    const matchedCoupon = visibleCoupons.find(
       (coupon) => String(coupon.code || "").toUpperCase() === inputCode,
     )
 
@@ -2428,21 +2436,21 @@ export default function Cart() {
                   <div className="px-4 py-3 md:px-6 md:py-4 flex flex-col gap-3">
                     {loadingCoupons ? (
                       <p className="text-sm text-gray-500">Loading offers...</p>
-                    ) : availableCoupons.length > 0 ? (
+                    ) : visibleCoupons.length > 0 ? (
                       <div className="flex items-start justify-between w-full">
                         <div className="flex items-start gap-3 flex-1">
                           <Percent className="h-5 w-5 text-gray-700 dark:text-gray-300 mt-0.5" />
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight mb-0.5">
-                              {availableCoupons[0].discountDisplay || `Save ${RUPEE_SYMBOL}${availableCoupons[0].discount}`} with '{availableCoupons[0].code}'
+                              {visibleCoupons[0].discountDisplay || `Save ${RUPEE_SYMBOL}${visibleCoupons[0].discount}`} with '{visibleCoupons[0].code}'
                             </p>
-                            {availableCoupons[0].customerGroup === "new" ? (
+                            {visibleCoupons[0].customerGroup === "new" ? (
                                <p className="text-[11px] text-[#2A9C64] mb-1">First-time users only</p>
-                            ) : subtotal < availableCoupons[0].minOrder ? (
-                              <p className="text-xs text-blue-600 font-medium mb-1">Add items worth {RUPEE_SYMBOL}{(availableCoupons[0].minOrder - subtotal).toFixed(0)} more to unlock</p>
+                            ) : subtotal < visibleCoupons[0].minOrder ? (
+                              <p className="text-xs text-blue-600 font-medium mb-1">Add items worth {RUPEE_SYMBOL}{(visibleCoupons[0].minOrder - subtotal).toFixed(0)} more to unlock</p>
                             ) : null}
 
-                            {availableCoupons.length > 1 && (
+                            {visibleCoupons.length > 1 && (
                                <button onClick={() => setShowCoupons(!showCoupons)} className="text-[11px] text-[#2A9C64] hover:underline flex items-center mt-1">
                                  View all coupons <ChevronRight className="h-3 w-3 ml-0.5" />
                                </button>
@@ -2451,8 +2459,8 @@ export default function Cart() {
                         </div>
                         <button
                            className="border border-[#2A9C64] text-[#2A9C64] dark:hover:bg-[#2A9C6410] rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed ml-2 shadow-sm"
-                          onClick={() => handleApplyCoupon(availableCoupons[0])}
-                          disabled={subtotal < availableCoupons[0].minOrder || (availableCoupons[0].customerGroup === "new" && userOrderCount > 0)}
+                          onClick={() => handleApplyCoupon(visibleCoupons[0])}
+                          disabled={subtotal < visibleCoupons[0].minOrder || (visibleCoupons[0].customerGroup === "new" && userOrderCount > 0)}
                         >
                           APPLY
                         </button>
@@ -2465,7 +2473,7 @@ export default function Cart() {
                     )}
 
                     {/* Show All Coupons List */}
-                    {showCoupons && !appliedCoupon && availableCoupons.length > 0 && (
+                    {showCoupons && !appliedCoupon && visibleCoupons.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 space-y-4">
                         {/* Input for manual code */}
                         <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -2483,7 +2491,7 @@ export default function Cart() {
                             APPLY
                           </button>
                         </div>
-                        {availableCoupons.slice(1).map((coupon) => (
+                        {visibleCoupons.slice(1).map((coupon) => (
                           <div key={coupon.code} className="flex items-start justify-between">
                             <div className="flex items-start gap-3 flex-1">
                               <Percent className="h-5 w-5 text-gray-700 dark:text-gray-300 mt-0.5 opacity-50" />

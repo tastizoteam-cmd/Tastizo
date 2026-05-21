@@ -28,7 +28,6 @@ import {
   RotateCcw,
   Zap,
   Check,
-  Lock,
   Percent,
   Eye,
   Users,
@@ -684,12 +683,6 @@ function RestaurantDetailsContent() {
             offerText: actualRestaurant?.offer || apiRestaurant?.offer || onboardingStep4?.offer || "",
             offerCount: actualRestaurant?.offerCount || apiRestaurant?.offerCount || 0,
             restaurantOffers: {
-              goldOffer: {
-                title: normalizedRestaurantOffers?.goldOffer?.title || "Gold exclusive offer",
-                description: apiRestaurant?.restaurantOffers?.goldOffer?.description || "Free delivery above ₹99",
-                unlockText: normalizedRestaurantOffers?.goldOffer?.unlockText || "join Gold to unlock",
-                buttonText: apiRestaurant?.restaurantOffers?.goldOffer?.buttonText || "Add Gold - ₹1",
-              },
               coupons: Array.isArray(normalizedRestaurantOffers?.coupons)
                 ? normalizedRestaurantOffers.coupons
                 : [],
@@ -826,6 +819,7 @@ function RestaurantDetailsContent() {
             const restaurantOffers = Array.isArray(offersList)
               ? offersList
                   .filter(matchesRestaurantOffer)
+                  .filter((offer) => String(offer?.couponType || "delivery").toLowerCase() !== "dining")
                   .map(normalizeOfferForDisplay)
               : []
 
@@ -4060,36 +4054,6 @@ function RestaurantDetailsContent() {
 
                   {/* Scrollable Content */}
                   <div className="flex-1 overflow-y-auto px-4 py-4">
-                    {/* Gold Exclusive Offer Section */}
-                    {restaurant?.restaurantOffers?.goldOffer && (
-                      <div className="mb-6">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                          {restaurant.restaurantOffers.goldOffer?.title || "Gold exclusive offer"}
-                        </h3>
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 flex items-start justify-between gap-4 border border-gray-100 dark:border-gray-700 shadow-md">
-                          <div className="flex items-start gap-3 flex-1">
-                            <Lock className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                                {restaurant.restaurantOffers.goldOffer?.description || "Free delivery above ₹99"}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {restaurant.restaurantOffers.goldOffer?.unlockText || "join Gold to unlock"}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            className="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg whitespace-nowrap"
-                            onClick={() => {
-                              // Handle add gold
-                            }}
-                          >
-                            {restaurant.restaurantOffers.goldOffer?.buttonText || "Add Gold - ₹1"}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Restaurant Coupons Section */}
                     {restaurant?.restaurantOffers?.coupons && Array.isArray(restaurant.restaurantOffers.coupons) && restaurant.restaurantOffers.coupons.length > 0 && (
                       <div>
@@ -4097,7 +4061,9 @@ function RestaurantDetailsContent() {
                           Restaurant coupons
                         </h3>
                         <div className="space-y-3">
-                          {restaurant.restaurantOffers.coupons.map((coupon, couponIndex) => {
+                          {restaurant.restaurantOffers.coupons
+                            .filter((coupon) => String(coupon?.couponType || "delivery").toLowerCase() !== "dining")
+                            .map((coupon, couponIndex) => {
                             const couponKey = coupon?.id || coupon?.code || `coupon-${couponIndex}`
                             const isExpanded = expandedCoupons.has(couponKey)
                             return (

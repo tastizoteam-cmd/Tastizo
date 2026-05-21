@@ -355,8 +355,20 @@ export default function MyBookings() {
         }
     }
 
-    const handleApplyCoupon = async (booking) => {
-        const code = (couponInputs[booking._id] || "").trim()
+    const getDiningRecommendations = (booking) => {
+        const rawOffers =
+            booking?.restaurant?.restaurantOffers?.coupons ||
+            booking?.restaurantOffers?.coupons ||
+            booking?.restaurant?.offers ||
+            []
+
+        if (!Array.isArray(rawOffers)) return []
+
+        return rawOffers.filter((offer) => String(offer?.couponType || "").toLowerCase() === "dining")
+    }
+
+    const handleApplyCoupon = async (booking, codeOverride = "") => {
+        const code = String(codeOverride || couponInputs[booking._id] || "").trim()
         if (!code) { toast.error("Please enter a coupon code"); return }
         const bookingId = booking._id
         setCouponLoading(prev => ({ ...prev, [bookingId]: true }))
@@ -544,11 +556,36 @@ export default function MyBookings() {
                                                              <div>Restaurant Payout: <span className="font-bold text-emerald-600">₹{(booking.billAmount - (booking.billAmount * ((booking.commissionPct ?? 10) / 100))).toFixed(2)}</span></div>
                                                          </div>
                                                      </div>
-                                                 ) : (
-                                                     <div className="flex flex-col gap-2 items-end">
-                                                         {/* Coupon Input */}
-                                                         {!appliedCoupons[booking._id] ? (
-                                                             <div className="flex items-center gap-1.5 w-full">
+                                                        ) : (
+                                                            <div className="flex flex-col gap-2 items-end">
+                                                                {getDiningRecommendations(booking).length > 0 && (
+                                                                    <div className="w-full mb-1">
+                                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                                                                            Recommended dining coupons
+                                                                        </p>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {getDiningRecommendations(booking).slice(0, 3).map((offer) => {
+                                                                                const code = String(offer?.couponCode || offer?.code || "").trim().toUpperCase()
+                                                                                if (!code) return null
+                                                                                return (
+                                                                                    <button
+                                                                                        key={offer?.id || offer?.offerId || code}
+                                                                                        type="button"
+                                                                                        onClick={() => handleApplyCoupon(booking, code)}
+                                                                                        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold text-emerald-700 active:scale-95 transition"
+                                                                                    >
+                                                                                        <Tag className="w-3 h-3" />
+                                                                                        {code}
+                                                                                    </button>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Coupon Input */}
+                                                                {!appliedCoupons[booking._id] ? (
+                                                                    <div className="flex items-center gap-1.5 w-full">
                                                                  <div className="relative flex-1">
                                                                      <Tag className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
                                                                      <input

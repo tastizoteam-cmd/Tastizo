@@ -1112,6 +1112,7 @@ export const restaurantAPI = {
           const isPct = o.discountType === "percentage";
           return {
             couponCode: o.couponCode,
+            couponType: o.couponType || "delivery",
             discountType: o.discountType,
             discountPercentage: isPct ? Number(o.discountValue) || 0 : 0,
             originalPrice: 0,

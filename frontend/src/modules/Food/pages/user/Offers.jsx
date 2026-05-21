@@ -35,8 +35,17 @@ export default function Offers() {
         const data = response?.data?.data
         
         if (data) {
-          setOffers(data.allOffers || [])
-          setGroupedOffers(data.groupedByOffer || {})
+          const allOffers = Array.isArray(data.allOffers)
+            ? data.allOffers.filter((offer) => String(offer?.couponType || "delivery").toLowerCase() !== "dining")
+            : []
+          const grouped = Object.entries(data.groupedByOffer || {}).reduce((acc, [key, dishes]) => {
+            acc[key] = Array.isArray(dishes)
+              ? dishes.filter((dish) => String(dish?.couponType || "delivery").toLowerCase() !== "dining")
+              : []
+            return acc
+          }, {})
+          setOffers(allOffers)
+          setGroupedOffers(grouped)
         }
       } catch (err) {
         debugError('Error fetching offers:', err)

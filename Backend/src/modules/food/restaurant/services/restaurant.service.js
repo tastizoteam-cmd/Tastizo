@@ -1150,7 +1150,7 @@ export const uploadRestaurantCoverImages = async (restaurantId, files = []) => {
 
     uploadedUrls.forEach((url) => {
         if (!nextCoverImages.includes(url)) nextCoverImages.push(url);
-    });
+    }).filter((offer) => String(offer?.couponType || 'delivery').toLowerCase() !== 'dining');
 
     let update = {
         coverImages: nextCoverImages.slice(0, 20)
@@ -1526,6 +1526,7 @@ export const listPublicOffers = async () => {
             id: String(o._id),
             offerId: String(o._id),
             couponCode: o.couponCode,
+            couponType: o.couponType || 'delivery',
             title,
             discountType: o.discountType,
             discountValue: o.discountValue,
