@@ -1768,7 +1768,7 @@ export default function Home() {
                 distanceInKm: distanceInKm, // Store numeric distance for sorting
                 image: image,
                 images: allImages, // Array of cover images for carousel (separate from menu images)
-                priceRange: restaurant.priceRange || "$$", // Use from API or default
+                priceRange: restaurant.priceRange || "₹₹", // Use from API or default
                 featuredDish:
                   restaurant.featuredDish ||
                   (restaurant.cuisines && restaurant.cuisines.length > 0

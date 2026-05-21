@@ -160,7 +160,7 @@ export default function Cashback() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Cashback Amount ({formData.cashbackType === "Percentage (%)" ? "%" : "$"}) <span className="text-red-500">*</span>
+                  Cashback Amount ({formData.cashbackType === "Percentage (%)" ? "%" : "₹"}) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"

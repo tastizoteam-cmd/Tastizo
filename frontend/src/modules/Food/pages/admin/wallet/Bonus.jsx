@@ -149,7 +149,7 @@ export default function Bonus() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   <div className="flex items-center gap-2">
-                    <span>Bonus Amount ({formData.bonusType === "Percentage (%)" ? "%" : "$"})</span>
+                    <span>Bonus Amount ({formData.bonusType === "Percentage (%)" ? "%" : "₹"})</span>
                     <Info className="w-4 h-4 text-slate-400" />
                   </div>
                 </label>

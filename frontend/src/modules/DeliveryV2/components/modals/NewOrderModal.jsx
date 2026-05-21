@@ -1,13 +1,48 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
-import { User, MapPin, FastForward, Clock, Phone, ChefHat, ChevronDown } from 'lucide-react';
+import { MapPin, Clock, ChefHat, ChevronDown } from 'lucide-react';
 import { ActionSlider } from '@/modules/DeliveryV2/components/ui/ActionSlider';
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
-import { getHaversineDistance, calculateETA } from '@/modules/DeliveryV2/utils/geo';
+import { getHaversineDistance } from '@/modules/DeliveryV2/utils/geo';
 import { formatCurrency } from '@food/utils/currency';
 
 const DELIVERY_OFFER_TTL_SECONDS = 30;
+
+const toFiniteNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const resolveCoords = (...candidates) => {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    if (Array.isArray(candidate) && candidate.length >= 2) {
+      const lng = toFiniteNumber(candidate[0]);
+      const lat = toFiniteNumber(candidate[1]);
+      if (lat !== null && lng !== null) return { lat, lng };
+      continue;
+    }
+
+    const lat = toFiniteNumber(
+      candidate.lat ?? candidate.latitude ?? candidate.coordinates?.[1],
+    );
+    const lng = toFiniteNumber(
+      candidate.lng ?? candidate.longitude ?? candidate.coordinates?.[0],
+    );
+
+    if (lat !== null && lng !== null) return { lat, lng };
+  }
+
+  return null;
+};
+
+const formatDistanceLabel = (distanceKm) => {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) return null;
+  if (distanceKm >= 1) return `${distanceKm.toFixed(1)} km`;
+  return `${Math.round(distanceKm * 1000)} m`;
+};
 
 /**
  * NewOrderModal - Ported to Original 1:1 Theme with Slider Accept.
@@ -94,8 +129,57 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
     onReject();
   }, [order, timeLeft, onReject]);
 
-  const { distanceKm, etaMins } = useMemo(() => {
-    if (!order) return { distanceKm: null, etaMins: null };
+  const {
+    pickupDistanceKm,
+    etaMins,
+    restaurantToCustomerDistanceLabel,
+  } = useMemo(() => {
+    if (!order) {
+      return {
+        pickupDistanceKm: null,
+        etaMins: null,
+        restaurantToCustomerDistanceLabel: null,
+      };
+    }
+
+    const restaurantCoords = resolveCoords(
+      order.restaurantLocation,
+      order.restaurantId?.location,
+      {
+        lat: order.restaurant_lat ?? order.restaurantLat,
+        lng: order.restaurant_lng ?? order.restaurantLng,
+      },
+    );
+
+    const deliveryGeoCoords =
+      Array.isArray(order.deliveryAddress?.location?.coordinates) &&
+      order.deliveryAddress.location.coordinates.length >= 2
+        ? {
+            lng: order.deliveryAddress.location.coordinates[0],
+            lat: order.deliveryAddress.location.coordinates[1],
+          }
+        : null;
+
+    const customerCoords = resolveCoords(
+      order.customerLocation,
+      order.deliveryLocation,
+      order.deliveryAddress?.location,
+      deliveryGeoCoords,
+      {
+        lat: order.customer_lat ?? order.customerLat,
+        lng: order.customer_lng ?? order.customerLng,
+      },
+    );
+
+    const restaurantToCustomerDistanceKm =
+      restaurantCoords && customerCoords
+        ? getHaversineDistance(
+            restaurantCoords.lat,
+            restaurantCoords.lng,
+            customerCoords.lat,
+            customerCoords.lng,
+          ) / 1000
+        : null;
 
     // A. Use provided data if available (Direct distance from socket)
     const rawDist = order.pickupDistanceKm || order.distanceKm;
@@ -103,32 +187,36 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
     
     if (rawDist != null) {
       return { 
-        distanceKm: Number(rawDist).toFixed(1), 
-        etaMins: rawEta && rawEta > 0 ? Math.ceil(rawEta) : Math.ceil((rawDist * 1000) / 416) + 5
+        pickupDistanceKm: Number(rawDist).toFixed(1),
+        etaMins: rawEta && rawEta > 0 ? Math.ceil(rawEta) : Math.ceil((rawDist * 1000) / 416) + 5,
+        restaurantToCustomerDistanceLabel: formatDistanceLabel(restaurantToCustomerDistanceKm),
       };
     }
 
     // B. Calculate from locations (Local calculation fallback)
-    const rest = order.restaurantLocation || order.restaurantId?.location || {};
-    const resLat = parseFloat(order.restaurant_lat || order.restaurantLat || rest.latitude || rest.lat);
-    const resLng = parseFloat(order.restaurant_lng || order.restaurantLng || rest.longitude || rest.lng);
-
-    if (riderLocation && !isNaN(resLat) && !isNaN(resLng)) {
+    if (riderLocation && restaurantCoords) {
       const distM = getHaversineDistance(
-        riderLocation.lat, riderLocation.lng,
-        resLat, resLng
+        riderLocation.lat,
+        riderLocation.lng,
+        restaurantCoords.lat,
+        restaurantCoords.lng,
       );
       const km = distM / 1000;
       // Assume 25km/h avg for initial estimate (roughly 416m/min)
       const mins = Math.ceil(distM / 416) + (order.prepTime || 5);
       
       return { 
-        distanceKm: km.toFixed(1), 
-        etaMins: mins 
+        pickupDistanceKm: km.toFixed(1),
+        etaMins: mins,
+        restaurantToCustomerDistanceLabel: formatDistanceLabel(restaurantToCustomerDistanceKm),
       };
     }
 
-    return { distanceKm: '??', etaMins: order.prepTime || 15 };
+    return {
+      pickupDistanceKm: '??',
+      etaMins: order.prepTime || 15,
+      restaurantToCustomerDistanceLabel: formatDistanceLabel(restaurantToCustomerDistanceKm),
+    };
   }, [order, riderLocation]);
 
   if (!order) return null;
@@ -249,6 +337,11 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
                 </div>
                 <p className="text-gray-950 font-bold text-base sm:text-xl leading-tight">Customer Location</p>
                 <p className="text-gray-500 text-sm font-medium line-clamp-2">{customerAddress}</p>
+                {restaurantToCustomerDistanceLabel && (
+                  <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+                    Restaurant to customer: {restaurantToCustomerDistanceLabel}
+                  </p>
+                )}
                 {mapsLink && (
                   <a
                     href={mapsLink}
@@ -274,8 +367,10 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
              <div className="p-3 sm:p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center gap-2.5 sm:gap-3">
                <MapPin className="w-5 h-5 text-gray-400" />
                <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Distance</span>
-                  <span className="text-sm font-bold text-gray-900">{distanceKm} KM</span>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Pickup</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {pickupDistanceKm === '??' ? pickupDistanceKm : `${pickupDistanceKm} KM`}
+                  </span>
                </div>
              </div>
           </div>

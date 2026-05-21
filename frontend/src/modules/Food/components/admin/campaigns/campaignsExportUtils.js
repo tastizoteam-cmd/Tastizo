@@ -11,7 +11,7 @@ export const exportCampaignsToCSV = (campaigns, filename = "campaigns", isFoodCa
       campaign.dateEnd,
       campaign.timeStart,
       campaign.timeEnd,
-      `$ ${(campaign.price || 0).toFixed(2)}`,
+      `₹ ${(campaign.price || 0).toFixed(2)}`,
       campaign.status ? "Active" : "Inactive"
     ])
   } else {
@@ -55,7 +55,7 @@ export const exportCampaignsToExcel = (campaigns, filename = "campaigns", isFood
       campaign.dateEnd,
       campaign.timeStart,
       campaign.timeEnd,
-      `$ ${(campaign.price || 0).toFixed(2)}`,
+      `₹ ${(campaign.price || 0).toFixed(2)}`,
       campaign.status ? "Active" : "Inactive"
     ])
   } else {
@@ -99,7 +99,7 @@ export const exportCampaignsToPDF = (campaigns, filename = "campaigns", isFoodCa
       campaign.dateEnd,
       campaign.timeStart,
       campaign.timeEnd,
-      `$ ${(campaign.price || 0).toFixed(2)}`,
+      `₹ ${(campaign.price || 0).toFixed(2)}`,
       campaign.status ? "Active" : "Inactive"
     ])
   } else {

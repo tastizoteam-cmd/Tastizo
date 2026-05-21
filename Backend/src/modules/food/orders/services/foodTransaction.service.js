@@ -96,8 +96,15 @@ export async function createInitialTransaction(order) {
         Number.isFinite(restaurantCommissionFromOrder) && restaurantCommissionFromOrder > 0
             ? restaurantCommissionFromOrder
             : (commissionAmount || 0);
-    const restaurantNet = (order.pricing?.subtotal || 0) + (order.pricing?.packagingFee || 0) - restaurantCommission;
-    const platformNetProfit = (order.pricing?.platformFee || 0) + (order.pricing?.deliveryFee || 0) + restaurantCommission - riderShare;
+    // Restaurant payout must be based only on food base price (subtotal).
+    // Platform fee, packaging fee, GST, and delivery fee should never increase restaurant share.
+    const restaurantNet = (order.pricing?.subtotal || 0) - restaurantCommission;
+    const platformNetProfit =
+        (order.pricing?.platformFee || 0) +
+        (order.pricing?.packagingFee || 0) +
+        (order.pricing?.deliveryFee || 0) +
+        restaurantCommission -
+        riderShare;
 
     const transaction = new FoodTransaction({
         orderId: order._id,

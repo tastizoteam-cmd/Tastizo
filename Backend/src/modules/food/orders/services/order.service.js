@@ -359,6 +359,7 @@ export async function createOrder(userId, dto) {
   const platformProfit = Math.max(
     0,
     (Number.isFinite(normalizedPricing.deliveryFee) ? normalizedPricing.deliveryFee : 0) +
+      (Number.isFinite(normalizedPricing.packagingFee) ? normalizedPricing.packagingFee : 0) +
       (Number.isFinite(normalizedPricing.platformFee) ? normalizedPricing.platformFee : 0) +
       restaurantCommission -
       riderEarning,

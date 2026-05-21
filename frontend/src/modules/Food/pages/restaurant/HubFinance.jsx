@@ -648,7 +648,7 @@ export default function HubFinance() {
         end: currentCycleDates.end,
         month: currentCycleDates.month,
         year: currentCycleDates.year,
-        estimatedPayout: `₹${((currentCycle.estimatedPayout || 0) + currentCycleDiningSummary.earnings).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        estimatedPayout: `₹${(currentCycle.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         orders: (currentCycle.totalOrders || 0) + currentCycleDiningSummary.count,
         payoutDate: currentCycle.payoutDate ? new Date(currentCycle.payoutDate).toLocaleDateString('en-IN') : "-"
       },
@@ -1064,27 +1064,17 @@ export default function HubFinance() {
                 ) : (
                   <>
                     <p className="text-4xl font-bold text-gray-900 mb-2">
-                      ₹{((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹{(financeData?.currentCycle?.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <p className="text-sm text-gray-600 mb-4">
                       {financeData?.currentCycle?.totalOrders || 0} {financeData?.currentCycle?.totalOrders === 1 ? 'order' : 'orders'}
                       {currentCycleDiningSummary.count > 0 ? ` • ${currentCycleDiningSummary.count} dining bill${currentCycleDiningSummary.count === 1 ? '' : 's'}` : ''}
                     </p>
-                    {currentCycleDiningSummary.count > 0 ? (
-                      <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 mb-4">
-                        <p className="text-xs font-medium text-gray-700">
-                          Dining added: ₹{currentCycleDiningSummary.earnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-[11px] text-gray-500 mt-0.5">
-                          Gross ₹{currentCycleDiningSummary.gross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Commission ₹{currentCycleDiningSummary.commission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    ) : null}
                     <button
                       onClick={() => setShowWithdrawalModal(true)}
-                      disabled={!(((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings) > 0)}
+                      disabled={!((financeData?.currentCycle?.estimatedPayout || 0) > 0)}
                       className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2 mt-4 transition-colors ${
-                        ((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings) > 0
+                        (financeData?.currentCycle?.estimatedPayout || 0) > 0
                           ? "bg-black text-white hover:bg-gray-800"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
@@ -1362,7 +1352,7 @@ export default function HubFinance() {
                                 </p>
                                 {transaction.type === "dining" ? (
                                   <p className="text-[11px] text-gray-500 mt-1">
-                                    Commission ₹{Number(transaction.commission || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Paid {formatDateTime(transaction.billPaidAt || transaction.createdAt)}
+                                    Paid {formatDateTime(transaction.billPaidAt || transaction.createdAt)}
                                   </p>
                                 ) : null}
                               </div>
@@ -1405,10 +1395,6 @@ export default function HubFinance() {
                   <p className="text-base font-semibold text-gray-900">₹{invoiceSummary.earnings.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 <div className="rounded-md bg-gray-50 p-3">
-                  <p className="text-xs text-gray-600">Commission</p>
-                  <p className="text-base font-semibold text-gray-900">₹{invoiceSummary.commission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-                <div className="rounded-md bg-gray-50 p-3">
                   <p className="text-xs text-gray-600">Gross amount</p>
                   <p className="text-base font-semibold text-gray-900">₹{invoiceSummary.gross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
@@ -1437,7 +1423,7 @@ export default function HubFinance() {
                           </p>
                           {transaction.type === "dining" ? (
                             <p className="text-xs text-gray-500 mt-1">
-                              Commission: ₹{Number(transaction.commission || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Net: ₹{Number(transaction.payout || transaction.restaurantEarning || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              Net: ₹{Number(transaction.payout || transaction.restaurantEarning || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                           ) : null}
                         </div>
@@ -1491,7 +1477,7 @@ export default function HubFinance() {
                 
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-2">
-                    Available Balance: <span className="font-semibold text-gray-900">₹{((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    Available Balance: <span className="font-semibold text-gray-900">₹{(financeData?.currentCycle?.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </p>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Enter Amount to Withdraw
@@ -1499,14 +1485,14 @@ export default function HubFinance() {
                   <input
                     type="number"
                     min="0.01"
-                    max={(financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings}
+                    max={financeData?.currentCycle?.estimatedPayout || 0}
                     step="0.01"
                     value={withdrawalAmount}
                     onChange={(e) => setWithdrawalAmount(e.target.value)}
                     placeholder="0.00"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
                   />
-                  {withdrawalAmount && parseFloat(withdrawalAmount) > ((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings) && (
+                  {withdrawalAmount && parseFloat(withdrawalAmount) > (financeData?.currentCycle?.estimatedPayout || 0) && (
                     <p className="text-sm text-red-600 mt-1">Amount cannot exceed available balance</p>
                   )}
                 </div>
@@ -1528,7 +1514,7 @@ export default function HubFinance() {
                         alert('Please enter a valid amount')
                         return
                       }
-                      if (amount > ((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings)) {
+                      if (amount > (financeData?.currentCycle?.estimatedPayout || 0)) {
                         alert('Amount cannot exceed available balance')
                         return
                       }
@@ -1563,7 +1549,7 @@ export default function HubFinance() {
                         setSubmittingWithdrawal(false)
                       }
                     }}
-                    disabled={submittingWithdrawal || !withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > ((financeData?.currentCycle?.estimatedPayout || 0) + currentCycleDiningSummary.earnings)}
+                    disabled={submittingWithdrawal || !withdrawalAmount || parseFloat(withdrawalAmount) <= 0 || parseFloat(withdrawalAmount) > (financeData?.currentCycle?.estimatedPayout || 0)}
                     className="flex-1 px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     {submittingWithdrawal ? 'Submitting...' : 'Submit Request'}

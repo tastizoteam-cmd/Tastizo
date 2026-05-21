@@ -1050,7 +1050,6 @@ export default function DiningReservations() {
                                                                     </span>
                                                                     {booking.billStatus === 'paid' && (
                                                                         <div className="text-[9px] text-slate-500 font-medium text-right mt-1 bg-slate-50 p-1.5 rounded border border-slate-100">
-                                                                            <div>Admin Fee ({booking.commissionPct ?? 10}%): <span className="font-bold text-indigo-600">₹{(booking.billAmount * ((booking.commissionPct ?? 10) / 100)).toFixed(2)}</span></div>
                                                                             <div>Your Share: <span className="font-bold text-emerald-600">₹{(booking.billAmount - (booking.billAmount * ((booking.commissionPct ?? 10) / 100))).toFixed(2)}</span></div>
                                                                         </div>
                                                                     )}
@@ -1223,10 +1222,6 @@ export default function DiningReservations() {
                                                          </div>
                                                          {booking.billStatus === 'paid' && (
                                                              <div className="text-[10px] text-slate-500 font-medium w-full border-t border-slate-200/60 pt-1.5 mt-0.5 space-y-0.5">
-                                                                 <div className="flex justify-between">
-                                                                     <span>Admin Commission ({booking.commissionPct ?? 10}%):</span>
-                                                                     <span className="font-bold text-indigo-600">₹{(booking.billAmount * ((booking.commissionPct ?? 10) / 100)).toFixed(2)}</span>
-                                                                 </div>
                                                                  <div className="flex justify-between">
                                                                      <span>Your Payout:</span>
                                                                      <span className="font-bold text-emerald-600">₹{(booking.billAmount - (booking.billAmount * ((booking.commissionPct ?? 10) / 100))).toFixed(2)}</span>
