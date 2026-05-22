@@ -26,6 +26,7 @@ const mapOptions = {
   streetViewControl: false,
   rotateControl: false,
   fullscreenControl: false,
+  gestureHandling: "greedy",
   styles: [
     { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
     { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
@@ -62,8 +63,31 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
       scaleControl: false,
       streetViewControl: false,
       rotateControl: false,
-      fullscreenControl: false
+      fullscreenControl: false,
+      gestureHandling: "greedy"
     });
+
+    let isProgrammaticChange = false;
+    mapInstance._setProgrammaticChange = (val) => { isProgrammaticChange = val; };
+    mapInstance.userHasInteracted = false;
+
+    const trackInteraction = () => {
+      if (!isProgrammaticChange) {
+        mapInstance.userHasInteracted = true;
+      }
+    };
+
+    mapInstance.addListener('dragstart', trackInteraction);
+    mapInstance.addListener('zoom_changed', () => {
+      // Limit interaction tracking to zoom_changed if not programmatic
+      if (!isProgrammaticChange) {
+        // Small timeout to allow programmatic zoom to finish
+        setTimeout(() => {
+          if (!isProgrammaticChange) trackInteraction();
+        }, 100);
+      }
+    });
+
     setMapInternal(mapInstance);
     if (onMapLoad) onMapLoad(mapInstance);
   };
@@ -113,6 +137,70 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     const lng = parseFloat(riderLocation.lng || riderLocation.longitude);
     return (Number.isFinite(lat) && Number.isFinite(lng)) ? { lat, lng, heading: parseFloat(riderLocation.heading || 0) } : null;
   }, [riderLocation]);
+
+  const [animatedRiderLocation, setAnimatedRiderLocation] = useState(null);
+  const animationRef = useRef(null);
+  const lastRiderLocationRef = useRef(null);
+  const animatedRiderLocationRef = useRef(null);
+
+  useEffect(() => {
+    if (!parsedRiderLocation) return;
+
+    // First time — snap immediately, no animation needed
+    if (!lastRiderLocationRef.current) {
+      setAnimatedRiderLocation(parsedRiderLocation);
+      lastRiderLocationRef.current = parsedRiderLocation;
+      animatedRiderLocationRef.current = parsedRiderLocation;
+      return;
+    }
+
+    // Same position, just update heading
+    if (parsedRiderLocation.lat === lastRiderLocationRef.current.lat &&
+        parsedRiderLocation.lng === lastRiderLocationRef.current.lng) {
+      setAnimatedRiderLocation(prev => prev ? { ...prev, heading: parsedRiderLocation.heading } : parsedRiderLocation);
+      return;
+    }
+
+    // Use ref (not state) as start so we don't add animatedRiderLocation to deps
+    const startLocation = animatedRiderLocationRef.current || lastRiderLocationRef.current;
+    const endLocation = parsedRiderLocation;
+
+    const startTime = performance.now();
+    const duration = 2000; // 2 seconds smooth animation
+
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const lat = startLocation.lat + (endLocation.lat - startLocation.lat) * progress;
+      const lng = startLocation.lng + (endLocation.lng - startLocation.lng) * progress;
+      const nextPos = { lat, lng, heading: endLocation.heading };
+
+      animatedRiderLocationRef.current = nextPos;
+      setAnimatedRiderLocation(nextPos);
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        lastRiderLocationRef.current = endLocation;
+        animationRef.current = null;
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+    lastRiderLocationRef.current = parsedRiderLocation;
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+  // Only re-run when GPS location changes — NOT when animatedRiderLocation changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedRiderLocation]);
 
   useEffect(() => { if (map) map.setZoom(zoom); }, [zoom, map]);
 
@@ -184,24 +272,44 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
 
   const lastCenteredPosRef = useRef(null);
   const lastBoundsUpdateRef = useRef(0);
+  const hasInitialBoundsFitted = useRef(false);
+
   useEffect(() => {
     if (!map || !window.google?.maps) return;
 
     const hasAnchors = restaurantPoint || customerPoint;
     if (!hasAnchors && !parsedRiderLocation) return;
 
+    if (map.userHasInteracted) return;
+
     const now = Date.now();
+    
+    if (!hasInitialBoundsFitted.current) {
+      if (map._setProgrammaticChange) map._setProgrammaticChange(true);
+      const bounds = new window.google.maps.LatLngBounds();
+      if (restaurantPoint) bounds.extend(restaurantPoint);
+      if (customerPoint) bounds.extend(customerPoint);
+      if (parsedRiderLocation) bounds.extend(parsedRiderLocation);
+
+      map.fitBounds(bounds, { top: 70, right: 70, bottom: 120, left: 70 });
+      hasInitialBoundsFitted.current = true;
+      lastBoundsUpdateRef.current = now;
+      
+      setTimeout(() => {
+        if (map._setProgrammaticChange) map._setProgrammaticChange(false);
+      }, 500);
+      return;
+    }
+
     if (now - lastBoundsUpdateRef.current < 12000) return;
     lastBoundsUpdateRef.current = now;
 
-    const bounds = new window.google.maps.LatLngBounds();
-    if (restaurantPoint) bounds.extend(restaurantPoint);
-    if (customerPoint) bounds.extend(customerPoint);
-    if (parsedRiderLocation) bounds.extend(parsedRiderLocation);
-
-    map.fitBounds(bounds, { top: 70, right: 70, bottom: 120, left: 70 });
-
     if (parsedRiderLocation) {
+      if (map._setProgrammaticChange) map._setProgrammaticChange(true);
+      map.panTo(parsedRiderLocation);
+      setTimeout(() => {
+        if (map._setProgrammaticChange) map._setProgrammaticChange(false);
+      }, 500);
       lastCenteredPosRef.current = parsedRiderLocation;
     }
   }, [map, parsedRiderLocation, restaurantPoint, customerPoint]);
@@ -265,9 +373,9 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
           <Polyline path={remainingPath} options={{ strokeColor: '#22c55e', strokeOpacity: 0.98, strokeWeight: 7, zIndex: 12 }} />
         )}
 
-        {parsedRiderLocation && (
-          <OverlayView position={parsedRiderLocation} mapPaneName={OverlayView.MARKER_LAYER}>
-            <div style={{ transform: `translate(-50%, -50%) rotate(${parsedRiderLocation.heading || 0}deg)`, transition: 'transform 0.5s linear' }} className="relative w-[72px] h-[72px]">
+        {animatedRiderLocation && (
+          <OverlayView position={animatedRiderLocation} mapPaneName={OverlayView.MARKER_LAYER}>
+            <div style={{ transform: `translate(-50%, -50%) rotate(${animatedRiderLocation.heading || 0}deg)`, transition: 'transform 0.5s linear' }} className="relative w-[72px] h-[72px]">
               <img src="/MapRider.png" alt="Rider" className="w-full h-full object-contain" />
             </div>
           </OverlayView>

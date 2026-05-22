@@ -601,6 +601,7 @@ export default function GoogleMapsTracking({
         zoom={13}
         onLoad={onLoad}
         options={{
+          gestureHandling: "greedy",
           zoomControl: false,
           streetViewControl: false,
           mapTypeControl: false,

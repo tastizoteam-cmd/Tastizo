@@ -1534,6 +1534,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
 
   const handleCenterMap = () => {
     if (mapRef.current && useDeliveryStore.getState().riderLocation) {
+      mapRef.current.userHasInteracted = false;
       const loc = useDeliveryStore.getState().riderLocation;
       mapRef.current.panTo({ 
         lat: parseFloat(loc.lat || loc.latitude), 
