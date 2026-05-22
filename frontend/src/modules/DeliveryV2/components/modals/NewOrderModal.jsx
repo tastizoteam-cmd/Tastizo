@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, ChefHat, ChevronDown } from 'lucide-react';
 import { ActionSlider } from '@/modules/DeliveryV2/components/ui/ActionSlider';
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
+import { useTrackingStore } from '@/modules/DeliveryV2/hooks/tracking/useTrackingStore';
 import { getHaversineDistance } from '@/modules/DeliveryV2/utils/geo';
 import { formatCurrency } from '@food/utils/currency';
 
@@ -49,7 +50,7 @@ const formatDistanceLabel = (distanceKm) => {
  * Matches the Zomato/Swiggy style Green Header + White Card.
  */
 export const NewOrderModal = ({ order, onAccept, onReject, onMinimize }) => {
-  const { riderLocation } = useDeliveryStore();
+  const riderLocation = useTrackingStore((state) => state.riderLocation);
   const formatMoney = (value) =>
     formatCurrency(Number(value) || 0, "\u20B9").replace("\u20B9 ", "\u20B9");
   const resolveEstimatedEarning = (orderLike) =>

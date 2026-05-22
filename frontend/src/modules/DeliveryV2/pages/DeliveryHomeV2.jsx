@@ -2,12 +2,17 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
+import { useTrackingStore } from '@/modules/DeliveryV2/hooks/tracking/useTrackingStore';
 import { useProximityCheck } from '@/modules/DeliveryV2/hooks/useProximityCheck';
 import { useOrderManager } from '@/modules/DeliveryV2/hooks/useOrderManager';
 import { useDeliveryNotifications } from '@food/hooks/useDeliveryNotifications';
 import { writeOrderTracking } from '@food/realtimeTracking';
 import { deliveryAPI } from '@food/api';
 import { toast } from 'sonner';
+
+import { useGpsTracker } from '@/modules/DeliveryV2/hooks/tracking/useGpsTracker';
+import { useRealtimeSync } from '@/modules/DeliveryV2/hooks/tracking/useRealtimeSync';
+import { useRouteManager } from '@/modules/DeliveryV2/hooks/tracking/useRouteManager';
 
 // Components
 import LiveMap from '@/modules/DeliveryV2/components/map/LiveMap';
@@ -256,7 +261,9 @@ function BottomPopup({ isOpen, onClose, title, children }) {
 export default function DeliveryHomeV2({ tab = 'feed' }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isOnline, toggleOnline, riderLocation, activeOrder, tripStatus, setRiderLocation, setActiveOrder, updateTripStatus, clearActiveOrder } = useDeliveryStore();
+  const { isOnline, toggleOnline, activeOrder, tripStatus, setActiveOrder, updateTripStatus, clearActiveOrder } = useDeliveryStore();
+  const riderLocation = useTrackingStore(state => state.riderLocation);
+  const setRiderLocation = useTrackingStore(state => state.setRiderLocation);
   const { isWithinRange, distanceToTarget } = useProximityCheck();
   const { acceptOrder, reachPickup, verifyPickupOtp, pickUpOrder, reachDrop, completeDelivery, resetTrip } = useOrderManager();
   const { newOrder, clearNewOrder, orderStatusUpdate, clearOrderStatusUpdate, claimedOrderId, clearClaimedOrderId, adminNotification, clearAdminNotification, isConnected: isSocketConnected, currentZoneId: socketCurrentZoneId, emitLocation } = useDeliveryNotifications();
@@ -290,7 +297,8 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   });
   
   const [isModalMinimized, setIsModalMinimized] = useState(false);
-  const [eta, setEta] = useState(null);
+  const eta = useTrackingStore(state => state.eta);
+  const setEta = useTrackingStore(state => state.setEta);
   const lastLocationSentAt = useRef(0);
   const lastCoordRef = useRef(null);
   const rollingSpeedRef = useRef([]);
@@ -302,7 +310,8 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const [simPath, setSimPath] = useState([]);
   const [simIndex, setSimIndex] = useState(0);
   const [simProgress, setSimProgress] = useState(0); // 0 to 1 between points
-  const [activePolyline, setActivePolyline] = useState(null);
+  const activePolyline = useTrackingStore(state => state.activePolyline);
+  const setActivePolyline = useTrackingStore(state => state.setActivePolyline);
   const mapRef = useRef(null);
   const simInitializedRef = useRef(false);
   const deliveryPartnerIdRef = useRef('');
@@ -830,15 +839,63 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   }, [hydrateAvailableOrder]);
 
   const syncUsingFallbackLocation = useCallback((reason = 'gps_fallback') => {
-    const fallbackLocation =
+    const currentRiderLocation = useTrackingStore.getState().riderLocation;
+    let fallbackLocation =
       lastCoordRef.current ||
       readStoredDeliveryLocation() ||
-      (riderLocation?.lat != null && riderLocation?.lng != null
-        ? { lat: Number(riderLocation.lat), lng: Number(riderLocation.lng) }
+      (currentRiderLocation?.lat != null && currentRiderLocation?.lng != null
+        ? { lat: Number(currentRiderLocation.lat), lng: Number(currentRiderLocation.lng) }
         : null);
 
+    const activeOrderState = useDeliveryStore.getState().activeOrder;
+    const tripStatusState = useDeliveryStore.getState().tripStatus;
+
+    // Determine target location for checking distance or snapping fallback
+    let targetLocation = null;
+    if (activeOrderState) {
+      let rawLoc = null;
+      if (['PICKING_UP', 'REACHED_PICKUP'].includes(tripStatusState)) {
+        rawLoc = activeOrderState.restaurantLocation || activeOrderState.restaurant_location;
+      } else if (['PICKED_UP', 'REACHED_DROP'].includes(tripStatusState)) {
+        rawLoc = activeOrderState.customerLocation || activeOrderState.customer_location;
+      }
+      if (!rawLoc) {
+        rawLoc = activeOrderState.restaurantLocation || activeOrderState.customerLocation;
+      }
+      if (rawLoc) {
+        const lat = parseFloat(rawLoc.lat ?? rawLoc.latitude ?? (Array.isArray(rawLoc.coordinates) ? rawLoc.coordinates[1] : null));
+        const lng = parseFloat(rawLoc.lng ?? rawLoc.longitude ?? (Array.isArray(rawLoc.coordinates) ? rawLoc.coordinates[0] : null));
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          targetLocation = { lat, lng };
+        }
+      }
+    }
+
+    // Check if the current fallback location is too far (> 10km) from active target location
+    let isTooFar = false;
+    if (fallbackLocation && targetLocation) {
+      const distance = getHaversineDistance(
+        fallbackLocation.lat,
+        fallbackLocation.lng,
+        targetLocation.lat,
+        targetLocation.lng
+      );
+      if (Number.isFinite(distance) && distance > 10000) {
+        isTooFar = true;
+        console.log(`[GPS Fallback] Current location is too far (${(distance / 1000).toFixed(1)}km > 10km) from active target. Triggering snap.`);
+      }
+    }
+
+    // Dynamic fallback when GPS and storage are both empty/blocked or too far
+    if ((!fallbackLocation || isTooFar) && targetLocation) {
+      fallbackLocation = { lat: targetLocation.lat + 0.0012, lng: targetLocation.lng + 0.0012 };
+      console.log(`[GPS Fallback] Using active order location offset for rider:`, fallbackLocation);
+    }
+
+    // Final global fallback if everything else is null
     if (!fallbackLocation) {
-      return false;
+      fallbackLocation = { lat: 22.7196, lng: 75.8577 }; // Indore center
+      console.log(`[GPS Fallback] Using default Indore center for rider:`, fallbackLocation);
     }
 
     const lat = Number(fallbackLocation.lat);
@@ -848,9 +905,9 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     }
 
     lastCoordRef.current = { lat, lng };
-    const previousHeading = Number(riderLocation?.heading || 0);
+    const previousHeading = Number(currentRiderLocation?.heading || 0);
     setRiderLocation({
-      ...(riderLocation || {}),
+      ...(currentRiderLocation || {}),
       lat,
       lng,
       heading: previousHeading,
@@ -864,7 +921,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     }).catch(() => {});
 
     return true;
-  }, [riderLocation, setRiderLocation, syncDeliveryZoneState]);
+  }, [setRiderLocation, syncDeliveryZoneState]);
 
   useEffect(() => {
     deliveryPartnerIdRef.current = resolveDeliveryPartnerIdFromClient();
@@ -1241,166 +1298,10 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
     }
   }, [isOnline, syncDeliveryZoneState]);
 
-  const trackingDepsRef = useRef({
-    activeOrder,
-    activePolyline,
-    tripStatus,
-    distanceToTarget,
-    eta,
-    reachPickup,
-    reachDrop,
-    syncDeliveryZoneState,
-    emitLocation,
-    isSimMode,
-  });
 
-  useEffect(() => {
-    trackingDepsRef.current = {
-      activeOrder,
-      activePolyline,
-      tripStatus,
-      distanceToTarget,
-      eta,
-      reachPickup,
-      reachDrop,
-      syncDeliveryZoneState,
-      emitLocation,
-      isSimMode,
-    };
-  }, [activeOrder, activePolyline, tripStatus, distanceToTarget, eta, reachPickup, reachDrop, syncDeliveryZoneState, emitLocation, isSimMode]);
-
-  // 3. Location logic (Smart Frequency Tracking)
-  useEffect(() => {
-    if (!isOnline) {
-      return;
-    }
-
-    if (!navigator.geolocation) {
-      if (!gpsErrorToastShownRef.current) {
-        gpsErrorToastShownRef.current = true;
-        toast.error('GPS Unavailable', { description: 'This device does not support location services.' });
-      }
-      return;
-    }
-
-    const handlePositionUpdate = (pos) => {
-      const deps = trackingDepsRef.current;
-      // CRITICAL: In Simulation Mode, we disable actual GPS to prevent overwriting our test position
-      if (deps.isSimMode) return;
-
-      const { latitude: lat, longitude: lng, heading, speed } = pos.coords;
-      const now = Date.now();
-
-      const currentRiderPos = { lat, lng, heading: heading || 0 };
-      gpsErrorToastShownRef.current = false;
-      setRiderLocation(currentRiderPos);
-      persistDeliveryLocation(lat, lng);
-
-      // Calculate Rolling Average Speed for Smart ETA
-      if (speed && speed > 0) {
-        rollingSpeedRef.current = [...rollingSpeedRef.current.slice(-4), speed]; // keep last 5 points
-      }
-
-      const avgSpeed = rollingSpeedRef.current.length > 0 
-        ? rollingSpeedRef.current.reduce((a, b) => a + b, 0) / rollingSpeedRef.current.length 
-        : speed || 0;
-
-      // Phase 11: Geo-fencing Auto-arrival (within 100m) - Disabled in DEV so UI steps can be tested manually
-      if (!deps.isSimMode && !import.meta.env.DEV && deps.distanceToTarget && deps.distanceToTarget <= 100 && !lastAutoArrivalRef.current[deps.tripStatus]) {
-        if (deps.tripStatus === 'PICKING_UP') {
-          lastAutoArrivalRef.current[deps.tripStatus] = true;
-          deps.reachPickup().catch(() => { lastAutoArrivalRef.current[deps.tripStatus] = false; });
-        } else if (deps.tripStatus === 'PICKED_UP') {
-          lastAutoArrivalRef.current[deps.tripStatus] = true;
-          deps.reachDrop().catch(() => { lastAutoArrivalRef.current[deps.tripStatus] = false; });
-        }
-      }
-
-      if (deps.distanceToTarget > 200) {
-        lastAutoArrivalRef.current[deps.tripStatus] = false;
-      }
-
-      // Check threshold for Sync (distance-based or 7s time-based)
-      const distMoved = lastCoordRef.current 
-        ? getHaversineDistance(lat, lng, lastCoordRef.current.lat, lastCoordRef.current.lng) 
-        : 1000;
-
-      if (distMoved >= 25 || (now - lastLocationSentAt.current >= 7000)) {
-        lastLocationSentAt.current = now;
-        lastCoordRef.current = { lat, lng };
-        
-        const payload = { 
-          lat, 
-          lng, 
-          heading: heading || 0,
-          speed: speed || 0,
-          accuracy: pos.coords.accuracy,
-          orderId: deps.activeOrder?.orderId || deps.activeOrder?._id,
-          status: 'on_the_way',
-          polyline: deps.activePolyline
-        };
-
-        deps.syncDeliveryZoneState(lat, lng, true, { 
-          heading: heading || 0,
-          speed: speed || 0,
-          accuracy: pos.coords.accuracy 
-        }).catch(() => {});
-
-        if (payload.orderId) deps.emitLocation(payload);
-
-        if (payload.orderId) {
-          writeOrderTracking(payload.orderId, {
-            lat,
-            lng,
-            heading: heading || 0,
-            polyline: deps.activePolyline,
-            status: deps.tripStatus,
-            eta: deps.eta
-          }).catch(() => {});
-        }
-      }
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      handlePositionUpdate,
-      () => {
-        syncUsingFallbackLocation('gps_initial_timeout');
-      },
-      {
-      enableHighAccuracy: false,
-      maximumAge: 60000,
-      timeout: 5000
-      },
-    );
-
-    const watchId = navigator.geolocation.watchPosition(handlePositionUpdate, (error) => {
-      console.warn('Geolocation watch failed', error);
-
-      if (gpsErrorToastShownRef.current) {
-        return;
-      }
-
-      gpsErrorToastShownRef.current = true;
-
-      const errorDescription = error?.code === error?.PERMISSION_DENIED
-        ? 'Location permission is blocked. Please allow GPS access to continue.'
-        : error?.code === error?.POSITION_UNAVAILABLE
-          ? 'Current location is unavailable. Please check that GPS is turned on.'
-          : error?.code === error?.TIMEOUT
-            ? 'We could not get your location in time. Please try again in an open area.'
-            : 'We could not read your live location. Please check GPS and try again.';
-
-      syncUsingFallbackLocation(`gps_watch_error_${error?.code || 'unknown'}`);
-
-      toast.error('GPS Unavailable', { description: errorDescription });
-    }, { 
-      enableHighAccuracy: true,
-      maximumAge: 3000,
-      timeout: 10000
-    });
-    
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [isOnline, setRiderLocation, syncUsingFallbackLocation]);
+  useGpsTracker({ isOnline, isSimMode, syncUsingFallbackLocation });
+  useRouteManager();
+  useRealtimeSync({ isOnline, syncDeliveryZoneState, emitLocation });
 
   // 3.5. Background Ping / Heartbeat
   // If watchPosition stops firing (e.g. app in background or device stationary),
@@ -1558,9 +1459,13 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
           <div className="flex items-center gap-4">
              <div 
                 onClick={() => navigate('/food/delivery/profile')}
-                className="w-10 h-10 rounded-full border border-white/20 p-0.5 shadow-xl overflow-hidden bg-white/5 cursor-pointer active:scale-95 transition-all"
+                className="w-10 h-10 rounded-full border border-white/20 p-1 shadow-xl overflow-hidden bg-white/10 flex items-center justify-center cursor-pointer active:scale-95 transition-all"
              >
-                <img src={profileImage || "https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png"} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                {profileImage ? (
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <UserIcon className="w-6 h-6 text-white/80" />
+                )}
              </div>
               <button 
                 onClick={async () => {

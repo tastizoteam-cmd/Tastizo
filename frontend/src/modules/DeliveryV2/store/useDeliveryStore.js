@@ -18,14 +18,14 @@ import { persist } from 'zustand/middleware'
 
 /**
  * useDeliveryStore - Professional Zustand store for Delivery V2
- * Handles Trip Lifecycle, Rider Status, and Admin Settings.
+ * Handles Trip Lifecycle and Admin Settings.
+ * NOTE: High-frequency GPS data (riderLocation) is managed by useTrackingStore to prevent re-renders.
  */
 export const useDeliveryStore = create(
   persist(
     (set, get) => ({
       // --- Rider Status ---
       isOnline: false,
-      riderLocation: null, // { lat, lng }
       
       // --- Trip State ---
       activeOrder: null, // ActiveOrder | null
@@ -41,8 +41,6 @@ export const useDeliveryStore = create(
       toggleOnline: () => set((state) => ({ isOnline: !state.isOnline })),
       
       setOnline: (online) => set({ isOnline: online }),
-      
-      setRiderLocation: (location) => set({ riderLocation: location }),
       
       setSettings: (newSettings) => set((state) => ({
         settings: { ...state.settings, ...newSettings }

@@ -9,6 +9,7 @@ import {
   OverlayView
 } from '@react-google-maps/api';
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
+import { useTrackingStore } from '@/modules/DeliveryV2/hooks/tracking/useTrackingStore';
 import { zoneAPI } from '@food/api';
 
 const mapContainerStyle = {
@@ -42,7 +43,9 @@ const mapOptions = {
 const LIBRARIES = ['places', 'geometry'];
 
 export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineReceived, zoom = 12 }) => {
-  const { riderLocation, activeOrder, tripStatus } = useDeliveryStore();
+  const { activeOrder, tripStatus } = useDeliveryStore();
+  const riderLocation = useTrackingStore(state => state.riderLocation);
+  
   const isRouteActive = Boolean(activeOrder) && ['PICKING_UP', 'REACHED_PICKUP', 'PICKED_UP', 'REACHED_DROP'].includes(tripStatus);
   
   const { isLoaded, loadError } = useJsApiLoader({
@@ -376,7 +379,15 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
         {animatedRiderLocation && (
           <OverlayView position={animatedRiderLocation} mapPaneName={OverlayView.MARKER_LAYER}>
             <div style={{ transform: `translate(-50%, -50%) rotate(${animatedRiderLocation.heading || 0}deg)`, transition: 'transform 0.5s linear' }} className="relative w-[72px] h-[72px]">
-              <img src="/MapRider.png" alt="Rider" className="w-full h-full object-contain" />
+              <img 
+                src="/tastizo_rider.png" 
+                alt="Rider" 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  console.error('Failed to load /tastizo_rider.png, falling back to /MapRider.png');
+                  e.target.src = "/MapRider.png";
+                }}
+              />
             </div>
           </OverlayView>
         )}

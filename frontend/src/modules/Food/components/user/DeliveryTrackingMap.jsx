@@ -317,7 +317,7 @@ const DeliveryTrackingMap = ({
         }}
       >
         {/* 1. PERSISTENT BASELINE (Full journey: Restaurant -> Customer) */}
-        {!baselineDirections && baselineDirectionsServiceOptions && (
+        {!isOrderPickedUp && !baselineDirections && baselineDirectionsServiceOptions && (
            <DirectionsService
              options={baselineDirectionsServiceOptions}
              callback={(r, s) => { 
@@ -335,7 +335,7 @@ const DeliveryTrackingMap = ({
         )}
 
         {/* 1. PERSISTENT BASELINE (Full journey: Restaurant -> Customer) */}
-        {baselineDirections && (
+        {!isOrderPickedUp && baselineDirections && (
           <Polyline
             path={baselineDirections.routes[0].overview_path}
             options={{
@@ -463,7 +463,7 @@ const DeliveryTrackingMap = ({
               className="relative w-16 h-16"
             >
               <img 
-                src="/MapRider.png" 
+                src="/tastizo_rider.png" 
                 alt="Rider" 
                 className="w-full h-full object-contain drop-shadow-2xl"
                 onError={(e) => {

@@ -3038,7 +3038,7 @@ export async function approveRestaurantAddon(addonId) {
                 {
                     title: 'Addon Approved! Ã¢Å“...',
                     body: `Your addon "${updated.published?.name || 'New Addon'}" has been approved and is now live.`,
-                    image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                    image: '',
                     data: {
                         type: 'addon_approved',
                         addonId: String(updated._id),
@@ -3081,7 +3081,7 @@ export async function rejectRestaurantAddon(addonId, reason) {
                 {
                     title: 'Addon Rejected Ã¢ÂÅ’',
                     body: `Your addon request for "${updated.draft?.name || 'New Addon'}" was rejected. Reason: ${rejectionReason}`,
-                    image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                    image: '',
                     data: {
                         type: 'addon_rejected',
                         addonId: String(updated._id),
@@ -3465,7 +3465,7 @@ export async function approveRestaurant(id) {
                 {
                     title: 'Congratulations! Ã°Å¸Å½"°',
                     body: `Your restaurant "${updated.restaurantName}" has been approved. You can now start receiving orders!`,
-                    image: updated.profileImage || 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                    image: updated.profileImage || '',
                     data: {
                         type: 'restaurant_approved',
                         restaurantId: String(updated._id)
@@ -3503,7 +3503,7 @@ export async function rejectRestaurant(id, reason) {
                 {
                     title: 'Update on Registration Ã°Å¸""¹',
                     body: `Your restaurant registration for "${updated.restaurantName}" has been rejected. Reason: ${reason || 'Incomplete documents'}.`,
-                    image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                    image: '',
                     data: {
                         type: 'restaurant_rejected',
                         restaurantId: String(updated._id),
@@ -3600,7 +3600,7 @@ export async function createAdminOffer(body) {
                 {
                     title: 'New Campaign Invitation! Ã°Å¸"Â¢',
                     body: `You have been invited to join a new campaign: "${doc.couponCode}". Check it out now!`,
-                    image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                    image: '',
                     data: {
                         type: 'campaign_invitation',
                         offerId: String(doc._id),
@@ -3953,7 +3953,7 @@ export async function addDeliveryPartnerBonus(body, adminUser) {
             {
                 title: 'Bonus Credited! Ã°Å¸Å½Å ',
                 body: `You have received a bonus of \u20B9${body.amount}. ${body.reference || 'Great job!'}`,
-                image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                image: '',
                 data: {
                     type: 'bonus_credited',
                     amount: String(body.amount),
@@ -4310,7 +4310,7 @@ export async function creditEarningAddonHistory(historyId, notes) {
             {
                 title: 'Incentive Credited! Ã°Å¸Å½Â¯',
                 body: `Your incentive for "${doc.offerId?.title || 'Earning Addon'}" has been approved and moved to your pocket.`,
-                image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                image: '',
                 data: {
                     type: 'incentive_credited',
                     historyId: String(doc._id),
@@ -4342,7 +4342,7 @@ export async function cancelEarningAddonHistory(historyId, reason) {
             {
                 title: 'Incentive Update Ã°Å¸""¹',
                 body: `Your incentive request for "${doc.offerId?.title || 'Earning Addon'}" was not approved. Reason: ${doc.cancelReason || 'Ineligible'}`,
-                image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                image: '',
                 data: {
                     type: 'incentive_rejected',
                     historyId: String(doc._id),
@@ -4548,7 +4548,7 @@ export async function approveDeliveryPartner(id) {
             {
                 title: 'Welcome Aboard! Ã°Å¸Å¡Â²',
                 body: `Your delivery partner application has been approved. You can now go online and start earning!`,
-                image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                image: '',
                 data: {
                     type: 'onboarding_approved',
                     partnerId: String(partner._id)
@@ -4629,7 +4629,7 @@ export async function rejectDeliveryPartner(id, reason) {
                 {
                     title: 'Onboarding Update Ã°Å¸""¹',
                     body: `Your application to join as a delivery partner was rejected. Reason: ${reason || 'Incomplete documents'}.`,
-                    image: 'https://i.ibb.co/3m2Yh7r/Appzeto-Brand-Image.png',
+                    image: '',
                     data: {
                         type: 'onboarding_rejected',
                         partnerId: String(updated._id),
