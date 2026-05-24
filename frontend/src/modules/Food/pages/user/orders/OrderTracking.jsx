@@ -1448,7 +1448,7 @@ export default function OrderTracking() {
       {/* Green Header */}
       {/* Translucent Overlay Header */}
       <motion.div
-        className="fixed inset-x-0 top-0 z-50 bg-gradient-to-b from-white via-white/80 to-transparent pt-4 pb-12 pointer-events-none"
+        className="fixed inset-x-0 top-0 z-50 bg-gradient-to-b from-white via-white/80 to-transparent pt-7 pb-12 pointer-events-none"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -1570,7 +1570,7 @@ export default function OrderTracking() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col max-w-[70%]">
-                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-gray-100 leading-tight tracking-tight">{currentStatus.title}</h2>
+                  <h2 className="text-[22px] font-semibold text-gray-900 dark:text-gray-100 leading-tight tracking-tight">{currentStatus.title}</h2>
                   <p className="text-[14px] text-gray-500 dark:text-gray-400 mt-1 leading-snug">{currentStatus.subtitle}</p>
                 </div>
                 {typeof estimatedTime === 'number' && ['preparing', 'ready', 'at_pickup', 'assigned', 'on_way'].includes(orderStatus) ? (
@@ -1615,7 +1615,7 @@ export default function OrderTracking() {
                      setDeliveryInstructions(order?.note || "");
                      setIsInstructionsModalOpen(true);
                    }}
-                   className="text-[14px] font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 flex items-center gap-1 transition-colors"
+                   className="text-[14px] font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 flex items-center gap-1 transition-colors"
                  >
                    {order?.note ? 'Edit Delivery Instructions' : 'Add Delivery Instructions'} <ChevronRight className="w-4 h-4 mt-0.5" />
                  </button>
