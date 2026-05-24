@@ -176,11 +176,26 @@ router.get('/delivery/support-tickets/stats', adminController.getSupportTicketSt
 router.get('/delivery/support-tickets', adminController.getSupportTickets);
 router.patch('/delivery/support-tickets/:id', adminController.updateSupportTicket);
 router.get('/delivery/partners', adminController.getDeliveryPartners);
-router.post('/delivery', upload.any(), adminController.createDeliveryPartner);
-router.get('/delivery/:id', adminController.getDeliveryPartnerById);
-router.patch('/delivery/:id/approve', adminController.approveDeliveryPartner);
-router.patch('/delivery/:id/reject', adminController.rejectDeliveryPartner);
-router.delete('/delivery/:id', adminController.deleteDeliveryPartner);
+
+// ----- Foods -----
+router.get('/foods', adminController.getFoods);
+router.post('/foods', adminController.createFood);
+router.patch('/foods/:id', adminController.updateFood);
+router.delete('/foods/:id', adminController.deleteFood);
+// Food approval queue (pending items created by restaurants)
+router.get('/foods/pending-approvals', foodApprovalController.getPendingFoodApprovals);
+router.patch('/foods/:id/approve', foodApprovalController.approveFoodItemController);
+router.patch('/foods/:id/reject', foodApprovalController.rejectFoodItemController);
+
+// ----- Offers & Coupons -----
+router.get('/offers', adminController.getAllOffers);
+router.post('/offers', adminController.createAdminOffer);
+router.patch('/offers/:id/cart-visibility', adminController.updateAdminOfferCartVisibility);
+router.delete('/offers/:id', adminController.deleteAdminOffer);
+
+// ----- Feedback Experience (Admin) -----
+router.get('/feedback-experiences', feedbackExperienceController.getFeedbackExperiences);
+router.delete('/feedback-experiences/:id', feedbackExperienceController.deleteFeedbackExperience);
 
 // ----- Zones -----
 router.get('/zones', adminController.getZones);
@@ -199,6 +214,7 @@ router.patch('/dining/restaurants/:restaurantId', diningAdminController.updateDi
 router.get('/dining/requests', diningAdminController.listAllDiningRequests);
 router.patch('/dining/requests/:id/approve', diningAdminController.approveDiningRequest);
 router.patch('/dining/requests/:id/reject', diningAdminController.rejectDiningRequest);
+router.get('/finance/dining-earnings', adminController.getDiningEarningsController);
 
 // ----- Orders -----
 router.get('/orders', orderController.listOrdersAdminController);

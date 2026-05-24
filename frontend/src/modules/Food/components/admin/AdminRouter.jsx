@@ -122,6 +122,7 @@ const LandingPageManagement = lazy(() => import("@food/pages/admin/system/Landin
 const DiningManagement = lazy(() => import("@food/pages/admin/system/DiningManagement"));
 const DiningList = lazy(() => import("@food/pages/admin/system/DiningList"));
 const DiningRequests = lazy(() => import("@food/pages/admin/system/DiningRequests"));
+const DiningEarnings = lazy(() => import("@food/pages/admin/system/DiningEarnings"));
 const EditRestaurant = lazy(() => import("@food/pages/admin/restaurant/EditRestaurant"));
 const AdminLogin = lazy(() => import("@food/pages/admin/auth/AdminLogin"));
 const AdminSignup = lazy(() => import("@food/pages/admin/auth/AdminSignup"));
@@ -291,6 +292,7 @@ export default function AdminRouter() {
             <Route path="dining-management" element={<DiningManagement />} />
             <Route path="dining-list" element={<DiningList />} />
             <Route path="dining-requests" element={<DiningRequests />} />
+            <Route path="dining-earning" element={<DiningEarnings />} />
           </Route>
 
           {/* TAXI ADMIN - Placeholder for future implementation */}

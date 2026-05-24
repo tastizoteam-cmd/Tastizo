@@ -4134,6 +4134,111 @@ export async function getDeliveryEarnings(query = {}) {
     };
 }
 
+// ----- Dining Earnings (admin) -----
+export async function getDiningEarningsAdmin(query = {}) {
+    const page = Math.max(parseInt(query.page, 10) || 1, 1);
+    const limit = Math.max(1, Math.min(1000, parseInt(query.limit, 10) || 50));
+    const skip = (page - 1) * limit;
+
+    const filter = {
+        type: 'dining',
+        status: { $in: ['captured', 'paid', 'successful'] }
+    };
+
+    // Date range filters
+    const createdAtFilter = {};
+    if (query.fromDate) {
+        const from = new Date(query.fromDate);
+        if (!Number.isNaN(from.getTime())) {
+            from.setHours(0, 0, 0, 0);
+            createdAtFilter.$gte = from;
+        }
+    }
+    if (query.toDate) {
+        const to = new Date(query.toDate);
+        if (!Number.isNaN(to.getTime())) {
+            to.setHours(23, 59, 59, 999);
+            createdAtFilter.$lte = to;
+        }
+    }
+
+    if (createdAtFilter.$gte || createdAtFilter.$lte) {
+        filter.createdAt = createdAtFilter;
+    }
+
+    const search = String(query.search || '').trim();
+    if (search) {
+        const regex = new RegExp(search, 'i');
+        filter.$or = [
+            { bookingId: regex },
+            { orderReadableId: regex }
+        ];
+    }
+
+    const [transactions, total, earningsAgg] = await Promise.all([
+        FoodTransaction.find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate({ path: 'restaurantId', select: 'restaurantName name' })
+            .populate({ path: 'userId', select: 'name email phone' })
+            .lean(),
+        FoodTransaction.countDocuments(filter),
+        FoodTransaction.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalEarnings: { $sum: '$amounts.totalCustomerPaid' },
+                    totalCommission: { $sum: '$amounts.restaurantCommission' },
+                    platformNetProfit: { $sum: '$amounts.platformNetProfit' },
+                    couponDiscount: { $sum: '$amounts.couponDiscount' },
+                    restaurantShare: { $sum: '$amounts.restaurantShare' },
+                    totalOrders: { $sum: 1 }
+                }
+            }
+        ])
+    ]);
+
+    const earnings = transactions.map((tx) => {
+        return {
+            transactionId: String(tx._id),
+            bookingId: tx.bookingId || tx.orderReadableId || 'N/A',
+            restaurantName: tx?.restaurantId?.restaurantName || tx?.restaurantId?.name || 'N/A',
+            customerName: tx?.userId?.name || 'N/A',
+            customerPhone: tx?.userId?.phone || 'N/A',
+            grossBill: Number(tx?.pricing?.subtotal || 0) || 0,
+            customerPaid: Number(tx?.amounts?.totalCustomerPaid || 0) || 0,
+            restaurantShare: Number(tx?.amounts?.restaurantShare || 0) || 0,
+            commission: Number(tx?.amounts?.restaurantCommission || 0) || 0,
+            discount: Number(tx?.amounts?.couponDiscount || 0) || 0,
+            platformNetProfit: Number(tx?.amounts?.platformNetProfit || 0) || 0,
+            status: tx?.status || 'N/A',
+            createdAt: tx?.createdAt || null
+        };
+    });
+
+    const agg = earningsAgg?.[0] || {};
+
+    return {
+        earnings,
+        summary: {
+            totalEarnings: Number(agg.totalEarnings || 0),
+            totalCommission: Number(agg.totalCommission || 0),
+            platformNetProfit: Number(agg.platformNetProfit || 0),
+            couponDiscount: Number(agg.couponDiscount || 0),
+            restaurantShare: Number(agg.restaurantShare || 0),
+            totalOrders: Number(agg.totalOrders || 0)
+        },
+        pagination: {
+            page,
+            limit,
+            total,
+            pages: Math.ceil(total / limit) || 1
+        }
+    };
+}
+
 // ----- Earning Addon Offers (admin) -----
 export async function getEarningAddons() {
     const list = await FoodEarningAddon.find({})

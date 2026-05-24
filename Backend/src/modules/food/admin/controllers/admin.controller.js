@@ -1644,3 +1644,16 @@ export async function createDeliveryPartner(req, res, next) {
         next(error);
     }
 }
+
+export async function getDiningEarningsController(req, res, next) {
+    try {
+        const { getDiningEarningsAdmin } = await import('../services/admin.service.js');
+        const result = await getDiningEarningsAdmin(req.query);
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+}

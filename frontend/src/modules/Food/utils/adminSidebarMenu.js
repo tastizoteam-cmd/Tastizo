@@ -208,6 +208,7 @@ export const adminSidebarMenu = [
       { type: "link", label: "Dining Banners", path: "/admin/food/dining-management", icon: "UtensilsCrossed" },
       { type: "link", label: "Dining List", path: "/admin/food/dining-list", icon: "FileText" },
       { type: "link", label: "Dining Category Request", path: "/admin/food/dining-requests", icon: "CheckCircle" },
+      { type: "link", label: "Dining Earning", path: "/admin/food/dining-earning", icon: "IndianRupee" },
     ],
   },
   {

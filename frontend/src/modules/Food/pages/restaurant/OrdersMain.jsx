@@ -2989,26 +2989,32 @@ export default function OrdersMain() {
                     );
                   })()}
 
-                  {/* Preparation time */}
                   <div className="mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-gray-700">
-                        Preparation time
+                    <div className="flex flex-row items-center justify-between w-full gap-2">
+                      <span className="text-[12px] md:text-[13px] font-medium text-gray-700 flex-1 min-w-0 pr-1 break-words leading-tight">
+                        Set food preparation time
                       </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setPrepTime(Math.max(1, prepTime - 1))}
-                          className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
-                          <Minus className="w-4 h-4 text-gray-700" />
-                        </button>
-                        <span className="text-base font-semibold text-gray-900 min-w-[60px] text-center">
-                          {prepTime} mins
-                        </span>
-                        <button
-                          onClick={() => setPrepTime(prepTime + 1)}
-                          className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
-                          <Plus className="w-4 h-4 text-gray-700" />
-                        </button>
+                      <div className="flex flex-row items-center justify-end gap-1 md:gap-2 shrink-0">
+                        {/* KOT and ORDER buttons - desktop only */}
+                        <div className="hidden md:flex gap-1 mr-2">
+                           <span className="text-[10px] font-bold text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-50 transition-colors uppercase">KOT</span>
+                           <span className="text-[10px] font-bold text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-50 transition-colors uppercase">ORDER</span>
+                        </div>
+                        <div className="flex items-center justify-between border border-gray-200 rounded-lg p-0.5 w-[115px] md:w-[160px] bg-white">
+                          <button
+                            onClick={() => setPrepTime(Math.max(1, prepTime - 1))}
+                            className="p-1.5 hover:bg-gray-50 text-blue-600 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center">
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-[13px] md:text-[15px] font-bold text-gray-900 min-w-[50px] md:min-w-[60px] text-center px-0.5 md:px-1 whitespace-nowrap">
+                            {prepTime} mins
+                          </span>
+                          <button
+                            onClick={() => setPrepTime(prepTime + 1)}
+                            className="p-1.5 hover:bg-gray-50 text-blue-600 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center">
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

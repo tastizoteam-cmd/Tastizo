@@ -687,6 +687,12 @@ export const adminAPI = {
       params,
       contextModule: "admin",
     }),
+  /** Dining Earnings (admin) */
+  getDiningEarnings: (params = {}) =>
+    apiClient.get("/food/admin/finance/dining-earnings", {
+      params,
+      contextModule: "admin",
+    }),
   addDeliveryPartnerBonus: (deliveryPartnerId, amount, reference = "") =>
     apiClient.post(
       "/food/admin/delivery/bonus",
