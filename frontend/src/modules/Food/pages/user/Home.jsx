@@ -472,28 +472,10 @@ export default function Home() {
   const vegModeToggleRef = useRef(null);
 
   const [isStuck, setIsStuck] = useState(false);
-  const [stickyHeight, setStickyHeight] = useState(0);
-  const placeholderRef = useRef(null);
-  const stickyContentRef = useRef(null);
-
-  useEffect(() => {
-    const handleScrollHeader = () => {
-      if (!placeholderRef.current) return;
-      const rect = placeholderRef.current.getBoundingClientRect();
-      if (rect.top <= 0) {
-        setIsStuck(true);
-        if (stickyContentRef.current) {
-          setStickyHeight(stickyContentRef.current.offsetHeight);
-        }
-      } else {
-        setIsStuck(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScrollHeader, { passive: true });
-    handleScrollHeader();
-    return () => window.removeEventListener("scroll", handleScrollHeader);
-  }, []);
+  const inlineCategoriesRef = useRef(null);
+  const inlineSliderRef = useRef(null);
+  const fixedSliderRef = useRef(null);
+  const isSyncingScroll = useRef(false);
 
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [heroBannerImages, setHeroBannerImages] = useState([]);
@@ -772,6 +754,62 @@ export default function Home() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+  // Vertical scroll listener to toggle isStuck
+  useEffect(() => {
+    const handleScrollHeader = () => {
+      const inlineEl = inlineCategoriesRef.current;
+      if (!inlineEl) return;
+      
+      const rect = inlineEl.getBoundingClientRect();
+      if (rect.top <= 0) {
+        setIsStuck(true);
+      } else {
+        setIsStuck(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollHeader, { passive: true });
+    handleScrollHeader();
+
+    return () => window.removeEventListener("scroll", handleScrollHeader);
+  }, []);
+
+  // Sync scroll left position between inline and fixed category sliders
+  useEffect(() => {
+    const inlineEl = inlineSliderRef.current;
+    const fixedEl = fixedSliderRef.current;
+
+    if (!inlineEl || !fixedEl) return;
+
+    const handleSliderScroll = (sourceRef, targetRef) => {
+      return () => {
+        if (isSyncingScroll.current) return;
+        
+        const source = sourceRef.current;
+        const target = targetRef.current;
+        if (!source || !target) return;
+
+        isSyncingScroll.current = true;
+        target.scrollLeft = source.scrollLeft;
+        
+        requestAnimationFrame(() => {
+          isSyncingScroll.current = false;
+        });
+      };
+    };
+
+    const onInlineScroll = handleSliderScroll(inlineSliderRef, fixedSliderRef);
+    const onFixedScroll = handleSliderScroll(fixedSliderRef, inlineSliderRef);
+
+    inlineEl.addEventListener("scroll", onInlineScroll, { passive: true });
+    fixedEl.addEventListener("scroll", onFixedScroll, { passive: true });
+
+    return () => {
+      inlineEl.removeEventListener("scroll", onInlineScroll);
+      fixedEl.removeEventListener("scroll", onFixedScroll);
     };
   }, []);
 
@@ -1219,6 +1257,8 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false);
   const [showManageCollections, setShowManageCollections] = useState(false);
   const [selectedRestaurantSlug, setSelectedRestaurantSlug] = useState(null);
+
+  // Native CSS sticky handles height naturally without manual height state measurement
 
   // Fetch categories (zone-aware) for the homepage category rail.
   useEffect(() => {
@@ -2534,7 +2574,7 @@ export default function Home() {
 
   return (
 
-    <div className={`relative min-h-screen bg-white dark:bg-[#0a0a0a] ${shouldShowOutOfZoneHome ? 'pb-6' : 'pb-16 md:pb-6'} overflow-x-clip`}>
+    <div className={`relative min-h-screen bg-white dark:bg-[#0a0a0a] ${shouldShowOutOfZoneHome ? 'pb-6' : 'pb-16 md:pb-6'}`}>
 
 
       <div className="transition-all duration-300">
@@ -2648,10 +2688,23 @@ export default function Home() {
             background-color: #ef4f5f;
             background-image: linear-gradient(180deg, #ef4f5f 0%, #e03546 100%);
           }
+          @keyframes slideDownSticky {
+            from {
+              transform: translateY(-100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
+          .animate-slide-down-sticky {
+            animation: slideDownSticky 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
         `}</style>
         </div>
 
-        <div className="md:hidden relative overflow-x-clip bg-white dark:bg-[#0a0a0a]">
+        <div className="md:hidden relative bg-white dark:bg-[#0a0a0a]">
           {/* Brand Top Section (Dark) */}
           <div className="relative overflow-hidden bg-gradient-to-b from-[#3a142c] to-[#1a0a14] rounded-b-[2rem] shadow-lg mb-2">
             {festVideoActive && (
@@ -2730,139 +2783,6 @@ export default function Home() {
                     </Link>
                   </div>
                 </div>
-
-                {/* Heading Section - outside the sticky container so it scrolls away naturally */}
-                <div className="px-4 pt-2.5 pb-2 flex items-center gap-2 min-w-0">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white min-w-0 flex-shrink leading-tight pl-1">
-                    What's on your mind today?
-                  </h2>
-                  <div className="h-[1px] bg-gray-100 dark:bg-gray-800 flex-1"></div>
-                  <Link
-                    to="/food/user/categories"
-                    className="text-sm font-bold text-gray-400 dark:text-gray-500 flex items-center gap-0.5 whitespace-nowrap shrink-0 pr-1"
-                  >
-                    View All <ArrowDownUp className="h-3 w-3 rotate-90" />
-                  </Link>
-                </div>
-
-                {/* Scroll Placeholder element to prevent jumping when content goes fixed */}
-                <div ref={placeholderRef} style={{ height: isStuck ? `${stickyHeight}px` : "0px" }} />
-
-                {/* Sticky Categories & Filters Section */}
-                <div
-                  ref={stickyContentRef}
-                  id="categories-section"
-                  className={isStuck 
-                    ? "fixed top-0 left-0 right-0 z-[100] bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md border-b border-gray-100 dark:border-white/5 transition-all duration-300 pt-7 pb-3" 
-                    : "relative bg-white dark:bg-[#0a0a0a] transition-all duration-300 pt-2 pb-3"
-                  }
-                  style={{ willChange: "transform" }}
-                >
-                  {/* Categories Horizontal Slider */}
-                  <div className="px-4 py-2">
-                    <div
-                      className="flex overflow-x-auto gap-3 pb-1 scrollbar-hide mask-edge-fade"
-                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                    >
-                      {displayCategories.map((category, index) => (
-                        <Link
-                          key={category.id || index}
-                          to={`/food/user/category/${category.slug}`}
-                          className="flex-shrink-0 flex flex-col items-center gap-2.5 group w-[92px]"
-                        >
-                          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] group-active:scale-95 transition-all duration-300">
-                            {/* Shining Glint Effect */}
-                            <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-                              <motion.div
-                                animate={{
-                                  x: ['-200%', '200%'],
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  repeatDelay: 3 + index * 0.5,
-                                  ease: "easeInOut"
-                                }}
-                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] w-[150%] h-full"
-                              />
-                            </div>
-
-                            <OptimizedImage
-                              src={category.image}
-                              alt={category.name}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
-                          </div>
-                          <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center leading-tight line-clamp-1 w-full px-0.5">
-                            {category.name}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Filters Sticky Row */}
-                  <div
-                    className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 py-0.5"
-                    style={{
-                      scrollbarWidth: "none",
-                      msOverflowStyle: "none",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setIsFilterOpen(true)}
-                      className="h-9 px-4 rounded-full flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 font-bold transition-all bg-white dark:bg-[#1a1a1a] border border-gray-200 shadow-sm active:scale-95 text-xs text-black dark:text-white"
-                    >
-                      <SlidersHorizontal className="h-4 w-4" />
-                      <span>Filters</span>
-                    </button>
-
-                    {[
-                      { id: "delivery-under-30", label: "Under 30 mins" },
-                      { id: "delivery-under-45", label: "Under 45 mins" },
-                      { id: "distance-under-1km", label: "Under 1km", icon: MapPin },
-                      { id: "distance-under-2km", label: "Under 2km", icon: MapPin },
-                    ].map((filter) => {
-                      const Icon = filter.icon;
-                      const isActive = activeFilters.has(filter.id);
-                      return (
-                        <button
-                          key={filter.id}
-                          type="button"
-                          onClick={() => {
-                            const nextFilters = new Set(activeFilters);
-                            if (nextFilters.has(filter.id)) {
-                              nextFilters.delete(filter.id);
-                            } else {
-                              nextFilters.add(filter.id);
-                            }
-                            setActiveFilters(nextFilters);
-                            void applyFiltersAndRefetch(
-                              nextFilters,
-                              sortBy,
-                              selectedCuisine,
-                            );
-                          }}
-                          className={`h-9 px-4 rounded-full flex items-center gap-2 whitespace-nowrap flex-shrink-0 transition-all font-bold shadow-sm active:scale-95 ${isActive
-                            ? "bg-[#2A9C64] text-white border border-[#2A9C64] hover:bg-orange-700"
-                            : "bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-                            }`}
-                        >
-                          {Icon && (
-                            <Icon
-                              className={`h-3.5 w-3.5 ${isActive ? "fill-white" : ""}`}
-                            />
-                          )}
-                          <span className="text-xs font-bold tracking-tight">
-                            {filter.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
               </motion.div>
             ) : (
               <motion.div
@@ -2877,6 +2797,236 @@ export default function Home() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Inline Categories & Filters Section - Stays in page flow to maintain layout height and prevent momentum scroll lock */}
+        {activeTab === "food" && (
+          <div
+            ref={inlineCategoriesRef}
+            id="categories-section-inline"
+            className="md:hidden relative bg-white dark:bg-[#0a0a0a] pt-5 pb-3"
+          >
+            {/* Categories Horizontal Slider */}
+            <div className="px-4 py-2">
+              <div
+                ref={inlineSliderRef}
+                className="flex overflow-x-auto gap-3 pb-1 scrollbar-hide mask-edge-fade"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {displayCategories.map((category, index) => (
+                  <Link
+                    key={category.id || index}
+                    to={`/food/user/category/${category.slug}`}
+                    className="flex-shrink-0 flex flex-col items-center gap-2.5 group w-[92px]"
+                  >
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] group-active:scale-95 transition-all duration-300">
+                      {/* Shining Glint Effect */}
+                      <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                        <motion.div
+                          animate={{
+                            x: ['-200%', '200%'],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            repeatDelay: 3 + index * 0.5,
+                            ease: "easeInOut"
+                          }}
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] w-[150%] h-full"
+                        />
+                      </div>
+
+                      <OptimizedImage
+                        src={category.image}
+                        alt={category.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center leading-tight line-clamp-1 w-full px-0.5">
+                      {category.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Filters Sticky Row */}
+            <div
+              className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 py-0.5"
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className="h-9 px-4 rounded-full flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 font-bold transition-all bg-white dark:bg-[#1a1a1a] border border-gray-200 shadow-sm active:scale-95 text-xs text-black dark:text-white"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Filters</span>
+              </button>
+
+              {[
+                { id: "delivery-under-30", label: "Under 30 mins" },
+                { id: "delivery-under-45", label: "Under 45 mins" },
+                { id: "distance-under-1km", label: "Under 1km", icon: MapPin },
+                { id: "distance-under-2km", label: "Under 2km", icon: MapPin },
+              ].map((filter) => {
+                const Icon = filter.icon;
+                const isActive = activeFilters.has(filter.id);
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => {
+                      const nextFilters = new Set(activeFilters);
+                      if (nextFilters.has(filter.id)) {
+                        nextFilters.delete(filter.id);
+                      } else {
+                        nextFilters.add(filter.id);
+                      }
+                      setActiveFilters(nextFilters);
+                      void applyFiltersAndRefetch(
+                        nextFilters,
+                        sortBy,
+                        selectedCuisine,
+                      );
+                    }}
+                    className={`h-9 px-4 rounded-full flex items-center gap-2 whitespace-nowrap flex-shrink-0 transition-all font-bold shadow-sm active:scale-95 ${isActive
+                      ? "bg-[#2A9C64] text-white border border-[#2A9C64] hover:bg-orange-700"
+                      : "bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {Icon && (
+                      <Icon
+                        className={`h-3.5 w-3.5 ${isActive ? "fill-white" : ""}`}
+                      />
+                    )}
+                    <span className="text-xs font-bold tracking-tight">
+                      {filter.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sticky Categories & Filters Section - Rendered fixed to viewport top on mobile and slides in when stuck */}
+        {activeTab === "food" && (
+          <div
+            id="categories-section-sticky"
+            className={`md:hidden fixed top-0 left-0 right-0 z-[100] bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md border-b border-gray-100 dark:border-white/5 pt-5 pb-3 shadow-md transition-all duration-300 ${
+              isStuck ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+            }`}
+            style={{ willChange: "transform, opacity" }}
+          >
+            {/* Categories Horizontal Slider */}
+            <div className="px-4 py-2">
+              <div
+                ref={fixedSliderRef}
+                className="flex overflow-x-auto gap-3 pb-1 scrollbar-hide mask-edge-fade"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {displayCategories.map((category, index) => (
+                  <Link
+                    key={`sticky-${category.id || index}`}
+                    to={`/food/user/category/${category.slug}`}
+                    className="flex-shrink-0 flex flex-col items-center gap-2.5 group w-[92px]"
+                  >
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] group-active:scale-95 transition-all duration-300">
+                      {/* Shining Glint Effect */}
+                      <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                        <motion.div
+                          animate={{
+                            x: ['-200%', '200%'],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            repeatDelay: 3 + index * 0.5,
+                            ease: "easeInOut"
+                          }}
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] w-[150%] h-full"
+                        />
+                      </div>
+
+                      <OptimizedImage
+                        src={category.image}
+                        alt={category.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center leading-tight line-clamp-1 w-full px-0.5">
+                      {category.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Filters Sticky Row */}
+            <div
+              className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 py-0.5"
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className="h-9 px-4 rounded-full flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 font-bold transition-all bg-white dark:bg-[#1a1a1a] border border-gray-200 shadow-sm active:scale-95 text-xs text-black dark:text-white"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Filters</span>
+              </button>
+
+              {[
+                { id: "delivery-under-30", label: "Under 30 mins" },
+                { id: "delivery-under-45", label: "Under 45 mins" },
+                { id: "distance-under-1km", label: "Under 1km", icon: MapPin },
+                { id: "distance-under-2km", label: "Under 2km", icon: MapPin },
+              ].map((filter) => {
+                const Icon = filter.icon;
+                const isActive = activeFilters.has(filter.id);
+                return (
+                  <button
+                    key={`sticky-filter-${filter.id}`}
+                    type="button"
+                    onClick={() => {
+                      const nextFilters = new Set(activeFilters);
+                      if (nextFilters.has(filter.id)) {
+                        nextFilters.delete(filter.id);
+                      } else {
+                        nextFilters.add(filter.id);
+                      }
+                      setActiveFilters(nextFilters);
+                      void applyFiltersAndRefetch(
+                        nextFilters,
+                        sortBy,
+                        selectedCuisine,
+                      );
+                    }}
+                    className={`h-9 px-4 rounded-full flex items-center gap-2 whitespace-nowrap flex-shrink-0 transition-all font-bold shadow-sm active:scale-95 ${isActive
+                      ? "bg-[#2A9C64] text-white border border-[#2A9C64] hover:bg-orange-700"
+                      : "bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {Icon && (
+                      <Icon
+                        className={`h-3.5 w-3.5 ${isActive ? "fill-white" : ""}`}
+                      />
+                    )}
+                    <span className="text-xs font-bold tracking-tight">
+                      {filter.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {!shouldShowOutOfZoneHome && recommendedForYouRestaurants.length > 0 && (
           <motion.section
