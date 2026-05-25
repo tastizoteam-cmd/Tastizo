@@ -15,7 +15,7 @@ import {
   X,
   Check,
   Shield,
-  Receipt,
+  FileText,
   CircleSlash,
   Loader2,
   Clock,
@@ -1603,7 +1603,7 @@ export default function OrderTracking() {
                       </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center p-2 text-orange-500">
-                        <Receipt className="w-full h-full" />
+                        <FileText className="w-full h-full" />
                       </div>
                     )}
                   </div>
