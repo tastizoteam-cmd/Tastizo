@@ -2530,7 +2530,7 @@ export default function Home() {
                 <span className="text-[8px] font-bold text-[#2A9C64]">Explore</span>
               </div>
             </div>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Offers</span>
+            <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">Offers</span>
           </div>
 
           {showCategorySkeleton ? (
@@ -2551,7 +2551,7 @@ export default function Home() {
                     sizes="80px"
                   />
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 text-center truncate max-w-[72px]">
+                <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center truncate max-w-[72px]">
                   {category.name}
                 </span>
               </Link>
@@ -2566,7 +2566,7 @@ export default function Home() {
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-orange-50 dark:bg-orange-950 flex items-center justify-center border border-orange-100 group-hover:border-[#2A9C64] transition-all">
                 <Plus className="w-6 h-6 text-[#2A9C64]" />
               </div>
-              <span className="text-xs font-medium text-gray-700">See All</span>
+              <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">See All</span>
             </div>
           )}
         </div>
