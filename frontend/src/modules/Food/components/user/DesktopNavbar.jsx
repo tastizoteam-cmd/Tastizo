@@ -28,6 +28,7 @@ export default function DesktopNavbar({ showLogo = true }) {
     const { vegMode, setVegMode } = useProfile()
     const [heroSearch, setHeroSearch] = useState("")
     const [logoUrl, setLogoUrl] = useState(null)
+    const [faviconUrl, setFaviconUrl] = useState(null)
     const [companyName, setCompanyName] = useState(null)
     const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false)
     const [under250PriceLimit, setUnder250PriceLimit] = useState(250)
@@ -92,6 +93,9 @@ export default function DesktopNavbar({ showLogo = true }) {
                     if (cached.logo?.url) {
                         setLogoUrl(cached.logo.url)
                     }
+                    if (cached.favicon?.url) {
+                        setFaviconUrl(cached.favicon.url)
+                    }
                     if (cached.companyName) {
                         setCompanyName(cached.companyName)
                     }
@@ -100,6 +104,9 @@ export default function DesktopNavbar({ showLogo = true }) {
                     if (settings) {
                         if (settings.logo?.url) {
                             setLogoUrl(settings.logo.url)
+                        }
+                        if (settings.favicon?.url) {
+                            setFaviconUrl(settings.favicon.url)
                         }
                         if (settings.companyName) {
                             setCompanyName(settings.companyName)
@@ -118,6 +125,9 @@ export default function DesktopNavbar({ showLogo = true }) {
             if (cached) {
                 if (cached.logo?.url) {
                     setLogoUrl(cached.logo.url)
+                }
+                if (cached.favicon?.url) {
+                    setFaviconUrl(cached.favicon.url)
                 }
                 if (cached.companyName) {
                     setCompanyName(cached.companyName)
@@ -191,17 +201,17 @@ export default function DesktopNavbar({ showLogo = true }) {
             {/* Top Row: Location - Search - Icons */}
             <div className={`w-full ${(isBannerRoute && !hasScrolledPastBanner) ? "border-b border-transparent" : "border-b border-gray-100 dark:border-gray-800"}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16 gap-4">
+                    <div className="flex items-center justify-between min-h-[4rem] py-2 gap-4">
                         {/* Left: Logo & Location */}
                         <div className="flex items-center gap-4 lg:gap-6 flex-shrink-0">
                             {/* Logo */}
                             {showLogo && (
                                 <Link to="/" className="flex items-center justify-center flex-shrink-0">
-                                    {logoUrl || companyName ? (
+                                    {faviconUrl || logoUrl || companyName ? (
                                         <img
-                                            src={logoUrl || quickSpicyLogo}
+                                            src={faviconUrl || logoUrl || quickSpicyLogo}
                                             alt={companyName || "Company Logo"}
-                                            className="h-10 w-auto md:h-14 lg:h-16 object-contain"
+                                            className="h-14 w-auto md:h-20 lg:h-24 object-contain"
                                             onError={(e) => {
                                                 if (e.target.src !== quickSpicyLogo) {
                                                     e.target.src = quickSpicyLogo
@@ -209,7 +219,7 @@ export default function DesktopNavbar({ showLogo = true }) {
                                             }}
                                         />
                                     ) : (
-                                        <img src={quickSpicyLogo} alt={companyName || "Logo"} className="h-10 w-auto md:h-14 lg:h-16 object-contain" />
+                                        <img src={quickSpicyLogo} alt={companyName || "Logo"} className="h-14 w-auto md:h-20 lg:h-24 object-contain" />
                                     )}
                                 </Link>
                             )}

@@ -46,7 +46,7 @@ export default function DesktopHomeView({
   return (
     <div className="hidden md:block w-full min-h-screen bg-gray-50 dark:bg-[#0a0a0a] overflow-x-hidden font-sans pb-20">
       {/* 1. Hero Section with Glassmorphism */}
-      <section className="relative w-full h-[500px] mb-16 overflow-hidden rounded-b-[3rem] shadow-2xl shadow-green-900/10 dark:shadow-black/50">
+      <section className="relative w-full h-[500px] mb-16 overflow-hidden rounded-none shadow-2xl shadow-green-900/10 dark:shadow-black/50">
         {/* Background Image / Gradient / Video */}
         <div className="absolute inset-0 z-0 bg-[#3a142c]">
           {festVideoActive && festBannerVideoUrl ? (
@@ -108,12 +108,6 @@ export default function DesktopHomeView({
           </motion.div>
         </div>
 
-        {/* Decorative Wave/Curve at bottom */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-20 transform translate-y-1">
-          <svg className="relative block w-full h-[50px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V95.8C59.71,118,130.85,130.6,201.33,126.5,242.49,124.1,283.47,112.5,321.39,56.44Z" className="fill-gray-50 dark:fill-[#0a0a0a]"></path>
-          </svg>
-        </div>
       </section>
 
       <div className="max-w-7xl mx-auto px-6 space-y-20">
@@ -225,10 +219,10 @@ export default function DesktopHomeView({
                   >
                     <Link
                       to={`/user/restaurants/${restaurant.slug}`}
-                      className="group block h-full bg-white dark:bg-[#121212] rounded-[2rem] p-3 shadow-[0_8px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] dark:shadow-none dark:border dark:border-gray-800 dark:hover:border-green-800/50 transition-all duration-300"
+                      className="group flex flex-col h-full bg-white dark:bg-[#121212] rounded-[2rem] p-3 shadow-[0_8px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] dark:shadow-none dark:border dark:border-gray-800 dark:hover:border-green-800/50 transition-all duration-300"
                     >
                       {/* Image Container */}
-                      <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden mb-4">
+                      <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden mb-4 shrink-0">
                         <OptimizedImage
                           src={imageUrl}
                           alt={restaurant.name}
@@ -261,7 +255,7 @@ export default function DesktopHomeView({
                       </div>
 
                       {/* Content */}
-                      <div className="px-2 pb-2">
+                      <div className="px-2 pb-2 flex-1 flex flex-col">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                             {restaurant.name}

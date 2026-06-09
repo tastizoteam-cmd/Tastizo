@@ -132,6 +132,8 @@ export default function AdminHome() {
   // Calculate totals from real data
   const revenueTotal = dashboardData?.revenue?.total || 0
   const commissionTotal = dashboardData?.commission?.total || 0
+  const deliveryCommissionTotal = dashboardData?.commission?.delivery || commissionTotal
+  const diningCommissionTotal = dashboardData?.commission?.dining || 0
   const ordersTotal = dashboardData?.orders?.total || 0
   const platformFeeTotal = dashboardData?.platformFee?.total || 0
   const deliveryFeeTotal = dashboardData?.deliveryFee?.total || 0
@@ -163,7 +165,8 @@ export default function AdminHome() {
 
   const activityFeed = dashboardData?.liveSignals || []
   const totalRevenueHelper = [
-    `Comm: ${formatCurrency(commissionTotal)}`,
+    `Del Comm: ${formatCurrency(deliveryCommissionTotal)}`,
+    `Dine Comm: ${formatCurrency(diningCommissionTotal)}`,
     `Platform: ${formatCurrency(platformFeeTotal)}`,
     `Delivery Net: ${formatCurrency(deliveryProfit)}`,
     `GST: ${formatCurrency(gstTotal)}`,
@@ -231,6 +234,10 @@ export default function AdminHome() {
             <MetricCard
               title="Commission earned"
               value={formatCurrency(commissionTotal)}
+              breakdown={[
+                { label: "Delivery", value: formatCurrency(deliveryCommissionTotal) },
+                { label: "Dining", value: formatCurrency(diningCommissionTotal) }
+              ]}
               helper={`${periodLabel} restaurant cut`}
               icon={<ArrowUpRight className="h-5 w-5 text-indigo-600" />}
               accent="bg-indigo-200/40"
@@ -616,7 +623,7 @@ export default function AdminHome() {
   )
 }
 
-function MetricCard({ title, value, helper, icon, accent, path }) {
+function MetricCard({ title, value, helper, icon, accent, path, breakdown }) {
   const navigate = useNavigate()
   return (
     <Card
@@ -629,6 +636,15 @@ function MetricCard({ title, value, helper, icon, accent, path }) {
           <div className="flex-1 min-w-0 mr-2">
             <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 font-bold mb-1 truncate">{title}</p>
             <p className="text-xl font-bold text-neutral-900 leading-tight mb-1">{value}</p>
+            {breakdown && breakdown.length > 0 && (
+              <div className="flex flex-col gap-0.5 mt-1.5 mb-2 pl-1 border-l-2 border-indigo-200 dark:border-indigo-800">
+                {breakdown.map((item, idx) => (
+                  <p key={idx} className="text-[10px] text-neutral-600 dark:text-neutral-400 font-medium whitespace-nowrap">
+                    {item.label}: <span className="font-semibold text-neutral-800 dark:text-neutral-200">{item.value}</span>
+                  </p>
+                ))}
+              </div>
+            )}
             <p className="text-[10px] text-neutral-500 font-medium line-clamp-1">{helper}</p>
           </div>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/90 ring-1 ring-neutral-200 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-md">

@@ -34,7 +34,7 @@ async function syncRestaurantDiningSettings(restaurantId, diningDoc) {
                     isEnabled: Boolean(diningDoc?.isEnabled),
                     maxGuests: Math.max(1, Number(diningDoc?.maxGuests) || 6),
                     diningType: Array.isArray(diningDoc?.diningType) ? diningDoc.diningType : (primaryCategory?.slug ? [primaryCategory.slug] : ['family-dining']),
-                    commissionPct: Number(diningDoc?.commissionPct) ?? 10
+                    commissionPct: (typeof diningDoc?.commissionPct === 'number' && !isNaN(diningDoc.commissionPct)) ? diningDoc.commissionPct : 10
                 }
             }
         },
@@ -294,7 +294,8 @@ export async function updateDiningRestaurant(restaurantId, body = {}) {
         diningDoc.maxGuests = Math.max(1, parseInt(body.maxGuests, 10) || 6);
     }
     if (body.commissionPct !== undefined) {
-        diningDoc.commissionPct = Math.max(0, Math.min(100, parseInt(body.commissionPct, 10) ?? 10));
+        const parsedPct = parseInt(body.commissionPct, 10);
+        diningDoc.commissionPct = isNaN(parsedPct) ? 10 : Math.max(0, Math.min(100, parsedPct));
     }
     if (body.pureVegRestaurant !== undefined) {
         if (typeof body.pureVegRestaurant === 'boolean') {

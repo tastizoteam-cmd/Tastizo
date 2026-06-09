@@ -24,6 +24,7 @@ export default function Navbar() {
   const { openLocationSelector } = useLocationSelector()
   const cartCount = getCartCount()
   const [logoUrl, setLogoUrl] = useState(null)
+  const [faviconUrl, setFaviconUrl] = useState(null)
   const [companyName, setCompanyName] = useState(null)
 
   // Load business settings logo
@@ -35,6 +36,9 @@ export default function Navbar() {
           if (cached.logo?.url) {
             setLogoUrl(cached.logo.url)
           }
+          if (cached.favicon?.url) {
+            setFaviconUrl(cached.favicon.url)
+          }
           if (cached.companyName) {
             setCompanyName(cached.companyName)
           }
@@ -43,6 +47,9 @@ export default function Navbar() {
           if (settings) {
             if (settings.logo?.url) {
               setLogoUrl(settings.logo.url)
+            }
+            if (settings.favicon?.url) {
+              setFaviconUrl(settings.favicon.url)
             }
             if (settings.companyName) {
               setCompanyName(settings.companyName)
@@ -61,6 +68,9 @@ export default function Navbar() {
             if (cached) {
                 if (cached.logo?.url) {
                     setLogoUrl(cached.logo.url)
+                }
+                if (cached.favicon?.url) {
+                    setFaviconUrl(cached.favicon.url)
                 }
                 if (cached.companyName) {
                     setCompanyName(cached.companyName)
@@ -90,7 +100,7 @@ export default function Navbar() {
   return (
     <nav className="z-50 w-full backdrop-blur-md bg-white/70 border-b border-gray-100 shadow-sm">
       <div className="w-full px-4">
-        <div className="flex h-14 sm:h-16 items-center justify-between gap-2 sm:gap-3">
+        <div className="flex min-h-[3.5rem] sm:min-h-[4rem] py-2 items-center justify-between gap-2 sm:gap-3">
           {/* Location Section */}
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             {/* Location - 2 Row Layout */}
@@ -121,11 +131,11 @@ export default function Navbar() {
 
           {/* Company Logo or Name - Centered between sections */}
           <Link to="/food/user" className="flex items-center justify-center flex-shrink-0">
-            {logoUrl ? (
+            {faviconUrl || logoUrl ? (
               <img
-                src={logoUrl}
+                src={faviconUrl || logoUrl}
                 alt={companyName || "Company Logo"}
-                className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 object-contain"
+                className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 object-contain"
                 onError={(e) => {
                   // Hide image if it fails to load
                   e.target.style.display = 'none'
@@ -136,7 +146,7 @@ export default function Navbar() {
                 {companyName}
               </span>
             ) : (
-              <img src={quickSpicyLogo} alt="Logo" className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 object-contain" />
+              <img src={quickSpicyLogo} alt="Logo" className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 object-contain" />
             )}
           </Link>
 

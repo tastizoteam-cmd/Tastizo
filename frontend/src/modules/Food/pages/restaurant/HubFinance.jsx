@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, Menu, ChevronDown, Calendar, Download, ArrowRight, FileText, Wallet, X } from "lucide-react"
 import BottomNavOrders from "@food/components/restaurant/BottomNavOrders"
-import { restaurantAPI, diningAPI } from "@food/api"
+import { restaurantAPI } from "@food/api"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -32,8 +32,6 @@ export default function HubFinance() {
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false)
   const [withdrawalRequests, setWithdrawalRequests] = useState([])
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(false)
-  const [diningTransactions, setDiningTransactions] = useState([])
-  const [loadingDiningTransactions, setLoadingDiningTransactions] = useState(false)
 
   // Fetch finance data on mount
   useEffect(() => {
@@ -154,124 +152,7 @@ export default function HubFinance() {
     return financeData?.restaurant || null
   }, [restaurantData, financeData])
 
-  useEffect(() => {
-    const fetchDiningTransactions = async () => {
-      if (!restaurantFinanceRef) {
-        setDiningTransactions([])
-        return
-      }
-
-      try {
-        setLoadingDiningTransactions(true)
-        const response = await diningAPI.getRestaurantBookings(restaurantFinanceRef)
-        const bookings = Array.isArray(response?.data?.data) ? response.data.data : []
-
-        const paidDiningTransactions = bookings
-          .filter((booking) => String(booking?.billStatus || "").toLowerCase() === "paid")
-          .map((booking) => {
-            const grossAmount = Number(booking?.billAmount || 0)
-            const commissionPct = Number(booking?.commissionPct ?? 10)
-            const commissionAmount = Number(
-              booking?.commissionAmount ?? (grossAmount * (commissionPct / 100)).toFixed(2),
-            )
-            const restaurantEarning = Number((grossAmount - commissionAmount).toFixed(2))
-            const paidAt =
-              booking?.billPaidAt ||
-              booking?.updatedAt ||
-              booking?.billSentAt ||
-              booking?.createdAt ||
-              null
-            const guestCount = Number(booking?.guests || 0)
-
-            return {
-              id: String(booking?._id || booking?.id || booking?.bookingId || `dining-${Math.random()}`),
-              type: "dining",
-              orderId: booking?.bookingId || booking?._id || "N/A",
-              bookingId: booking?.bookingId || booking?._id || "N/A",
-              createdAt: paidAt,
-              billPaidAt: booking?.billPaidAt || null,
-              totalAmount: grossAmount,
-              orderTotal: grossAmount,
-              amount: grossAmount,
-              grossAmount,
-              payout: restaurantEarning,
-              restaurantEarning,
-              commission: commissionAmount,
-              commissionAmount,
-              commissionPct,
-              paymentMethod: "Dining bill",
-              orderStatus: "Paid",
-              foodNames:
-                guestCount > 0 ? `Dining bill • ${guestCount} guest${guestCount === 1 ? "" : "s"}` : "Dining bill",
-              items: [
-                {
-                  name: "Dining bill",
-                  quantity: guestCount > 0 ? guestCount : 1,
-                },
-              ],
-              guestName: booking?.user?.name || "Guest",
-              sourceData: booking,
-            }
-          })
-          .sort((a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime())
-
-        setDiningTransactions(paidDiningTransactions)
-      } catch (error) {
-        debugError("Error fetching dining transactions:", error)
-        setDiningTransactions([])
-      } finally {
-        setLoadingDiningTransactions(false)
-      }
-    }
-
-    fetchDiningTransactions()
-  }, [restaurantFinanceRef])
-
   const selectedDateBounds = useMemo(() => parseDateRange(selectedDateRange), [selectedDateRange])
-
-  const filteredDiningTransactions = useMemo(() => {
-    if (!selectedDateBounds?.startDate || !selectedDateBounds?.endDate) return diningTransactions
-
-    const startTime = new Date(selectedDateBounds.startDate).getTime()
-    const endTime = new Date(selectedDateBounds.endDate).getTime()
-
-    const backendBookingIds = new Set()
-    const currentOrders = financeData?.currentCycle?.orders || []
-    currentOrders.forEach(o => {
-      if (o.type === 'dining') {
-        backendBookingIds.add(String(o.orderId || '').trim())
-        backendBookingIds.add(String(o.bookingId || '').trim())
-        backendBookingIds.add(String(o._id || '').trim())
-      }
-    })
-    const pastOrders = pastCyclesData?.orders || []
-    pastOrders.forEach(o => {
-      if (o.type === 'dining') {
-        backendBookingIds.add(String(o.orderId || '').trim())
-        backendBookingIds.add(String(o.bookingId || '').trim())
-        backendBookingIds.add(String(o._id || '').trim())
-      }
-    })
-
-    return diningTransactions.filter((transaction) => {
-      const id = String(transaction?.id || '').trim()
-      const bookingId = String(transaction?.bookingId || '').trim()
-      const orderId = String(transaction?.orderId || '').trim()
-
-      if (backendBookingIds.size > 0 && (
-        (id && backendBookingIds.has(id)) ||
-        (bookingId && backendBookingIds.has(bookingId)) ||
-        (orderId && backendBookingIds.has(orderId))
-      )) {
-        return false
-      }
-
-      const transactionTime = new Date(
-        transaction?.billPaidAt || transaction?.createdAt || 0,
-      ).getTime()
-      return !Number.isNaN(transactionTime) && transactionTime >= startTime && transactionTime <= endTime
-    })
-  }, [diningTransactions, selectedDateBounds, financeData, pastCyclesData])
 
   const currentCycleRange = useMemo(() => {
     const monthMap = {
@@ -309,55 +190,6 @@ export default function HubFinance() {
     return { startDate, endDate }
   }, [financeData])
 
-  const currentCycleDiningTransactions = useMemo(() => {
-    if (!currentCycleRange?.startDate || !currentCycleRange?.endDate) return diningTransactions
-
-    const startTime = currentCycleRange.startDate.getTime()
-    const endTime = currentCycleRange.endDate.getTime()
-
-    const backendBookingIds = new Set()
-    const currentOrders = financeData?.currentCycle?.orders || []
-    currentOrders.forEach(o => {
-      if (o.type === 'dining') {
-        backendBookingIds.add(String(o.orderId || '').trim())
-        backendBookingIds.add(String(o.bookingId || '').trim())
-        backendBookingIds.add(String(o._id || '').trim())
-      }
-    })
-
-    return diningTransactions.filter((transaction) => {
-      const id = String(transaction?.id || '').trim()
-      const bookingId = String(transaction?.bookingId || '').trim()
-      const orderId = String(transaction?.orderId || '').trim()
-
-      if (backendBookingIds.size > 0 && (
-        (id && backendBookingIds.has(id)) ||
-        (bookingId && backendBookingIds.has(bookingId)) ||
-        (orderId && backendBookingIds.has(orderId))
-      )) {
-        return false
-      }
-
-      const transactionTime = new Date(
-        transaction?.billPaidAt || transaction?.createdAt || 0,
-      ).getTime()
-      return !Number.isNaN(transactionTime) && transactionTime >= startTime && transactionTime <= endTime
-    })
-  }, [diningTransactions, currentCycleRange, financeData])
-
-  const currentCycleDiningSummary = useMemo(() => {
-    return currentCycleDiningTransactions.reduce(
-      (summary, transaction) => {
-        summary.count += 1
-        summary.gross += Number(transaction?.totalAmount || 0)
-        summary.earnings += Number(transaction?.payout || transaction?.restaurantEarning || 0)
-        summary.commission += Number(transaction?.commission || transaction?.commissionAmount || 0)
-        return summary
-      },
-      { count: 0, gross: 0, earnings: 0, commission: 0 },
-    )
-  }, [currentCycleDiningTransactions])
-
   const normalizeOrderTransactions = (orders = [], type = "order") =>
     (Array.isArray(orders) ? orders : []).map((order, index) => ({
       ...order,
@@ -377,17 +209,15 @@ export default function HubFinance() {
 
   const payoutTransactions = useMemo(() => {
     if (Array.isArray(pastCyclesData?.orders)) {
-      return sortTransactionsByLatest([
-        ...normalizeOrderTransactions(pastCyclesData.orders, "order"),
-        ...filteredDiningTransactions,
-      ])
+      return sortTransactionsByLatest(
+        normalizeOrderTransactions(pastCyclesData.orders, "order")
+      )
     }
 
-    return sortTransactionsByLatest([
-      ...normalizeOrderTransactions(financeData?.currentCycle?.orders || [], "order"),
-      ...currentCycleDiningTransactions,
-    ])
-  }, [pastCyclesData, filteredDiningTransactions, financeData, currentCycleDiningTransactions])
+    return sortTransactionsByLatest(
+      normalizeOrderTransactions(financeData?.currentCycle?.orders || [], "order")
+    )
+  }, [pastCyclesData, financeData])
 
   const invoiceOrders = useMemo(() => {
     const allOrdersMap = new Map()
@@ -413,28 +243,9 @@ export default function HubFinance() {
     return Array.from(allOrdersMap.values())
   }, [financeData, pastCyclesData])
 
-  const invoiceDiningTransactions = useMemo(() => {
-    const allDiningMap = new Map()
-
-    currentCycleDiningTransactions.forEach((transaction) => {
-      allDiningMap.set(transaction.id, transaction)
-    })
-
-    filteredDiningTransactions.forEach((transaction) => {
-      if (!allDiningMap.has(transaction.id)) {
-        allDiningMap.set(transaction.id, transaction)
-      }
-    })
-
-    return Array.from(allDiningMap.values())
-  }, [currentCycleDiningTransactions, filteredDiningTransactions])
-
   const invoiceTransactions = useMemo(
-    () => sortTransactionsByLatest([
-      ...normalizeOrderTransactions(invoiceOrders, "order"),
-      ...invoiceDiningTransactions,
-    ]),
-    [invoiceOrders, invoiceDiningTransactions],
+    () => sortTransactionsByLatest(normalizeOrderTransactions(invoiceOrders, "order")),
+    [invoiceOrders],
   )
 
   const invoiceSummary = useMemo(() => {
@@ -563,8 +374,11 @@ export default function HubFinance() {
         return
       }
       
-      const startDateISO = startDateObj.toISOString().split('T')[0]
-      const endDateISO = endDateObj.toISOString().split('T')[0]
+      // Fix timezone offset issue so toISOString uses the local date
+      const localStartDate = new Date(startDateObj.getTime() - startDateObj.getTimezoneOffset() * 60000)
+      const localEndDate = new Date(endDateObj.getTime() - endDateObj.getTimezoneOffset() * 60000)
+      const startDateISO = localStartDate.toISOString().split('T')[0]
+      const endDateISO = localEndDate.toISOString().split('T')[0]
       
       const response = await restaurantAPI.getFinance({
         startDate: startDateISO,
@@ -634,10 +448,9 @@ export default function HubFinance() {
       })
     }
     
-    const allTransactions = sortTransactionsByLatest([
-      ...normalizeOrderTransactions(Array.from(allOrdersMap.values()), "order"),
-      ...invoiceDiningTransactions,
-    ])
+    const allTransactions = sortTransactionsByLatest(
+      normalizeOrderTransactions(Array.from(allOrdersMap.values()), "order")
+    )
     
     return {
       restaurantName,
@@ -649,7 +462,7 @@ export default function HubFinance() {
         month: currentCycleDates.month,
         year: currentCycleDates.year,
         estimatedPayout: `₹${(currentCycle.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        orders: (currentCycle.totalOrders || 0) + currentCycleDiningSummary.count,
+        orders: currentCycle.totalOrders || 0,
         payoutDate: currentCycle.payoutDate ? new Date(currentCycle.payoutDate).toLocaleDateString('en-IN') : "-"
       },
       pastCycles: pastCyclesData,
@@ -1067,8 +880,7 @@ export default function HubFinance() {
                       ₹{(financeData?.currentCycle?.estimatedPayout || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <p className="text-sm text-gray-600 mb-4">
-                      {financeData?.currentCycle?.totalOrders || 0} {financeData?.currentCycle?.totalOrders === 1 ? 'order' : 'orders'}
-                      {currentCycleDiningSummary.count > 0 ? ` • ${currentCycleDiningSummary.count} dining bill${currentCycleDiningSummary.count === 1 ? '' : 's'}` : ''}
+                      {financeData?.currentCycle?.totalOrders || 0} {(financeData?.currentCycle?.totalOrders === 1) ? 'transaction' : 'transactions'}
                     </p>
                     <button
                       onClick={() => setShowWithdrawalModal(true)}
@@ -1332,10 +1144,6 @@ export default function HubFinance() {
                   <div className="bg-white rounded-lg p-4">
                     <p className="text-sm text-gray-600 text-center">Loading past cycles...</p>
                   </div>
-                ) : loadingDiningTransactions ? (
-                  <div className="bg-white rounded-lg p-4">
-                    <p className="text-sm text-gray-600 text-center">Loading dining transactions...</p>
-                  </div>
                 ) : (
                   <>
                     {payoutTransactions.length > 0 ? (
@@ -1405,8 +1213,6 @@ export default function HubFinance() {
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Transaction invoice details</h3>
               {loading ? (
                 <p className="text-sm text-gray-500">Loading invoice data...</p>
-              ) : loadingDiningTransactions ? (
-                <p className="text-sm text-gray-500">Loading dining invoice data...</p>
               ) : invoiceTransactions.length === 0 ? (
                 <p className="text-sm text-gray-500">No invoice data available for selected range.</p>
               ) : (

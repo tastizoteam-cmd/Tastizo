@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useState, useMemo, useCallback, useEffect, useRef } from "react"
-import { Star, Clock, MapPin, ArrowDownUp, Timer, ArrowRight, ChevronDown, Bookmark, Share2, Plus, Minus, X, UtensilsCrossed } from "lucide-react"
+import { Star, Clock, MapPin, ArrowDownUp, Timer, ArrowRight, ChevronDown, ChevronRight, Bookmark, Share2, Plus, Minus, X, UtensilsCrossed } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import AnimatedPage from "@food/components/user/AnimatedPage"
@@ -118,6 +118,18 @@ export default function Under250() {
     startY: 0,
     dragging: false,
   })
+  const categoriesRef = useRef(null)
+
+  const scrollCategories = (direction) => {
+    if (categoriesRef.current) {
+      const scrollAmount = 400; // Scroll amount in pixels
+      categoriesRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
+
   const [categories, setCategories] = useState([])
   const [bannerImages, setBannerImages] = useState([])
   const [loadingBanner, setLoadingBanner] = useState(true)
@@ -1075,16 +1087,24 @@ export default function Under250() {
       {/* Content Section */}
       <div className="relative max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 space-y-0 pt-2 sm:pt-3 md:pt-4 lg:pt-6 pb-6 md:pb-8 lg:pb-10">
 
-        <section className="space-y-1 sm:space-y-1.5">
-          <div
-            className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto md:overflow-x-visible overflow-y-visible scrollbar-hide scroll-smooth px-2 sm:px-3 py-2 sm:py-3 md:py-4"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              touchAction: "pan-x pan-y pinch-zoom",
-              overflowY: "hidden",
-            }}
-          >
+        <section className="relative mt-4">
+          <div className="relative group/slider">
+            <button 
+              onClick={() => scrollCategories("left")}
+              className="hidden md:flex absolute left-2 top-[calc(50%-12px)] -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] shadow-[0_8px_20px_rgb(0,0,0,0.12)] border border-gray-100 dark:border-gray-800 items-center justify-center hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 text-gray-600 dark:text-gray-300 transition-all hover:scale-110"
+            >
+              <ChevronRight className="rotate-180 w-6 h-6" />
+            </button>
+            <div
+              ref={categoriesRef}
+              className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth px-4 sm:px-6 md:px-16 py-2 sm:py-3 md:py-4"
+              style={{
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                touchAction: "pan-x pan-y pinch-zoom",
+                overflowY: "hidden",
+              }}
+            >
             {/* All Button */}
             <div className="flex-shrink-0 cursor-pointer" onClick={() => setActiveCategory(null)}>
               <motion.div
@@ -1130,6 +1150,13 @@ export default function Under250() {
                 </div>
               )
             })}
+            </div>
+            <button 
+              onClick={() => scrollCategories("right")}
+              className="hidden md:flex absolute right-2 top-[calc(50%-12px)] -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] shadow-[0_8px_20px_rgb(0,0,0,0.12)] border border-gray-100 dark:border-gray-800 items-center justify-center hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20 text-gray-600 dark:text-gray-300 transition-all hover:scale-110"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
         </section>
 

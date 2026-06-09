@@ -611,10 +611,10 @@ export async function tryAutoAssign(orderId, options = {}) {
           eligibleDeliveryPartnerIds: eligible.map((partner) => String(partner.partnerId)),
           orderZoneId: String(order.zoneId || ''),
           dispatch: {
-            ...order.dispatch,
+            ...payload.dispatch,
             status: 'offered',
             offeredTo: [
-              ...(order.dispatch?.offeredTo || []),
+              ...(payload.dispatch?.offeredTo || []),
               ...offeredToEntries
             ]
           }

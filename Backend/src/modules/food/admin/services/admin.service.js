@@ -654,6 +654,51 @@ export async function getDashboardStats(query = {}) {
             : FoodUser.find({}).sort({ createdAt: -1 }).limit(5).select('name createdAt').lean()
     ]);
 
+    const diningMatch = { type: 'dining', status: { $in: ['captured', 'authorized', 'paid'] } };
+    if (zoneId) {
+        diningMatch.restaurantId = { $in: zoneRestaurantIds || [] };
+    }
+    if (periodRange) {
+        diningMatch.createdAt = { $gte: periodRange.start, $lte: periodRange.end };
+    }
+
+    const [diningAgg, diningMonthlyAgg] = await Promise.all([
+        FoodTransaction.aggregate([
+            { $match: diningMatch },
+            {
+                $group: {
+                    _id: null,
+                    totalOrders: { $sum: 1 },
+                    commissionTotal: { $sum: { $ifNull: ['$amounts.restaurantCommission', 0] } },
+                    revenueTotal: { $sum: { $ifNull: ['$amounts.totalCustomerPaid', 0] } },
+                    adminNetProfit: { $sum: { $ifNull: ['$amounts.platformNetProfit', 0] } }
+                }
+            }
+        ]),
+        FoodTransaction.aggregate([
+            {
+                $match: {
+                    ...diningMatch,
+                    createdAt: {
+                        $gte: new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1),
+                        $lte: new Date()
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: '$createdAt' },
+                        month: { $month: '$createdAt' }
+                    },
+                    commission: { $sum: { $ifNull: ['$amounts.restaurantCommission', 0] } },
+                    revenue: { $sum: { $ifNull: ['$amounts.totalCustomerPaid', 0] } }
+                }
+            }
+        ])
+    ]);
+
+    const diningTotals = diningAgg?.[0] || {};
     const liveSignals = [];
     
     (recentPendingRestaurants || []).forEach(r => {
@@ -729,6 +774,12 @@ export async function getDashboardStats(query = {}) {
             return [key, row];
         })
     );
+    const diningMonthlyMap = new Map(
+        (diningMonthlyAgg || []).map((row) => {
+            const key = `${row._id?.year}-${row._id?.month}`;
+            return [key, row];
+        })
+    );
 
     const monthlyData = [];
     for (let i = 11; i >= 0; i -= 1) {
@@ -737,29 +788,34 @@ export async function getDashboardStats(query = {}) {
         const month = d.getMonth() + 1;
         const key = `${year}-${month}`;
         const row = monthlyMap.get(key);
+        const dRow = diningMonthlyMap.get(key);
         monthlyData.push({
             month: formatMonthShort(year, month - 1),
-            orders: Number(row?.orders || 0),
-            revenue: Number(row?.revenue || 0),
-            commission: Number(row?.commission || 0)
+            orders: Number(row?.orders || 0), // we keep delivery orders here for simplicity, or we could add dRow?.orders
+            revenue: Number(row?.revenue || 0) + Number(dRow?.revenue || 0),
+            commission: Number(row?.commission || 0) + Number(dRow?.commission || 0)
         });
     }
 
     return {
         orders: {
-            total: Number(totals.totalOrders || 0),
+            total: Number(totals.totalOrders || 0) + Number(diningTotals.totalOrders || 0),
             byStatus: {
                 delivered: Number(totals.delivered || 0),
                 cancelled: Number(totals.cancelled || 0),
                 pending: Number(totals.pending || 0)
             }
         },
-        revenue: { total: Number(totals.revenueTotal || 0) },
-        commission: { total: Number(totals.commissionTotal || 0) },
+        revenue: { total: Number(totals.revenueTotal || 0) + Number(diningTotals.revenueTotal || 0) },
+        commission: { 
+            total: Number(totals.commissionTotal || 0) + Number(diningTotals.commissionTotal || 0),
+            delivery: Number(totals.commissionTotal || 0),
+            dining: Number(diningTotals.commissionTotal || 0) 
+        },
         platformFee: { total: Number(totals.platformFeeTotal || 0) },
         deliveryFee: { total: Number(totals.deliveryFeeTotal || 0) },
         gst: { total: Number(totals.gstTotal || 0) },
-        totalAdminEarnings: Number(totals.adminNetProfit || 0) + Number(totals.gstTotal || 0),
+        totalAdminEarnings: Number(totals.adminNetProfit || 0) + Number(diningTotals.adminNetProfit || 0) + Number(totals.gstTotal || 0),
         deliveryProfit: Number(totals.adminNetProfit || 0) - Number(totals.commissionTotal || 0) - Number(totals.platformFeeTotal || 0),
         restaurants: {
             total: Number(restaurantsTotal || 0),
