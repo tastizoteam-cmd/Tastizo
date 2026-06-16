@@ -30,6 +30,7 @@ import {
   MapPin,
   LogOut,
   Trash2,
+  Megaphone,
 } from "lucide-react"
 import { Card, CardContent } from "@food/components/ui/card"
 import { DateRangeCalendar } from "@food/components/ui/date-range-calendar"
@@ -777,6 +778,7 @@ export default function ExploreMore() {
     { id: 2, label: "Outlet timings", icon: Clock, route: "/food/restaurant/outlet-timings" },
     { id: 3, label: "Dining Reservations", icon: Calendar, route: "/food/restaurant/reservations" },
     { id: 4, label: "Menu categories", icon: Settings, route: "/food/restaurant/menu-categories" },
+    { id: 5, label: "Ads & Promotions", icon: Megaphone, route: "/food/restaurant/ads" },
   ]
 
   const settingsItems = [

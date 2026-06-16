@@ -44,6 +44,7 @@ const PhoneNumbersPage = lazy(() => import("@food/pages/restaurant/PhoneNumbersP
 const DownloadReport = lazy(() => import("@food/pages/restaurant/DownloadReport"))
 
 const ManageOutlets = lazy(() => import("@food/pages/restaurant/ManageOutlets"))
+const Ads = lazy(() => import("@food/pages/restaurant/Ads"))
 const UpdateBankDetails = lazy(() => import("@food/pages/restaurant/UpdateBankDetails"))
 const ZoneSetup = lazy(() => import("@food/pages/restaurant/ZoneSetup"))
 const DiningReservations = lazy(() => import("@food/pages/restaurant/DiningReservations"))
@@ -89,6 +90,7 @@ export default function RestaurantRouter() {
           <Route path="reviews" element={<RestaurantReviewsEntry />} />
           <Route path="status" element={<RestaurantStatus />} />
           <Route path="explore" element={<ExploreMore />} />
+          <Route path="ads" element={<Ads />} />
           <Route path="outlet-timings" element={<OutletTimings />} />
           <Route path="outlet-timings/:day" element={<DaySlots />} />
           <Route path="outlet-info" element={<OutletInfo />} />

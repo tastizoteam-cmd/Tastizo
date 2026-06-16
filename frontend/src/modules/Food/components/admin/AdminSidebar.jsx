@@ -245,15 +245,13 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
   const [isCollapsed, setIsCollapsed] = useState(() => getInitialStates().isCollapsed)
   const [expandedSections, setExpandedSections] = useState(() => {
     const initialState = getInitialStates().expandedSections
-    if (Object.keys(initialState || {}).length > 0) return initialState
-
-    // Generate defaults if empty
     const state = {}
     adminSidebarMenu.forEach((item) => {
       if (item.type === "section") {
         item.items.forEach((subItem) => {
           if (subItem.type === "expandable") {
-            state[subItem.label.toLowerCase().replace(/\s+/g, "")] = false
+            const key = subItem.label.toLowerCase().replace(/\s+/g, "")
+            state[key] = initialState && typeof initialState[key] !== 'undefined' ? initialState[key] : false
           }
         })
       }
@@ -410,20 +408,22 @@ export default function AdminSidebar({ isOpen = false, onClose, onCollapseChange
     setExpandedSections((prev) => {
       const isCurrentlyOpen = Boolean(prev[sectionKey])
 
-      // Accordion behavior:
-      // 1) If current section is open -> close it.
-      // 2) If current section is closed -> open it and close all others.
-      if (isCurrentlyOpen) {
-        return {
-          ...prev,
-          [sectionKey]: false,
+      const next = {}
+      adminSidebarMenu.forEach((item) => {
+        if (item.type === "section") {
+          item.items.forEach((subItem) => {
+            if (subItem.type === "expandable") {
+              const key = subItem.label.toLowerCase().replace(/\s+/g, "")
+              next[key] = false
+            }
+          })
         }
+      })
+
+      if (!isCurrentlyOpen) {
+        next[sectionKey] = true
       }
 
-      const next = {}
-      Object.keys(prev).forEach((key) => {
-        next[key] = key === sectionKey
-      })
       return next
     })
   }

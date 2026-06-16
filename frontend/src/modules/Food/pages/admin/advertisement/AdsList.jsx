@@ -11,7 +11,77 @@ export default function AdsList() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [adsType, setAdsType] = useState("all")
-  const [ads, setAds] = useState(emptyAds)
+  const [ads, setAds] = useState(() => {
+    const stored = localStorage.getItem("restaurant_ads")
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return parsed.filter(ad => ad.status === "approved")
+    }
+    const defaultAds = [
+      {
+        sl: 1,
+        adsId: "AD-1001",
+        adsTitle: "Super Saver Sunday",
+        restaurantName: "Café Monarch",
+        restaurantEmail: "owner@cafemonarch.com",
+        adsType: "Restaurant Promotion",
+        duration: "Valid till 2026-07-01",
+        validity: "2026-07-01",
+        status: "approved",
+        priority: "1",
+        clicks: 120,
+        impressions: 2400,
+        ctr: "5.0%",
+        description: "Get 50% off on all main courses.",
+        coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop"
+      },
+      {
+        sl: 2,
+        adsId: "AD-1002",
+        adsTitle: "Monsoon Special Beverages",
+        restaurantName: "Hungry Puppets",
+        restaurantEmail: "owner@hungrypuppets.com",
+        adsType: "Restaurant Promotion",
+        duration: "Valid till 2026-08-15",
+        validity: "2026-08-15",
+        status: "approved",
+        priority: "2",
+        clicks: 85,
+        impressions: 1900,
+        ctr: "4.5%",
+        description: "Buy 1 Get 1 Free on all hot beverages.",
+        coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop"
+      },
+      {
+        sl: 3,
+        adsId: "AD-1003",
+        adsTitle: "Weekend Biryani Feast",
+        restaurantName: "Café Monarch",
+        restaurantEmail: "owner@cafemonarch.com",
+        adsType: "Restaurant Promotion",
+        duration: "Valid till 2026-06-30",
+        validity: "2026-06-30",
+        status: "new",
+        priority: "N/A",
+        clicks: 0,
+        impressions: 0,
+        ctr: "0.0%",
+        description: "Flat 20% off on Family Biryani packs.",
+        coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop"
+      }
+    ]
+    localStorage.setItem("restaurant_ads", JSON.stringify(defaultAds))
+    return defaultAds.filter(ad => ad.status === "approved")
+  })
+  const [adRatePerDay, setAdRatePerDay] = useState(() => {
+    const rate = localStorage.getItem("ad_rate_per_day")
+    return rate ? Number(rate) : 100
+  })
+
+  const handleRateChange = (newRate) => {
+    setAdRatePerDay(newRate)
+    localStorage.setItem("ad_rate_per_day", String(newRate))
+  }
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isViewOpen, setIsViewOpen] = useState(false)
@@ -103,6 +173,14 @@ export default function AdsList() {
     setAds(ads.map(ad =>
       ad.sl === sl ? { ...ad, priority: newPriority } : ad
     ))
+    const stored = localStorage.getItem("restaurant_ads")
+    if (stored) {
+      const allAds = JSON.parse(stored)
+      const updated = allAds.map(ad =>
+        ad.sl === sl ? { ...ad, priority: newPriority } : ad
+      )
+      localStorage.setItem("restaurant_ads", JSON.stringify(updated))
+    }
   }
 
   const handleViewAd = (ad) => {
@@ -122,6 +200,12 @@ export default function AdsList() {
   const handleDelete = () => {
     if (selectedAd) {
       setAds(ads.filter(ad => ad.sl !== selectedAd.sl))
+      const stored = localStorage.getItem("restaurant_ads")
+      if (stored) {
+        const allAds = JSON.parse(stored)
+        const updated = allAds.filter(ad => ad.sl !== selectedAd.sl)
+        localStorage.setItem("restaurant_ads", JSON.stringify(updated))
+      }
       setIsDeleteOpen(false)
       setSelectedAd(null)
     }
@@ -177,13 +261,26 @@ export default function AdsList() {
             </div>
           </div>
 
-          <button 
-            onClick={() => navigate("/admin/new-advertisement")}
-            className="px-4 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition-all shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            New Advertisement
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-inner">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ad Rate / Day:</span>
+              <span className="text-sm font-extrabold text-slate-700">₹</span>
+              <input 
+                type="number"
+                value={adRatePerDay}
+                onChange={(e) => handleRateChange(Number(e.target.value))}
+                className="w-20 px-2 py-0.5 border border-slate-300 rounded text-sm font-bold text-slate-800 text-center bg-white focus:outline-none focus:border-blue-500"
+                min="0"
+              />
+            </div>
+            <button 
+              onClick={() => navigate("/admin/new-advertisement")}
+              className="px-4 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition-all shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              New Advertisement
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

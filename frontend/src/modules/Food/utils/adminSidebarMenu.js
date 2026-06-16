@@ -103,6 +103,16 @@ export const adminSidebarMenu = [
         path: "/admin/food/coupons",
         icon: "Gift",
       },
+      {
+        type: "expandable",
+        label: "Advertisements",
+        icon: "Megaphone",
+        subItems: [
+          { label: "Ads List", path: "/admin/food/advertisement" },
+          { label: "Ad Requests", path: "/admin/food/advertisement/requests" },
+          { label: "New Advertisement", path: "/admin/food/advertisement/new" },
+        ],
+      },
     ],
   },
   {

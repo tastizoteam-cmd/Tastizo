@@ -23,7 +23,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, DollarSign, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, XCircle } from "lucide-react"
+import { Activity, ArrowUpRight, ShoppingBag, CreditCard, Truck, Receipt, DollarSign, Store, UserCheck, Package, UserCircle, Clock, CheckCircle, Plus, XCircle, Megaphone } from "lucide-react"
 import { adminAPI } from "@food/api"
 const debugLog = () => {}
 const debugError = () => {}
@@ -44,6 +44,26 @@ export default function AdminHome() {
   const [isLoading, setIsLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState(null)
   const [zones, setZones] = useState([])
+  const [adRevenue, setAdRevenue] = useState(0)
+
+  // Load ad revenue from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("restaurant_ads")
+      if (stored) {
+        const adsList = JSON.parse(stored)
+        const total = adsList.reduce((sum, ad) => {
+          if (ad.isPaid && ad.amountPaid) {
+            return sum + Number(ad.amountPaid)
+          }
+          return sum
+        }, 0)
+        setAdRevenue(total)
+      }
+    } catch (e) {
+      console.error("Failed to parse restaurant_ads:", e)
+    }
+  }, [])
 
   // Fetch zone list for filter
   useEffect(() => {
@@ -139,6 +159,7 @@ export default function AdminHome() {
   const deliveryFeeTotal = dashboardData?.deliveryFee?.total || 0
   const gstTotal = dashboardData?.gst?.total || 0
   const totalAdminEarnings = dashboardData?.totalAdminEarnings || 0
+  const displayTotalAdminEarnings = totalAdminEarnings + adRevenue
 
   // Additional stats
   const totalRestaurants = dashboardData?.restaurants?.total || 0
@@ -170,6 +191,7 @@ export default function AdminHome() {
     `Platform: ${formatCurrency(platformFeeTotal)}`,
     `Delivery Net: ${formatCurrency(deliveryProfit)}`,
     `GST: ${formatCurrency(gstTotal)}`,
+    `Ads: ${formatCurrency(adRevenue)}`,
   ].join(" + ")
 
   return (
@@ -276,8 +298,16 @@ export default function AdminHome() {
               path="/admin/food/tax-report"
             />
             <MetricCard
+              title="Ads Revenue"
+              value={formatCurrency(adRevenue)}
+              helper="Total advertising campaign revenue"
+              icon={<Megaphone className="h-5 w-5 text-emerald-600" />}
+              accent="bg-emerald-200/40"
+              path="/admin/food/advertisement"
+            />
+            <MetricCard
               title="Platform Total"
-              value={formatCurrency(totalAdminEarnings, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              value={formatCurrency(displayTotalAdminEarnings, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               helper={totalRevenueHelper}
               icon={<DollarSign className="h-5 w-5 text-green-600" />}
               accent="bg-green-200/40"

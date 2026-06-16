@@ -1,6 +1,7 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Upload, Heart, Star, Calendar, CheckCircle2, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@food/components/ui/dialog"
+import { adminAPI } from "@food/api"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -11,6 +12,21 @@ const coverPlaceholder = "https://images.unsplash.com/photo-1559339352-11d035aa6
 
 export default function NewAdvertisement() {
   const [activeLanguage, setActiveLanguage] = useState("default")
+  const [restaurants, setRestaurants] = useState([])
+
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const response = await adminAPI.getRestaurants({ limit: 1000 })
+        const list = response?.data?.data?.restaurants || response?.data?.restaurants || []
+        setRestaurants(Array.isArray(list) ? list : [])
+      } catch (err) {
+        console.error("Error loading restaurants:", err)
+      }
+    }
+    fetchRestaurants()
+  }, [])
+
   const [formData, setFormData] = useState({
     title: "",
     shortDescription: "",
@@ -146,7 +162,32 @@ export default function NewAdvertisement() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Here you would typically send the data to your API
+      // Save to localStorage under key "restaurant_ads"
+      const stored = localStorage.getItem("restaurant_ads")
+      const currentAds = stored ? JSON.parse(stored) : []
+      const selectedResObj = restaurants.find(r => (r._id || r.id) === formData.restaurant)
+      
+      const newAd = {
+        sl: currentAds.length + 1,
+        adsId: `AD-${1000 + currentAds.length + 1}`,
+        adsTitle: formData.title,
+        restaurantName: selectedResObj?.name || (formData.restaurant === "cafe-monarch" ? "Café Monarch" : "Hungry Puppets"),
+        restaurantEmail: selectedResObj?.email || (formData.restaurant === "cafe-monarch" ? "owner@cafemonarch.com" : "owner@hungrypuppets.com"),
+        adsType: formData.advertisementType,
+        duration: `Valid till ${formData.validity}`,
+        validity: formData.validity,
+        status: "approved",
+        priority: formData.priority === "Priority" ? "N/A" : (formData.priority === "High" ? "1" : formData.priority === "Normal" ? "2" : "3"),
+        clicks: 0,
+        impressions: 0,
+        ctr: "0.0%",
+        description: formData.shortDescription,
+        profileImage: profilePreview,
+        coverImage: coverPreview,
+        zoneId: selectedResObj?.zoneId || null
+      }
+      localStorage.setItem("restaurant_ads", JSON.stringify([...currentAds, newAd]))
+
       debugLog("Form submitted:", {
         ...formData,
         profileImage,
@@ -263,8 +304,15 @@ export default function NewAdvertisement() {
                         }`}
                       >
                         <option value="">Select Restaurant</option>
-                        <option value="cafe-monarch">Café Monarch</option>
-                        <option value="hungry-puppets">Hungry Puppets</option>
+                        {/* Static Fallback Options */}
+                        <option value="cafe-monarch">Café Monarch (Mock)</option>
+                        <option value="hungry-puppets">Hungry Puppets (Mock)</option>
+                        {/* Dynamic Active Options */}
+                        {restaurants.map(r => (
+                          <option key={r._id || r.id} value={r._id || r.id}>
+                            {r.name}
+                          </option>
+                        ))}
                       </select>
                       {formErrors.restaurant && (
                         <p className="text-xs text-red-500 mt-1">{formErrors.restaurant}</p>

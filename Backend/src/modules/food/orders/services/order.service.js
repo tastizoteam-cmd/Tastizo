@@ -1244,6 +1244,9 @@ export async function listOrdersRestaurant(restaurantId, query) {
       { "payment.status": { $in: ["paid", "authorized", "captured", "settled", "refunded"] } },
     ],
   };
+  if (query.status) {
+    filter.orderStatus = query.status;
+  }
   const [docs, total] = await Promise.all([
     FoodOrder.find(filter)
       .populate(

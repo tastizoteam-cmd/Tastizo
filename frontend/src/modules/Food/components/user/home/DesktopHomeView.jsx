@@ -226,7 +226,8 @@ export default function DesktopHomeView({
   setShowManageCollections,
   setShowToast,
   isOutOfService = false,
-  BACKEND_ORIGIN = ""
+  BACKEND_ORIGIN = "",
+  HeroBannerSection = null
 }) {
   const navigate = useNavigate();
 
@@ -375,6 +376,9 @@ export default function DesktopHomeView({
         </section>
 
         {/* Explore More section removed to hide it in desktop view */}
+
+        {/* Hero Banner Section (Carousel for Ads) */}
+        {HeroBannerSection}
 
         {/* 4. Featured Restaurants - Spacious Grid */}
         <section>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, HelpCircle, Menu, Search, SlidersHorizontal, Calendar, ChevronLeft, X, Loader2, ChevronRight, Star } from "lucide-react"
@@ -10,11 +10,12 @@ const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
 
-const REVIEWS_STORAGE_KEY = "restaurant_reviews_data"
+
 
 const tabs = [
   { id: "complaints", label: "Complaints" },
   { id: "reviews", label: "Reviews" },
+  { id: "customers", label: "Customers" },
 ]
 
 const normalizeOrderStatus = (order) =>
@@ -62,6 +63,8 @@ export default function Feedback() {
   useEffect(() => {
     if (tabFromUrl === "complaints") {
       setActiveTab("complaints")
+    } else if (tabFromUrl === "customers") {
+      setActiveTab("customers")
     } else {
       setActiveTab("reviews")
     }
@@ -73,7 +76,7 @@ export default function Feedback() {
   const touchStartY = useRef(0)
   const isSwiping = useRef(false)
   
-  const feedbackTabs = ["complaints", "reviews"]
+  const feedbackTabs = ["complaints", "reviews", "customers"]
   const [reviews, setReviews] = useState([])
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedFilterCategory, setSelectedFilterCategory] = useState("duration")
@@ -84,6 +87,11 @@ export default function Feedback() {
   })
   const [isFilterLoading, setIsFilterLoading] = useState(false)
   const [displayedReviews, setDisplayedReviews] = useState([])
+  
+  const [customers, setCustomers] = useState([])
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("")
+  const [customerSortBy, setCustomerSortBy] = useState("orders-desc")
+  const [reviewSearchQuery, setReviewSearchQuery] = useState("")
   
   const [isComplaintsFilterOpen, setIsComplaintsFilterOpen] = useState(false)
   const [selectedComplaintsFilterCategory, setSelectedComplaintsFilterCategory] = useState("issueType")
@@ -276,6 +284,71 @@ export default function Feedback() {
           totalReviews: transformedReviews.length
         })
         setReviews(transformedReviews)
+
+        // Aggregate unique customer metrics from delivered orders
+        const customerMap = {}
+        allOrders
+          .filter(order => normalizeOrderStatus(order) === 'delivered')
+          .forEach((order) => {
+          const uId = order.userId?._id || order.userId || order.customerPhone || order.customerName || 'unknown'
+          const cId = String(uId).trim()
+          
+          const userName = order.userId?.name || order.customerName || 'Customer'
+          const userImage = order.userId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`
+          const phone = order.customerPhone || order.userId?.phone || 'N/A'
+          const amount = Number(order.pricing?.total || 0)
+          const rating = extractReviewRating(order)
+          const orderDate = new Date(order.createdAt || Date.now())
+
+          if (!customerMap[cId]) {
+            customerMap[cId] = {
+              id: cId,
+              userName,
+              userImage,
+              phone,
+              totalOrders: 0,
+              totalSpent: 0,
+              lastOrderDate: orderDate,
+              ratingsList: []
+            }
+          }
+
+          const cust = customerMap[cId]
+          cust.totalOrders += 1
+          cust.totalSpent += amount
+          if (orderDate > cust.lastOrderDate) {
+            cust.lastOrderDate = orderDate
+          }
+          if (rating !== null) {
+            cust.ratingsList.push(rating)
+          }
+        })
+
+        const transformedCustomers = Object.values(customerMap).map(cust => {
+          const avgRating = cust.ratingsList.length > 0 
+            ? (cust.ratingsList.reduce((sum, r) => sum + r, 0) / cust.ratingsList.length).toFixed(1)
+            : null
+          
+          const day = cust.lastOrderDate.getDate()
+          const month = cust.lastOrderDate.toLocaleDateString('en-GB', { month: 'short' })
+          const year = cust.lastOrderDate.getFullYear()
+          
+          return {
+            id: cust.id,
+            userName: cust.userName,
+            userImage: cust.userImage,
+            phone: cust.phone,
+            totalOrders: cust.totalOrders,
+            totalSpent: cust.totalSpent,
+            lastOrderDate: `${day} ${month}, ${year}`,
+            averageRating: avgRating ? parseFloat(avgRating) : null,
+            loyaltyStatus: cust.totalOrders >= 5 ? 'VVIP' : cust.totalOrders >= 3 ? 'Loyal' : 'Regular'
+          }
+        })
+        
+        transformedCustomers.sort((a, b) => b.totalOrders - a.totalOrders)
+        setCustomers(transformedCustomers)
+
       } catch (error) {
         debugError("Error fetching reviews:", error)
       } finally {
@@ -288,6 +361,14 @@ export default function Feedback() {
 
   useEffect(() => {
     let filtered = [...reviews]
+    if (reviewSearchQuery.trim()) {
+      const q = reviewSearchQuery.toLowerCase().trim()
+      filtered = filtered.filter(r => 
+        (r.userName || "").toLowerCase().includes(q) || 
+        (r.reviewText || "").toLowerCase().includes(q) ||
+        (r.orderNumber || "").includes(q)
+      )
+    }
     if (filterValues.sortBy) {
       filtered.sort((a, b) => {
         const dateA = new Date(a.date); const dateB = new Date(b.date)
@@ -299,7 +380,34 @@ export default function Feedback() {
       })
     }
     setDisplayedReviews(filtered)
-  }, [reviews, filterValues])
+  }, [reviews, filterValues, reviewSearchQuery])
+
+  const displayedCustomers = useMemo(() => {
+    let filtered = [...customers]
+    
+    if (customerSearchQuery.trim()) {
+      const q = customerSearchQuery.toLowerCase().trim()
+      filtered = filtered.filter(c => 
+        (c.userName || "").toLowerCase().includes(q) || 
+        (c.phone || "").includes(q)
+      )
+    }
+
+    filtered.sort((a, b) => {
+      if (customerSortBy === "orders-desc") {
+        return b.totalOrders - a.totalOrders
+      }
+      if (customerSortBy === "spent-desc") {
+        return b.totalSpent - a.totalSpent
+      }
+      if (customerSortBy === "name-asc") {
+        return (a.userName || "").localeCompare(b.userName || "")
+      }
+      return 0
+    })
+
+    return filtered
+  }, [customers, customerSearchQuery, customerSortBy])
 
   const handleFilterReset = () => { setFilterValues({ duration: null, sortBy: "newest", reviewType: [] }); setIsFilterApply() }
   const handleFilterApply = () => { setIsFilterLoading(true); setIsFilterOpen(false); setTimeout(() => setIsFilterLoading(false), 200) }
@@ -381,8 +489,16 @@ export default function Feedback() {
     if (!isSwiping.current) return
     const swipeDistance = touchStartX.current - touchEndX.current
     if (Math.abs(swipeDistance) > 50) {
-      if (swipeDistance > 0) setActiveTab("reviews")
-      else setActiveTab("complaints")
+      const currentIndex = feedbackTabs.indexOf(activeTab)
+      if (swipeDistance > 0) {
+        if (currentIndex < feedbackTabs.length - 1) {
+          setActiveTab(feedbackTabs[currentIndex + 1])
+        }
+      } else {
+        if (currentIndex > 0) {
+          setActiveTab(feedbackTabs[currentIndex - 1])
+        }
+      }
     }
   }
 
@@ -485,12 +601,18 @@ export default function Feedback() {
               )}
             </AnimatePresence>
           </div>
-        ) : (
+        ) : activeTab === "reviews" ? (
           <div className="space-y-4">
             <div className="flex gap-2">
               <div className="flex-1 bg-white dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 flex items-center gap-2">
                 <Search className="w-4 h-4 text-gray-400" />
-                <input type="text" placeholder="Search reviews" className="flex-1 text-sm bg-transparent focus:outline-none dark:text-white" />
+                <input
+                  type="text"
+                  placeholder="Search reviews"
+                  value={reviewSearchQuery}
+                  onChange={(e) => setReviewSearchQuery(e.target.value)}
+                  className="flex-1 text-sm bg-transparent focus:outline-none dark:text-white"
+                />
               </div>
               <button onClick={() => setIsFilterOpen(true)} className="bg-white dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800">
                 <SlidersHorizontal className="w-4 h-4 text-gray-900 dark:text-white" />
@@ -498,24 +620,106 @@ export default function Feedback() {
             </div>
 
             <div className="space-y-4 pb-20">
-              {displayedReviews.map((review) => (
-                <div key={review.id} className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase">
-                    <span>Order #{review.orderNumber}</span>
-                    <span>{review.date}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <img src={review.userImage} className="w-8 h-8 rounded-full border border-gray-100 dark:border-gray-800" />
-                    <p className="font-bold text-gray-900 dark:text-white text-sm">{review.userName}</p>
-                    <div className="ml-auto flex items-center gap-1 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
-                      {review.rating} <Star className="w-2 h-2 fill-current" />
+              {displayedReviews.length === 0 ? (
+                <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                  <p className="text-sm text-gray-500 font-medium">No reviews found</p>
+                </div>
+              ) : (
+                displayedReviews.map((review) => (
+                  <div key={review.id} className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase">
+                      <span>Order #{review.orderNumber}</span>
+                      <span>{review.date}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <img src={review.userImage} className="w-8 h-8 rounded-full border border-gray-100 dark:border-gray-800" />
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{review.userName}</p>
+                      <div className="ml-auto flex items-center gap-1 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        {review.rating} <Star className="w-2 h-2 fill-current" />
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3">
+                      <p className="text-sm text-gray-800 dark:text-gray-200 font-medium italic">"{review.reviewText}"</p>
                     </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3">
-                    <p className="text-sm text-gray-800 dark:text-gray-200 font-medium italic">"{review.reviewText}"</p>
-                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="flex-1 bg-white dark:bg-[#1a1a1a] p-3 rounded-xl border border-gray-200 dark:border-gray-800 flex items-center gap-2">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search customers..."
+                  value={customerSearchQuery}
+                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                  className="flex-1 text-sm bg-transparent focus:outline-none dark:text-white"
+                />
+              </div>
+              <select
+                value={customerSortBy}
+                onChange={(e) => setCustomerSortBy(e.target.value)}
+                className="bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-800 focus:outline-none dark:text-white font-bold"
+              >
+                <option value="orders-desc">Most Orders</option>
+                <option value="spent-desc">Highest Spent</option>
+                <option value="name-asc">Name (A-Z)</option>
+              </select>
+            </div>
+
+            <div className="space-y-4 pb-20">
+              {displayedCustomers.length === 0 ? (
+                <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                  <p className="text-sm text-gray-500 font-medium">No customers found</p>
                 </div>
-              ))}
+              ) : (
+                displayedCustomers.map((customer) => (
+                  <div key={customer.id} className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm space-y-3">
+                    <div className="flex items-center gap-3">
+                      <img src={customer.userImage} alt={customer.userName} className="w-12 h-12 rounded-full border border-gray-100 dark:border-gray-800 object-cover" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-gray-900 dark:text-white text-sm">{customer.userName}</p>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            customer.loyaltyStatus === 'VVIP' 
+                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600' 
+                              : customer.loyaltyStatus === 'Loyal'
+                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {customer.loyaltyStatus}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 font-semibold">{customer.phone}</p>
+                      </div>
+                      
+                      {customer.averageRating && (
+                        <div className="ml-auto flex items-center gap-1 bg-green-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm">
+                          {customer.averageRating} <Star className="w-2.5 h-2.5 fill-current text-white" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 grid grid-cols-3 gap-2 text-center divide-x divide-gray-100 dark:divide-gray-800">
+                      <div>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Orders</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-white mt-0.5">{customer.totalOrders}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Total Spent</p>
+                        <p className="text-sm font-black text-[#2A9C64] mt-0.5">₹{customer.totalSpent.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Last Order</p>
+                        <p className="text-[11px] font-bold text-gray-700 dark:text-gray-300 mt-1 truncate">{customer.lastOrderDate}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

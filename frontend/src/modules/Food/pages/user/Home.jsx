@@ -458,6 +458,15 @@ export default function Home() {
   const HERO_BANNER_AUTO_SLIDE_MS = 3500;
   const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
   const navigate = useNavigate();
+  const { location, loading, requestLocation, deliveryAddressMode } = useLocation();
+  const {
+    zoneId,
+    zoneStatus,
+    isInService,
+    isOutOfService,
+    loading: zoneLoading,
+    error: zoneError,
+  } = useZone(location);
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const [heroSearch, setHeroSearch] = useState("");
@@ -483,7 +492,23 @@ export default function Home() {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [heroBannerImages, setHeroBannerImages] = useState([]);
   const [heroBannersData, setHeroBannersData] = useState([]); // Store full banner data with linked restaurants
-  const [loadingBanners, setLoadingBanners] = useState(true);
+  const [loadingBanners, setLoadingBanners] = useState(() => {
+    const stored = localStorage.getItem("restaurant_ads");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const todayStr = new Date().toISOString().split("T")[0];
+        const approved = Array.isArray(parsed)
+          ? parsed.filter(ad => ad.status === "approved" && ad.validity && ad.validity >= todayStr)
+          : [];
+        return approved.length > 0;
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  });
+  const publicBannersRef = useRef([]);
   const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false);
   const [landingCategories, setLandingCategories] = useState([]);
   const [landingExploreMore, setLandingExploreMore] = useState([]);
@@ -992,16 +1017,91 @@ export default function Home() {
           : Array.isArray(data)
             ? data
             : [];
-        const images = list
+        
+        publicBannersRef.current = list;
+        
+        // Append approved local advertisements
+        const stored = localStorage.getItem("restaurant_ads");
+        const localApproved = [];
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const todayStr = new Date().toISOString().split("T")[0];
+            const approved = Array.isArray(parsed)
+              ? parsed.filter(ad => {
+                  const isStatusAndValidityOk = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
+                  if (!isStatusAndValidityOk) return false;
+                  if (ad.zoneId && zoneId) {
+                    return String(ad.zoneId) === String(zoneId);
+                  }
+                  return true; // Fallback for legacy ads
+                })
+              : [];
+            approved.forEach(ad => {
+              if (!list.some(b => b.id === ad.adsId)) {
+                localApproved.push({
+                  id: ad.adsId,
+                  title: ad.adsTitle,
+                  imageUrl: ad.coverImage || "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=400&fit=crop",
+                  restaurantName: ad.restaurantName,
+                  link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
+                });
+              }
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        
+        const mergedList = localApproved.length > 0 ? [...list, ...localApproved] : [];
+        const images = mergedList
           .map((b) => (b && typeof b.imageUrl === "string" ? b.imageUrl : ""))
           .filter(Boolean);
         setHeroBannerImages(images);
-        setHeroBannersData(list);
+        setHeroBannersData(mergedList);
         setCurrentBannerIndex(0);
       })
       .catch((err) => {
         if (cancelled) return;
-        debugError("Failed to fetch hero banners", err);
+        debugError("Failed to fetch hero banners, attempting local fallback", err);
+        
+        publicBannersRef.current = [];
+        const stored = localStorage.getItem("restaurant_ads");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const todayStr = new Date().toISOString().split("T")[0];
+            const approved = Array.isArray(parsed)
+              ? parsed.filter(ad => {
+                  const isStatusAndValidityOk = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
+                  if (!isStatusAndValidityOk) return false;
+                  if (ad.zoneId && zoneId) {
+                    return String(ad.zoneId) === String(zoneId);
+                  }
+                  return true;
+                })
+              : [];
+            if (approved.length > 0) {
+              const list = approved.map(ad => ({
+                id: ad.adsId,
+                title: ad.adsTitle,
+                imageUrl: ad.coverImage || "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=400&fit=crop",
+                restaurantName: ad.restaurantName,
+                link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
+              }));
+              const images = list.map(b => b.imageUrl).filter(Boolean);
+              if (images.length > 0) {
+                setHeroBannerImages(images);
+                setHeroBannersData(list);
+                setCurrentBannerIndex(0);
+                return;
+              }
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        
         setHeroBannerImages([]);
         setHeroBannersData([]);
       })
@@ -1011,7 +1111,84 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [zoneId]);
+
+  // Periodic localStorage sync to immediately update/hide ads div in real-time
+  useEffect(() => {
+    const checkAds = () => {
+      const stored = localStorage.getItem("restaurant_ads");
+      const localApproved = [];
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const todayStr = new Date().toISOString().split("T")[0];
+          const approved = Array.isArray(parsed)
+            ? parsed.filter(ad => {
+                const ok = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
+                if (!ok) return false;
+                if (ad.zoneId && zoneId) {
+                  return String(ad.zoneId) === String(zoneId);
+                }
+                return true;
+              })
+            : [];
+          
+          approved.forEach(ad => {
+            localApproved.push({
+              id: ad.adsId,
+              title: ad.adsTitle,
+              imageUrl: ad.coverImage || "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=400&fit=crop",
+              restaurantName: ad.restaurantName,
+              link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
+            });
+          });
+        } catch (e) {
+          console.error("[Home] Error parsing restaurant ads:", e);
+        }
+      }
+
+      // If live approved ads is 0 or less, we hide the ads div completely
+      if (localApproved.length <= 0) {
+        if (heroBannerImages.length > 0) {
+          setHeroBannerImages([]);
+          setHeroBannersData([]);
+        }
+      } else {
+        // If there are live approved ads, merge with public banners and update if changed
+        const list = publicBannersRef.current || [];
+        const merged = [...list];
+        localApproved.forEach(ad => {
+          if (!merged.some(b => b.id === ad.id)) {
+            merged.push(ad);
+          }
+        });
+
+        const currentIds = heroBannersData.map(b => b.id).join(",");
+        const newIds = merged.map(b => b.id).join(",");
+        if (currentIds !== newIds) {
+          const images = merged
+            .map((b) => (b && typeof b.imageUrl === "string" ? b.imageUrl : ""))
+            .filter(Boolean);
+          setHeroBannerImages(images);
+          setHeroBannersData(merged);
+          setCurrentBannerIndex(0);
+        }
+      }
+    };
+
+    const interval = setInterval(checkAds, 1000);
+    window.addEventListener("focus", checkAds);
+    window.addEventListener("visibilitychange", checkAds);
+    
+    // Run initial check
+    checkAds();
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", checkAds);
+      window.removeEventListener("visibilitychange", checkAds);
+    };
+  }, [zoneId, heroBannerImages, heroBannersData]);
 
   // Old backend endpoint removed: keep UI stable with empty categories.
   useEffect(() => {
@@ -1248,15 +1425,6 @@ export default function Home() {
     getDefaultAddress,
   } = profileContext;
   const { addToCart, cart } = useCart();
-  const { location, loading, requestLocation, deliveryAddressMode } = useLocation();
-  const {
-    zoneId,
-    zoneStatus,
-    isInService,
-    isOutOfService,
-    loading: zoneLoading,
-    error: zoneError,
-  } = useZone(location);
   const [showToast, setShowToast] = useState(false);
   const [showManageCollections, setShowManageCollections] = useState(false);
   const [selectedRestaurantSlug, setSelectedRestaurantSlug] = useState(null);
@@ -2494,11 +2662,15 @@ export default function Home() {
             className="absolute inset-0 z-20 h-full w-full border-0 p-0 bg-transparent text-left"
             onClick={() => {
               const bannerData = heroBannersData[currentBannerIndex];
+              if (bannerData?.link) {
+                navigate(bannerData.link);
+                return;
+              }
               const linkedRestaurants = bannerData?.linkedRestaurants || [];
               if (linkedRestaurants.length > 0) {
                 const firstRestaurant = linkedRestaurants[0];
                 const restaurantSlug = firstRestaurant.slug || firstRestaurant.restaurantId || firstRestaurant._id;
-                navigate(`/restaurants/${restaurantSlug}`);
+                navigate(`/user/restaurants/${restaurantSlug}`);
               }
             }}
             aria-label={`Open hero banner ${currentBannerIndex + 1}`}
@@ -2734,6 +2906,7 @@ export default function Home() {
           setShowToast={setShowToast}
           isOutOfService={isOutOfService}
           BACKEND_ORIGIN={BACKEND_ORIGIN}
+          HeroBannerSection={HeroBannerSection}
         />
 
         <div className="md:hidden relative bg-white dark:bg-[#0a0a0a]">
@@ -2800,7 +2973,7 @@ export default function Home() {
                         <Tag className="w-full h-full text-rose-500" />
                       </div>
                     </Link>
-
+ 
                     <Link
                       to="/food/user/under-250"
                       className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-100 dark:border-amber-900/30 group active:scale-[0.98] transition-all"
@@ -3182,6 +3355,9 @@ export default function Home() {
             </div>
           </motion.section>
         )}
+
+        {/* Hero Banner Section (Carousel for Ads) */}
+        {HeroBannerSection}
 
         {/* Featured Foods - Horizontal Scroll */}
 
