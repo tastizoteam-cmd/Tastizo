@@ -106,6 +106,7 @@ const resolveRestaurantBackPath = ({ pathname, state }) => {
 
   if (
     normalizedPath === "/help-centre/support" ||
+    normalizedPath === "/support" ||
     normalizedPath === "/share-feedback"
   ) {
     return explicitBackPath || "/restaurant/explore"
@@ -142,6 +143,21 @@ export default function useRestaurantBackNavigation() {
   const location = useLocation()
 
   return useCallback(() => {
+    const normalizedPath = getNormalizedRestaurantPath(location.pathname)
+    const explicitBackPath = toRestaurantPath(location.state?.backTo) || toRestaurantPath(location.state?.from)
+    const hasHistory = (window.history.state && window.history.state.idx > 0) || (location.key && location.key !== "default")
+
+    if (
+      (normalizedPath === "/help-centre/support" || 
+       normalizedPath === "/support" || 
+       normalizedPath === "/share-feedback") && 
+      !explicitBackPath && 
+      hasHistory
+    ) {
+      navigate(-1)
+      return
+    }
+
     navigate(resolveRestaurantBackPath(location))
   }, [location, navigate])
 }

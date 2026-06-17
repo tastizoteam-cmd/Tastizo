@@ -12,6 +12,10 @@ import {
   ChevronRight,
   HelpCircle,
   X,
+  ShoppingBag,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react"
 import { DateRangeCalendar } from "@food/components/ui/date-range-calendar"
 import { restaurantAPI } from "@food/api"
@@ -59,6 +63,7 @@ const currentWeekDates = getCurrentWeek()
 const lastWeekDates = getLastWeek()
 
 const dateRangeOptions = [
+  { label: "all orders", all: true },
   { label: "last 2 days", getDates: getLast2Days },
   { label: "this week", getDates: getCurrentWeek },
   { label: "last week", getDates: getLastWeek },
@@ -123,7 +128,7 @@ export default function AllOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showCalendar, setShowCalendar] = useState(false)
   const [showDateRangePopup, setShowDateRangePopup] = useState(false)
-  const [selectedDateRange, setSelectedDateRange] = useState(dateRangeOptions[1]) // Default to "this week"
+  const [selectedDateRange, setSelectedDateRange] = useState(dateRangeOptions[2]) // Default to "this week"
   const [startDate, setStartDate] = useState(currentWeekDates.start)
   const [endDate, setEndDate] = useState(currentWeekDates.end)
   const calendarRef = useRef(null)
@@ -237,6 +242,7 @@ export default function AllOrdersPage() {
       customer: customerName,
       items,
       totalPrice: order.pricing?.total || 0,
+      subtotal: order.pricing?.subtotal || 0,
       reason,
       tags: tags.length > 0 ? tags : undefined,
       createdAt: order.createdAt,
@@ -266,6 +272,7 @@ export default function AllOrdersPage() {
           
           // Filter by date range
           const filteredByDate = transformedOrders.filter(order => {
+            if (selectedDateRange.all) return true
             if (!order.createdAt) return false
             const orderDate = new Date(order.createdAt)
             const start = new Date(startDate)
@@ -292,7 +299,7 @@ export default function AllOrdersPage() {
     }
     
     fetchOrders()
-  }, [startDate, endDate, transformOrder])
+  }, [startDate, endDate, transformOrder, selectedDateRange])
 
   // Realtime: instantly prepend new orders (no refresh)
   useEffect(() => {
@@ -346,6 +353,11 @@ export default function AllOrdersPage() {
     if (option.custom) {
       setShowDateRangePopup(false)
       setShowCalendar(true)
+    } else if (option.all) {
+      setSelectedDateRange(option)
+      setStartDate(null)
+      setEndDate(null)
+      setShowDateRangePopup(false)
     } else {
       const dates = option.getDates()
       setSelectedDateRange(option)
@@ -356,6 +368,7 @@ export default function AllOrdersPage() {
   }
 
   const formatDateRange = () => {
+    if (selectedDateRange.all) return "All time history"
     if (!startDate || !endDate) return "Select date range"
     const startDay = startDate.getDate()
     const endDay = endDate.getDate()
@@ -420,10 +433,10 @@ export default function AllOrdersPage() {
   }
 
   const getStatusColor = (status) => {
+    if (status.includes("CANCELLED") || status === "REJECTED") {
+      return "bg-red-700 text-white"
+    }
     switch (status) {
-      case "REJECTED":
-      case "CANCELLED":
-        return "bg-red-700 text-white"
       case "DELIVERED":
         return "bg-green-600 text-white"
       case "PREPARING":
@@ -451,17 +464,19 @@ export default function AllOrdersPage() {
 
     // Order status filter
     if (filters.orderStatus.length > 0) {
-      const statusMap = {
-        'preparing': 'PREPARING',
-        'ready': 'READY',
-        'out-for-delivery': 'OUT FOR DELIVERY',
-        'delivered': 'DELIVERED',
-        'rejected': 'REJECTED',
-        'cancelled': 'CANCELLED'
-      }
-      const matchesStatus = filters.orderStatus.some(
-        statusId => statusMap[statusId] === order.status
-      )
+      const matchesStatus = filters.orderStatus.some(statusId => {
+        if (statusId === 'cancelled') {
+          return order.status.includes('CANCELLED')
+        }
+        const statusMap = {
+          'preparing': 'PREPARING',
+          'ready': 'READY',
+          'out-for-delivery': 'OUT FOR DELIVERY',
+          'delivered': 'DELIVERED',
+          'rejected': 'REJECTED'
+        }
+        return statusMap[statusId] === order.status
+      })
       if (!matchesStatus) return false
     }
 
@@ -476,6 +491,21 @@ export default function AllOrdersPage() {
 
     return true
   })
+
+  const totalSalesAmount = filteredOrders.reduce((sum, order) => {
+    if (!order.status.includes("CANCELLED") && order.status !== "REJECTED") {
+      return sum + (order.subtotal || 0)
+    }
+    return sum
+  }, 0)
+
+  const completedOrdersCount = filteredOrders.filter(
+    (order) => order.status === "DELIVERED"
+  ).length
+
+  const cancelledOrdersCount = filteredOrders.filter(
+    (order) => order.status.includes("CANCELLED") || order.status === "REJECTED"
+  ).length
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -553,6 +583,55 @@ export default function AllOrdersPage() {
             <ChevronDown className="w-4 h-4 text-gray-400" />
           </div>
         </button>
+      </div>
+
+      {/* Stats Card */}
+      <div className="px-4 pb-2">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm grid grid-cols-2 gap-y-4 gap-x-2">
+          {/* Total Orders */}
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-50 rounded-xl">
+              <ShoppingBag className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Total Orders</p>
+              <p className="text-base font-black text-gray-900 mt-0.5">{filteredOrders.length}</p>
+            </div>
+          </div>
+          
+          {/* Total Sales */}
+          <div className="flex items-center gap-3 border-l border-gray-100 pl-3">
+            <div className="p-2.5 bg-emerald-50 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Total Sales</p>
+              <p className="text-base font-black text-emerald-600 mt-0.5">{formatMoney(totalSalesAmount)}</p>
+            </div>
+          </div>
+
+          {/* Completed Orders */}
+          <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
+            <div className="p-2.5 bg-green-50 rounded-xl">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Completed</p>
+              <p className="text-base font-black text-gray-900 mt-0.5">{completedOrdersCount}</p>
+            </div>
+          </div>
+
+          {/* Cancelled Orders */}
+          <div className="flex items-center gap-3 border-t border-l border-gray-100 pl-3 pt-3">
+            <div className="p-2.5 bg-rose-50 rounded-xl">
+              <XCircle className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Cancelled</p>
+              <p className="text-base font-black text-gray-900 mt-0.5">{cancelledOrdersCount}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Active Filters Summary */}
@@ -759,7 +838,7 @@ export default function AllOrdersPage() {
                     >
                       <div>
                         <p className="text-sm font-semibold text-gray-900 capitalize">{option.label}</p>
-                        {!option.custom && (
+                        {!option.custom && !option.all && (
                           <p className="text-xs text-gray-500 mt-0.5">
                             {(() => {
                               const dates = option.getDates()
@@ -767,6 +846,11 @@ export default function AllOrdersPage() {
                               const end = dates.end.toLocaleDateString("en-US", { day: "numeric", month: "short" })
                               return `${start} - ${end}`
                             })()}
+                          </p>
+                        )}
+                        {option.all && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            All time orders history
                           </p>
                         )}
                       </div>

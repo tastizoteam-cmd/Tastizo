@@ -825,6 +825,7 @@ function TableBookings() {
 }
 
 function AllOrders({ onSelectOrder, onCancel, onOpenRiderDetails }) {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());

@@ -1992,6 +1992,30 @@ export function DesktopOrderHistoryView({ embedded = false }) {
     })
   }, [desktopFrame, embedded, toolbar])
 
+  const totalSalesAmount = useMemo(() => {
+    return historyOrders.reduce((sum, order) => {
+      const status = String(order.status || "").toUpperCase()
+      if (!status.includes("CANCELLED") && status !== "REJECTED") {
+        return sum + (order.pricing?.subtotal || order.subtotal || 0)
+      }
+      return sum
+    }, 0)
+  }, [historyOrders])
+
+  const completedOrdersCount = useMemo(() => {
+    return historyOrders.filter((order) => {
+      const status = String(order.status || "").toUpperCase()
+      return status === "DELIVERED"
+    }).length
+  }, [historyOrders])
+
+  const cancelledOrdersCount = useMemo(() => {
+    return historyOrders.filter((order) => {
+      const status = String(order.status || "").toUpperCase()
+      return status.includes("CANCELLED") || status === "REJECTED"
+    }).length
+  }, [historyOrders])
+
   const content = (
     <div className="space-y-5">
       <div className="grid grid-cols-[360px_1fr] overflow-hidden rounded-[24px] border border-[#e5e8f0] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
@@ -2005,6 +2029,26 @@ export function DesktopOrderHistoryView({ embedded = false }) {
                 placeholder="Enter full order ID to search"
                 className="h-11 w-full rounded-xl border border-[#dce1eb] bg-white pl-11 pr-4 text-sm outline-none transition focus:border-[#8aa3f5]"
               />
+            </div>
+          </div>
+          <div className="border-b border-[#edf0f5] p-4 bg-[#f8fafc]">
+            <div className="grid grid-cols-2 gap-3 text-[#2b3343]">
+              <div>
+                <p className="text-[10px] text-[#7b8498] font-bold uppercase tracking-wider">Total Orders</p>
+                <p className="text-lg font-black mt-0.5">{historyOrders.length}</p>
+              </div>
+              <div className="border-l border-[#eef2f7] pl-3">
+                <p className="text-[10px] text-[#7b8498] font-bold uppercase tracking-wider">Total Sales</p>
+                <p className="text-lg font-black text-emerald-600 mt-0.5">{currency(totalSalesAmount)}</p>
+              </div>
+              <div className="border-t border-[#eef2f7] pt-2.5">
+                <p className="text-[10px] text-[#7b8498] font-bold uppercase tracking-wider">Completed</p>
+                <p className="text-lg font-black mt-0.5">{completedOrdersCount}</p>
+              </div>
+              <div className="border-t border-l border-[#eef2f7] pl-3 pt-2.5">
+                <p className="text-[10px] text-[#7b8498] font-bold uppercase tracking-wider">Cancelled</p>
+                <p className="text-lg font-black mt-0.5">{cancelledOrdersCount}</p>
+              </div>
             </div>
           </div>
           <div className="max-h-[720px] overflow-y-auto">

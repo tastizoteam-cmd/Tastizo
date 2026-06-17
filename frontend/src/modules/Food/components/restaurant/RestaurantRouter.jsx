@@ -103,6 +103,7 @@ export default function RestaurantRouter() {
           <Route path="share-feedback" element={<ShareFeedback />} />
           <Route path="dish-ratings" element={<DishRatings />} />
           <Route path="help-centre/support" element={<RestaurantSupport />} />
+          <Route path="support" element={<RestaurantSupport />} />
           <Route path="fssai" element={<FssaiDetails />} />
           <Route path="fssai/update" element={<FssaiUpdate />} />
           <Route path="hyperpure" element={<Hyperpure />} />
