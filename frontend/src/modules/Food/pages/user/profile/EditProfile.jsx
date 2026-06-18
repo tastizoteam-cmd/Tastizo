@@ -384,6 +384,7 @@ export default function EditProfile() {
     }
   }
 
+
   const handleMobileChange = () => {
     // Navigate to mobile change page or show modal
     debugLog('Change mobile clicked')
@@ -639,6 +640,8 @@ export default function EditProfile() {
           )}
         </Button>
 
+
+
         <ImageSourcePicker
           isOpen={photoPickerOpen}
           onClose={() => setPhotoPickerOpen(false)}
@@ -649,6 +652,8 @@ export default function EditProfile() {
           galleryInputRef={fileInputRef}
         />
       </div>
+
+
     </div>
   )
 }

@@ -14,7 +14,8 @@ import {
 import {
     getCurrentUserProfileController,
     updateCurrentUserProfileController,
-    uploadCurrentUserProfileImageController
+    uploadCurrentUserProfileImageController,
+    deleteCurrentUserProfileController
 } from '../controllers/userProfile.controller.js';
 import {
     getUserWalletController,
@@ -38,7 +39,9 @@ const router = express.Router();
 
 router.get('/profile', getCurrentUserProfileController);
 router.patch('/profile', updateCurrentUserProfileController);
+router.delete('/profile', deleteCurrentUserProfileController);
 router.post('/profile/profile-image', upload.single('file'), uploadCurrentUserProfileImageController);
+
 
 // Wallet (Bearer USER)
 router.get('/wallet', getUserWalletController);

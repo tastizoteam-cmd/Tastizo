@@ -1,6 +1,7 @@
 import { FoodUser } from '../../../../core/users/user.model.js';
 import { AuthError, ValidationError } from '../../../../core/auth/errors.js';
 import { uploadImageBuffer } from '../../../../services/cloudinary.service.js';
+import { FoodRefreshToken } from '../../../../core/refreshTokens/refreshToken.model.js';
 
 const parseIsoDateOrNull = (value) => {
     if (value === undefined) return undefined;
@@ -55,4 +56,40 @@ export const uploadCurrentUserProfileImage = async (userId, file) => {
     await user.save();
     return { profileImage: user.profileImage, user: user.toObject() };
 };
+
+export const deleteCurrentUserProfile = async (userId) => {
+    const user = await FoodUser.findById(userId);
+    if (!user) throw new AuthError('Profile not found');
+
+    // 1. Mark account as inactive to prevent further authentication
+    user.isActive = false;
+
+    // 2. Anonymize user details to free up phone number and comply with privacy rules
+    const suffix = `_deleted_${Date.now()}`;
+    user.phone = `${user.phone}${suffix}`;
+    if (user.email) {
+        user.email = `${user.email}${suffix}`;
+    }
+    user.name = "Deleted User";
+    user.profileImage = "";
+    user.appleId = undefined;
+    user.googleId = undefined;
+    user.fcmTokens = [];
+    user.fcmTokenMobile = [];
+    user.dateOfBirth = null;
+    user.anniversary = null;
+    user.gender = "";
+
+    // 3. Clear user's saved addresses
+    user.addresses = [];
+
+    // 4. Save anonymized data
+    await user.save();
+
+    // 5. Invalidate refresh tokens to log out of all active devices
+    await FoodRefreshToken.deleteMany({ userId });
+
+    return { success: true };
+};
+
 

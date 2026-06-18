@@ -20,6 +20,7 @@ import { restaurantAPI, adminAPI } from "@food/api"
 import { isModuleAuthenticated } from "@food/utils/auth"
 import { flattenMenuItems, getMenuFromResponse } from "@food/utils/menuItems"
 import { calculateDistance, formatDistance } from "@food/utils/common"
+import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability"
 import { shareContent } from "@food/utils/share"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -447,8 +448,14 @@ export default function Under250() {
           ? response.data.data.restaurants
           : []
 
+        // Filter out restaurants that are not currently serving
+        const activeRestaurants = restaurantsRaw.filter(restaurant => {
+          const availability = getRestaurantAvailabilityStatus(restaurant)
+          return availability.isOpen
+        })
+
         const restaurantsWithUnder250Dishes = await Promise.all(
-          restaurantsRaw.map(async (restaurant, index) => {
+          activeRestaurants.map(async (restaurant, index) => {
             const restaurantId = restaurant?.restaurantId || restaurant?._id
             if (!restaurantId) return null
 

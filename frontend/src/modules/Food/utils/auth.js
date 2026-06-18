@@ -176,6 +176,7 @@ export function clearUserSession() {
     "userLocation",
     "deliveryAddressMode",
     "selectedAddressId",
+    "userPaymentMethods",
   ];
   keys.forEach((k) => localStorage.removeItem(k));
 }

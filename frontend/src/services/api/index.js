@@ -2249,6 +2249,11 @@ export const userAPI = {
     apiClient.patch("/food/user/profile", body ?? {}, {
       contextModule: "user",
     }),
+  /** DELETE /food/user/profile (Bearer USER) */
+  deleteProfile: () =>
+    apiClient.delete("/food/user/profile", {
+      contextModule: "user",
+    }),
   /** Upload and set user profile image (multipart). Field name: file */
   uploadProfileImage: (file) => {
     if (!file) return Promise.reject(new Error("File is required"));
