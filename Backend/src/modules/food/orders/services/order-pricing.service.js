@@ -207,19 +207,34 @@ export async function calculateOrderPricing(userId, dto) {
         firstOrderOk;
 
       if (allowed) {
+        let calculatedDiscount = 0;
         if (offer.discountType === "percentage") {
           const raw = subtotal * (Number(offer.discountValue) / 100);
           const capped = Number(offer.maxDiscount)
             ? Math.min(raw, Number(offer.maxDiscount))
             : raw;
-          discount = Math.max(0, Math.min(subtotal, Math.floor(capped)));
+          calculatedDiscount = Math.max(0, Math.min(subtotal, Math.floor(capped)));
         } else {
-          discount = Math.max(
+          calculatedDiscount = Math.max(
             0,
             Math.min(subtotal, Math.floor(Number(offer.discountValue) || 0)),
           );
         }
-        appliedCoupon = { code: codeRaw, discount };
+
+        const { getRestaurantCommissionSnapshot } = await import('./foodTransaction.service.js');
+        const commissionSnapshot = await getRestaurantCommissionSnapshot({
+          restaurantId: dto.restaurantId,
+          pricing: { subtotal }
+        });
+        const platformCommission = commissionSnapshot?.commissionAmount || 0;
+
+        discount = Math.min(calculatedDiscount, platformCommission);
+        appliedCoupon = {
+          code: codeRaw,
+          discount,
+          capped: discount < calculatedDiscount,
+          platformCommission
+        };
       }
     }
   }

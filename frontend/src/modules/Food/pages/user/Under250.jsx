@@ -113,6 +113,13 @@ export default function Under250() {
     itemId: "",
   })
   const [viewCartButtonBottom, setViewCartButtonBottom] = useState("bottom-[92px]")
+  const [availabilityTick, setAvailabilityTick] = useState(Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAvailabilityTick(Date.now())
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [])
   const lastScrollY = useRef(0)
   const scrollLockYRef = useRef(0)
   const itemDetailContentRef = useRef(null)
@@ -216,6 +223,15 @@ export default function Under250() {
   const sortedAndFilteredRestaurants = useMemo(() => {
     let filtered = under250Restaurants.map(r => ({ ...r, menuItems: [...(r.menuItems || [])] }))
 
+    // Filter out offline/closed restaurants
+    filtered = filtered.filter(restaurant => {
+      if (restaurant.isActive === false || restaurant.isAcceptingOrders === false) {
+        return false
+      }
+      const availability = getRestaurantAvailabilityStatus(restaurant, new Date(availabilityTick))
+      return availability.isOpen
+    })
+
     // Apply category filter
     if (activeCategory) {
       const selectedCat = categories.find(cat => cat.id === activeCategory)
@@ -284,7 +300,7 @@ export default function Under250() {
     }
 
     return filtered
-  }, [under250Restaurants, selectedSort, under30MinsFilter, activeCategory, categories])
+  }, [under250Restaurants, selectedSort, under30MinsFilter, activeCategory, categories, availabilityTick])
 
   // Fetch under-50 banner from public API
   useEffect(() => {
@@ -450,6 +466,9 @@ export default function Under250() {
 
         // Filter out restaurants that are not currently serving
         const activeRestaurants = restaurantsRaw.filter(restaurant => {
+          if (restaurant.isActive === false || restaurant.isAcceptingOrders === false) {
+            return false
+          }
           const availability = getRestaurantAvailabilityStatus(restaurant)
           return availability.isOpen
         })
@@ -472,23 +491,45 @@ export default function Under250() {
                 .filter((value, valueIndex, arr) => arr.indexOf(value) === valueIndex)
 
               let menuResponse = null
-              for (const lookupId of lookupIds) {
-                try {
-                  const response = await restaurantAPI.getMenuByRestaurantId(lookupId, {
-                    noCache: true,
-                    params: Object.keys(zoneRequestParams).length > 0 ? zoneRequestParams : undefined,
-                  })
-                  const resolvedMenu = getMenuFromResponse(response)
-                  if (response?.data?.success && resolvedMenu) {
-                    menuResponse = response
-                    break
-                  }
-                } catch (lookupError) {
-                  if (lookupError?.response?.status !== 404) {
-                    throw lookupError
+              const fetchMenuPromise = (async () => {
+                for (const lookupId of lookupIds) {
+                  try {
+                    const response = await restaurantAPI.getMenuByRestaurantId(lookupId, {
+                      noCache: true,
+                      params: Object.keys(zoneRequestParams).length > 0 ? zoneRequestParams : undefined,
+                    })
+                    const resolvedMenu = getMenuFromResponse(response)
+                    if (response?.data?.success && resolvedMenu) {
+                      menuResponse = response
+                      break
+                    }
+                  } catch (lookupError) {
+                    if (lookupError?.response?.status !== 404) {
+                      throw lookupError
+                    }
                   }
                 }
-              }
+              })()
+
+              let outletTimings = null
+              const fetchOutletTimingsPromise = (async () => {
+                const targetIdForTimings = restaurant?._id || restaurantId
+                if (targetIdForTimings) {
+                  try {
+                    const outletResponse = await restaurantAPI.getOutletTimingsByRestaurantId(targetIdForTimings, {
+                      noCache: true,
+                    })
+                    outletTimings =
+                      outletResponse?.data?.data?.outletTimings ||
+                      outletResponse?.data?.outletTimings ||
+                      null
+                  } catch (_) {
+                    // Keep null on failure
+                  }
+                }
+              })()
+
+              await Promise.all([fetchMenuPromise, fetchOutletTimingsPromise])
 
               const menu = getMenuFromResponse(menuResponse)
               const menuItems = flattenMenuItems(menu)
@@ -562,6 +603,13 @@ export default function Under250() {
                 distanceInKm,
                 originalIndex: index,
                 menuItems,
+                // Timings and availability fields
+                openingTime: restaurant?.openingTime || null,
+                closingTime: restaurant?.closingTime || null,
+                openDays: Array.isArray(restaurant?.openDays) ? restaurant.openDays : [],
+                isAcceptingOrders: restaurant?.isAcceptingOrders !== false,
+                isActive: restaurant?.isActive !== false,
+                outletTimings,
               }
             } catch {
               return null
@@ -569,7 +617,16 @@ export default function Under250() {
           })
         )
 
-        setUnder250Restaurants(restaurantsWithUnder250Dishes.filter(Boolean))
+        const enrichedRestaurants = restaurantsWithUnder250Dishes.filter(Boolean)
+        const finalActiveRestaurants = enrichedRestaurants.filter(restaurant => {
+          if (restaurant.isActive === false || restaurant.isAcceptingOrders === false) {
+            return false
+          }
+          const availability = getRestaurantAvailabilityStatus(restaurant)
+          return availability.isOpen
+        })
+
+        setUnder250Restaurants(finalActiveRestaurants)
       } catch (error) {
         debugError('Error fetching restaurants under 250:', error)
         setUnder250Restaurants([])
