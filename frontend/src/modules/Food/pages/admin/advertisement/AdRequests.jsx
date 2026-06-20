@@ -5,6 +5,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@food/components/ui/dialog"
 import SettingsDialog from "@food/components/admin/orders/SettingsDialog"
 import { exportAdvertisementsToCSV, exportAdvertisementsToExcel, exportAdvertisementsToPDF, exportAdvertisementsToJSON } from "@food/components/admin/advertisements/advertisementsExportUtils"
+import { addTransaction } from "@food/utils/walletState"
+import { toast } from "sonner"
+import { adminAPI } from "@food/api"
 
 export default function AdRequests() {
   const [activeTab, setActiveTab] = useState("new")
@@ -31,7 +34,8 @@ export default function AdRequests() {
         impressions: 2400,
         ctr: "5.0%",
         description: "Get 50% off on all main courses.",
-        coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop",
+        zoneId: "6a265702ca46c4c4b769a82b"
       },
       {
         sl: 2,
@@ -48,7 +52,8 @@ export default function AdRequests() {
         impressions: 1900,
         ctr: "4.5%",
         description: "Buy 1 Get 1 Free on all hot beverages.",
-        coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop",
+        zoneId: "6a26572bca46c4c4b769a837"
       },
       {
         sl: 3,
@@ -65,7 +70,8 @@ export default function AdRequests() {
         impressions: 0,
         ctr: "0.0%",
         description: "Flat 20% off on Family Biryani packs.",
-        coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop",
+        zoneId: "6a265702ca46c4c4b769a82b"
       }
     ]
     localStorage.setItem("restaurant_ads", JSON.stringify(defaultAds))
@@ -131,6 +137,9 @@ export default function AdRequests() {
       result = result.filter(r => r.restaurantName === filters.restaurant)
     }
     
+    // Sort: newest first
+    result.sort((a, b) => (b.sl || 0) - (a.sl || 0))
+    
     return result
   }, [requests, searchQuery, activeTab, filters])
 
@@ -175,17 +184,62 @@ export default function AdRequests() {
     }
   }
 
-  const handleDeny = (sl) => {
-    setRequests(requests.map(r => 
-      r.sl === sl ? { ...r, status: "denied" } : r
-    ))
+  const handleDeny = async (sl) => {
+    let deniedAd = null
+    const updatedRequests = requests.map(r => {
+      if (r.sl === sl) {
+        deniedAd = r
+        return { ...r, status: "denied" }
+      }
+      return r
+    })
+
     const stored = localStorage.getItem("restaurant_ads")
     if (stored) {
       const allAds = JSON.parse(stored)
-      const updated = allAds.map(ad => 
-        ad.sl === sl ? { ...ad, status: "denied" } : ad
-      )
+      const updated = allAds.map(ad => {
+        if (ad.sl === sl) {
+          deniedAd = ad
+          return { ...ad, status: "denied" }
+        }
+        return ad
+      })
       localStorage.setItem("restaurant_ads", JSON.stringify(updated))
+    }
+
+    if (deniedAd && deniedAd.amountPaid > 0) {
+      try {
+        // 1. Call Backend to add transaction to DB
+        await adminAPI.refundAdPayment({
+          restaurantId: deniedAd.restaurantId,
+          restaurantName: deniedAd.restaurantName,
+          restaurantEmail: deniedAd.restaurantEmail,
+          amount: parseFloat(deniedAd.amountPaid),
+          adTitle: deniedAd.adsTitle,
+          adId: deniedAd.adsId
+        })
+
+        // 2. Local Fallback: Add transaction to localStorage as well (to keep local storage state in sync)
+        const refundTx = {
+          amount: parseFloat(deniedAd.amountPaid),
+          description: `Refund for rejected Ad Request: ${deniedAd.adsTitle} (${deniedAd.adsId})`,
+          status: "Completed",
+          type: "payment",
+          adId: deniedAd.adsId
+        }
+        addTransaction(refundTx)
+
+        // 3. Update requests state on UI
+        setRequests(updatedRequests)
+
+        toast.success(`Ad request denied. Amount ₹${deniedAd.amountPaid} refunded to restaurant wallet.`)
+      } catch (err) {
+        console.error("Failed to process ad rejection refund:", err)
+        toast.error("Failed to process wallet refund: " + (err.response?.data?.message || err.message))
+      }
+    } else {
+      setRequests(updatedRequests)
+      toast.success("Ad request denied.")
     }
   }
 

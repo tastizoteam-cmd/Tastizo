@@ -1671,3 +1671,87 @@ export async function getDiningEarningsController(req, res, next) {
         next(error);
     }
 }
+
+export async function refundAdPaymentController(req, res, next) {
+    try {
+        const { restaurantId, restaurantName, restaurantEmail, amount, adTitle, adId } = req.body;
+        
+        if (amount === undefined || amount === null || Number(amount) <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid or missing refund amount' });
+        }
+
+        const { FoodRestaurant } = await import('../../restaurant/models/restaurant.model.js');
+        const { FoodTransaction } = await import('../../orders/models/foodTransaction.model.js');
+        const mongoose = (await import('mongoose')).default;
+
+        let restaurant = null;
+        if (restaurantId && mongoose.Types.ObjectId.isValid(restaurantId)) {
+            restaurant = await FoodRestaurant.findById(new mongoose.Types.ObjectId(restaurantId));
+        }
+
+        if (!restaurant && restaurantEmail) {
+            restaurant = await FoodRestaurant.findOne({ ownerEmail: restaurantEmail });
+        }
+
+        if (!restaurant && restaurantName) {
+            restaurant = await FoodRestaurant.findOne({ restaurantName: restaurantName });
+        }
+
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurant not found for refund' });
+        }
+
+        // Create refund transaction in FoodTransaction
+        const refundTx = new FoodTransaction({
+            userId: restaurant._id, // use restaurant ID as it is also the owner's FoodUser ID
+            restaurantId: restaurant._id,
+            paymentMethod: 'wallet',
+            status: 'captured',
+            pricing: {
+                subtotal: Number(amount),
+                tax: 0,
+                packagingFee: 0,
+                deliveryFee: 0,
+                platformFee: 0,
+                restaurantCommission: 0,
+                discount: 0,
+                total: Number(amount),
+                currency: 'INR'
+            },
+            payment: {
+                method: 'wallet',
+                status: 'paid',
+                amountDue: 0
+            },
+            amounts: {
+                totalCustomerPaid: Number(amount),
+                restaurantShare: Number(amount),
+                restaurantCommission: 0,
+                riderShare: 0,
+                platformNetProfit: 0,
+                taxAmount: 0
+            },
+            orderReadableId: adId || 'AD-REFUND',
+            type: 'dining',
+            metadata: {
+                foodNames: `Ad Refund: ${adTitle || 'Ad Campaign'}`
+            },
+            history: [{
+                kind: 'captured',
+                amount: Number(amount),
+                note: `Refund for rejected Ad Request: ${adTitle || ''} (${adId || ''})`
+            }]
+        });
+
+        await refundTx.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Refund transaction created successfully',
+            data: refundTx
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+

@@ -171,8 +171,9 @@ export default function NewAdvertisement() {
         sl: currentAds.length + 1,
         adsId: `AD-${1000 + currentAds.length + 1}`,
         adsTitle: formData.title,
-        restaurantName: selectedResObj?.name || (formData.restaurant === "cafe-monarch" ? "Café Monarch" : "Hungry Puppets"),
-        restaurantEmail: selectedResObj?.email || (formData.restaurant === "cafe-monarch" ? "owner@cafemonarch.com" : "owner@hungrypuppets.com"),
+        restaurantName: selectedResObj?.restaurantName || selectedResObj?.name || (formData.restaurant === "cafe-monarch" ? "Café Monarch" : "Hungry Puppets"),
+        restaurantEmail: selectedResObj?.ownerEmail || selectedResObj?.email || (formData.restaurant === "cafe-monarch" ? "owner@cafemonarch.com" : "owner@hungrypuppets.com"),
+        restaurantId: selectedResObj?._id || selectedResObj?.id || (formData.restaurant === "cafe-monarch" ? "mock-monarch-id" : formData.restaurant === "hungry-puppets" ? "mock-puppets-id" : formData.restaurant),
         adsType: formData.advertisementType,
         duration: `Valid till ${formData.validity}`,
         validity: formData.validity,
@@ -184,7 +185,7 @@ export default function NewAdvertisement() {
         description: formData.shortDescription,
         profileImage: profilePreview,
         coverImage: coverPreview,
-        zoneId: selectedResObj?.zoneId || null
+        zoneId: (selectedResObj?.zoneId?._id || selectedResObj?.zoneId?.id || selectedResObj?.zoneId) || (formData.restaurant === "cafe-monarch" ? "6a265702ca46c4c4b769a82b" : formData.restaurant === "hungry-puppets" ? "6a26572bca46c4c4b769a837" : null)
       }
       localStorage.setItem("restaurant_ads", JSON.stringify([...currentAds, newAd]))
 
@@ -310,7 +311,7 @@ export default function NewAdvertisement() {
                         {/* Dynamic Active Options */}
                         {restaurants.map(r => (
                           <option key={r._id || r.id} value={r._id || r.id}>
-                            {r.name}
+                            {r.restaurantName || r.name}
                           </option>
                         ))}
                       </select>

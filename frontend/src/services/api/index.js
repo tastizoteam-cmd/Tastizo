@@ -266,6 +266,10 @@ export const adminAPI = {
       { reason },
       { contextModule: "admin" },
     ),
+  refundAdPayment: (body) =>
+    apiClient.post("/food/admin/restaurants/refund-ad", body, {
+      contextModule: "admin",
+    }),
   /** Delivery partner join requests - uses /food/admin/delivery/* (new backend API) */
   getDeliveryPartnerJoinRequests: (params) =>
     apiClient.get("/food/admin/delivery/join-requests", {

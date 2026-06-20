@@ -88,7 +88,8 @@ export default function Ads() {
           impressions: 2400,
           ctr: "5.0%",
           description: "Get 50% off on all main courses.",
-          coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop"
+          coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop",
+          zoneId: "6a265702ca46c4c4b769a82b"
         },
         {
           sl: 2,
@@ -105,7 +106,8 @@ export default function Ads() {
           impressions: 1900,
           ctr: "4.5%",
           description: "Buy 1 Get 1 Free on all hot beverages.",
-          coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop"
+          coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop",
+          zoneId: "6a26572bca46c4c4b769a837"
         },
         {
           sl: 3,
@@ -122,7 +124,8 @@ export default function Ads() {
           impressions: 0,
           ctr: "0.0%",
           description: "Flat 20% off on Family Biryani packs.",
-          coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop"
+          coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop",
+          zoneId: "6a265702ca46c4c4b769a82b"
         }
       ]
       localStorage.setItem("restaurant_ads", JSON.stringify(defaultAds))
@@ -133,7 +136,7 @@ export default function Ads() {
   // Filtered ads list
   const filteredAds = useMemo(() => {
     // If restaurant logs in, only show ads belonging to their restaurant
-    const restName = restaurantData?.name || "Café Monarch"
+    const restName = restaurantData?.restaurantName || restaurantData?.name || "Café Monarch"
     let result = ads.filter(ad => ad.restaurantName?.toLowerCase() === restName.toLowerCase())
     
     // In case no matches, show all mock ads so the panel doesn't look empty for any other restaurant account
@@ -152,6 +155,9 @@ export default function Ads() {
         ad.adsTitle?.toLowerCase().includes(query)
       )
     }
+
+    // Sort: newest first
+    result.sort((a, b) => (b.sl || 0) - (a.sl || 0))
 
     return result
   }, [ads, restaurantData, adTypeFilter, searchQuery])
@@ -281,8 +287,9 @@ export default function Ads() {
               sl: currentAds.length + 1,
               adsId: `AD-${1000 + currentAds.length + 1}`,
               adsTitle: form.title,
-              restaurantName: restaurantData?.name || "Café Monarch",
-              restaurantEmail: restaurantData?.email || "owner@cafemonarch.com",
+              restaurantId: restaurantData?._id || restaurantData?.id || null,
+              restaurantName: restaurantData?.restaurantName || restaurantData?.name || "Café Monarch",
+              restaurantEmail: restaurantData?.ownerEmail || restaurantData?.email || "owner@cafemonarch.com",
               adsType: "Restaurant Promotion",
               duration: `Valid for ${days} ${days === 1 ? "day" : "days"} (till ${validityStr})`,
               validity: validityStr,
@@ -296,7 +303,7 @@ export default function Ads() {
               amountPaid: totalAmount,
               isPaid: true,
               razorpayPaymentId: response.razorpay_payment_id,
-              zoneId: restaurantData?.zoneId || null
+              zoneId: (restaurantData?.zoneId?._id || restaurantData?.zoneId?.id || restaurantData?.zoneId) || null
             }
 
             const updatedAds = [...currentAds, newAd]

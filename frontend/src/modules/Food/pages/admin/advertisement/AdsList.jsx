@@ -33,7 +33,8 @@ export default function AdsList() {
         impressions: 2400,
         ctr: "5.0%",
         description: "Get 50% off on all main courses.",
-        coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&h=400&fit=crop",
+        zoneId: "6a265702ca46c4c4b769a82b"
       },
       {
         sl: 2,
@@ -50,7 +51,8 @@ export default function AdsList() {
         impressions: 1900,
         ctr: "4.5%",
         description: "Buy 1 Get 1 Free on all hot beverages.",
-        coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=400&fit=crop",
+        zoneId: "6a26572bca46c4c4b769a837"
       },
       {
         sl: 3,
@@ -67,7 +69,8 @@ export default function AdsList() {
         impressions: 0,
         ctr: "0.0%",
         description: "Flat 20% off on Family Biryani packs.",
-        coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop"
+        coverImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=1200&h=400&fit=crop",
+        zoneId: "6a265702ca46c4c4b769a82b"
       }
     ]
     localStorage.setItem("restaurant_ads", JSON.stringify(defaultAds))

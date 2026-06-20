@@ -14,7 +14,7 @@ export const getPublicHeroBannersController = async (req, res, next) => {
             .sort({ sortOrder: 1, createdAt: -1 })
             .populate({
                 path: 'linkedRestaurantIds',
-                select: '_id restaurantName slug area city rating cuisines profileImage pureVegRestaurant',
+                select: '_id restaurantName slug area city rating cuisines profileImage pureVegRestaurant isAcceptingOrders status isAdminApproved',
                 model: 'FoodRestaurant'
             })
             .lean();
@@ -97,4 +97,3 @@ export const getPublicLandingSettingsController = async (req, res, next) => {
         next(error);
     }
 };
-

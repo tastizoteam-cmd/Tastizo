@@ -455,7 +455,7 @@ const RestaurantImageCarousel = React.memo(
 );
 
 export default function Home() {
-  const HERO_BANNER_AUTO_SLIDE_MS = 3500;
+  const HERO_BANNER_AUTO_SLIDE_MS = 4000;
   const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
   const navigate = useNavigate();
   const { location, loading, requestLocation, deliveryAddressMode } = useLocation();
@@ -1004,192 +1004,6 @@ export default function Home() {
     };
   }, [showVegModePopup]);
 
-  // Fetch hero banners from public API (no auth required)
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingBanners(true);
-    publicGetOnce("/food/hero-banners/public")
-      .then((response) => {
-        if (cancelled) return;
-        const data = response?.data?.data;
-        const list = Array.isArray(data?.banners)
-          ? data.banners
-          : Array.isArray(data)
-            ? data
-            : [];
-        
-        publicBannersRef.current = list;
-        
-        // Append approved local advertisements
-        const stored = localStorage.getItem("restaurant_ads");
-        const localApproved = [];
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            const todayStr = new Date().toISOString().split("T")[0];
-            const approved = Array.isArray(parsed)
-              ? parsed.filter(ad => {
-                  const isStatusAndValidityOk = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
-                  if (!isStatusAndValidityOk) return false;
-                  if (ad.zoneId && zoneId) {
-                    return String(ad.zoneId) === String(zoneId);
-                  }
-                  return true; // Fallback for legacy ads
-                })
-              : [];
-            approved.forEach(ad => {
-              if (!list.some(b => b.id === ad.adsId)) {
-                localApproved.push({
-                  id: ad.adsId,
-                  title: ad.adsTitle,
-                  imageUrl: ad.coverImage || "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=400&fit=crop",
-                  restaurantName: ad.restaurantName,
-                  link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
-                });
-              }
-            });
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        
-        const mergedList = localApproved.length > 0 ? [...list, ...localApproved] : [];
-        const images = mergedList
-          .map((b) => (b && typeof b.imageUrl === "string" ? b.imageUrl : ""))
-          .filter(Boolean);
-        setHeroBannerImages(images);
-        setHeroBannersData(mergedList);
-        setCurrentBannerIndex(0);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        debugError("Failed to fetch hero banners, attempting local fallback", err);
-        
-        publicBannersRef.current = [];
-        const stored = localStorage.getItem("restaurant_ads");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            const todayStr = new Date().toISOString().split("T")[0];
-            const approved = Array.isArray(parsed)
-              ? parsed.filter(ad => {
-                  const isStatusAndValidityOk = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
-                  if (!isStatusAndValidityOk) return false;
-                  if (ad.zoneId && zoneId) {
-                    return String(ad.zoneId) === String(zoneId);
-                  }
-                  return true;
-                })
-              : [];
-            if (approved.length > 0) {
-              const list = approved.map(ad => ({
-                id: ad.adsId,
-                title: ad.adsTitle,
-                imageUrl: ad.coverImage || "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=400&fit=crop",
-                restaurantName: ad.restaurantName,
-                link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
-              }));
-              const images = list.map(b => b.imageUrl).filter(Boolean);
-              if (images.length > 0) {
-                setHeroBannerImages(images);
-                setHeroBannersData(list);
-                setCurrentBannerIndex(0);
-                return;
-              }
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        
-        setHeroBannerImages([]);
-        setHeroBannersData([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingBanners(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [zoneId]);
-
-  // Periodic localStorage sync to immediately update/hide ads div in real-time
-  useEffect(() => {
-    const checkAds = () => {
-      const stored = localStorage.getItem("restaurant_ads");
-      const localApproved = [];
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const todayStr = new Date().toISOString().split("T")[0];
-          const approved = Array.isArray(parsed)
-            ? parsed.filter(ad => {
-                const ok = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
-                if (!ok) return false;
-                if (ad.zoneId && zoneId) {
-                  return String(ad.zoneId) === String(zoneId);
-                }
-                return true;
-              })
-            : [];
-          
-          approved.forEach(ad => {
-            localApproved.push({
-              id: ad.adsId,
-              title: ad.adsTitle,
-              imageUrl: ad.coverImage || "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&h=400&fit=crop",
-              restaurantName: ad.restaurantName,
-              link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
-            });
-          });
-        } catch (e) {
-          console.error("[Home] Error parsing restaurant ads:", e);
-        }
-      }
-
-      // If live approved ads is 0 or less, we hide the ads div completely
-      if (localApproved.length <= 0) {
-        if (heroBannerImages.length > 0) {
-          setHeroBannerImages([]);
-          setHeroBannersData([]);
-        }
-      } else {
-        // If there are live approved ads, merge with public banners and update if changed
-        const list = publicBannersRef.current || [];
-        const merged = [...list];
-        localApproved.forEach(ad => {
-          if (!merged.some(b => b.id === ad.id)) {
-            merged.push(ad);
-          }
-        });
-
-        const currentIds = heroBannersData.map(b => b.id).join(",");
-        const newIds = merged.map(b => b.id).join(",");
-        if (currentIds !== newIds) {
-          const images = merged
-            .map((b) => (b && typeof b.imageUrl === "string" ? b.imageUrl : ""))
-            .filter(Boolean);
-          setHeroBannerImages(images);
-          setHeroBannersData(merged);
-          setCurrentBannerIndex(0);
-        }
-      }
-    };
-
-    const interval = setInterval(checkAds, 1000);
-    window.addEventListener("focus", checkAds);
-    window.addEventListener("visibilitychange", checkAds);
-    
-    // Run initial check
-    checkAds();
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("focus", checkAds);
-      window.removeEventListener("visibilitychange", checkAds);
-    };
-  }, [zoneId, heroBannerImages, heroBannersData]);
-
   // Old backend endpoint removed: keep UI stable with empty categories.
   useEffect(() => {
     setLoadingRealCategories(true);
@@ -1431,67 +1245,7 @@ export default function Home() {
 
   // Native CSS sticky handles height naturally without manual height state measurement
 
-  // Fetch categories (zone-aware) for the homepage category rail.
-  useEffect(() => {
-    let cancelled = false
-    const run = async () => {
-      const zoneKey = String(zoneId || "global")
-      try {
-        // Dedupe repeated calls (StrictMode + zone settling). Cache per zoneKey and share in-flight request.
-        const cached = publicCategoriesCacheRef.current.get(zoneKey)
-        if (cached) {
-          if (!cancelled) setRealCategories(cached)
-          return
-        }
 
-        const inFlight = publicCategoriesInFlightRef.current.get(zoneKey)
-        if (inFlight) {
-          const categories = await inFlight
-          if (!cancelled) setRealCategories(categories)
-          return
-        }
-
-        setLoadingRealCategories(true)
-        const promise = (async () => {
-          const res = await adminAPI.getPublicCategories(zoneId ? { zoneId } : {})
-          const list =
-            res?.data?.data?.categories ||
-            res?.data?.categories ||
-            []
-          const categories = Array.isArray(list)
-            ? list.map((cat, idx) => ({
-              id: String(cat?.id || cat?._id || cat?.slug || idx),
-              name: cat?.name || "",
-              slug: cat?.slug || String(cat?.name || "").toLowerCase().replace(/\s+/g, "-"),
-              image:
-                normalizeImageUrl(cat?.image || cat?.imageUrl) ||
-                foodImages[idx % foodImages.length] ||
-                foodImages[0],
-              type: cat?.type || "",
-            }))
-            : []
-
-          publicCategoriesCacheRef.current.set(zoneKey, categories)
-          return categories
-        })()
-
-        publicCategoriesInFlightRef.current.set(zoneKey, promise)
-        const categories = await promise
-        publicCategoriesInFlightRef.current.delete(zoneKey)
-
-        if (!cancelled) setRealCategories(categories)
-      } catch (err) {
-        debugWarn("Failed to fetch categories:", err)
-        if (!cancelled) setRealCategories([])
-      } finally {
-        if (!cancelled) setLoadingRealCategories(false)
-      }
-    }
-    run()
-    return () => {
-      cancelled = true
-    }
-  }, [zoneId, normalizeImageUrl])
 
   // Memoize cartCount to prevent recalculation on every render - use cart directly
   const cartCount = useMemo(
@@ -1644,6 +1398,553 @@ export default function Home() {
     (!zoneLoading && isOutOfService);
 
   const shouldShowOutOfZoneHome = hasConfirmedOutOfZone;
+
+  const zoneRestaurantsRef = useRef([]);
+  const restaurantsDataRef = useRef([]);
+
+  useEffect(() => {
+    restaurantsDataRef.current = restaurantsData;
+  }, [restaurantsData]);
+
+  // Fetch all restaurants in the current zone to keep track of their status (online/offline)
+  useEffect(() => {
+    if (!effectiveZoneId) {
+      zoneRestaurantsRef.current = [];
+      return;
+    }
+    let cancelled = false;
+    restaurantAPI.getRestaurants({ zoneId: effectiveZoneId, limit: 1000 })
+      .then((res) => {
+        if (cancelled) return;
+        const list = res?.data?.data?.restaurants || res?.data?.restaurants || [];
+        zoneRestaurantsRef.current = list;
+        // Trigger checkAds immediately
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("focus"));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch zone restaurants for ad filtering:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveZoneId]);
+
+  // Fetch categories (zone-aware) for the homepage category rail.
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const zoneKey = String(effectiveZoneId || "global")
+      try {
+        // Dedupe repeated calls (StrictMode + zone settling). Cache per zoneKey and share in-flight request.
+        const cached = publicCategoriesCacheRef.current.get(zoneKey)
+        if (cached) {
+          if (!cancelled) setRealCategories(cached)
+          return
+        }
+
+        const inFlight = publicCategoriesInFlightRef.current.get(zoneKey)
+        if (inFlight) {
+          const categories = await inFlight
+          if (!cancelled) setRealCategories(categories)
+          return
+        }
+
+        setLoadingRealCategories(true)
+        const promise = (async () => {
+          const res = await adminAPI.getPublicCategories(effectiveZoneId ? { zoneId: effectiveZoneId } : {})
+          const list =
+            res?.data?.data?.categories ||
+            res?.data?.categories ||
+            []
+          const categories = Array.isArray(list)
+            ? list.map((cat, idx) => ({
+              id: String(cat?.id || cat?._id || cat?.slug || idx),
+              name: cat?.name || "",
+              slug: cat?.slug || String(cat?.name || "").toLowerCase().replace(/\s+/g, "-"),
+              image:
+                normalizeImageUrl(cat?.image || cat?.imageUrl) ||
+                foodImages[idx % foodImages.length] ||
+                foodImages[0],
+              type: cat?.type || "",
+            }))
+            : []
+
+          publicCategoriesCacheRef.current.set(zoneKey, categories)
+          return categories
+        })()
+
+        publicCategoriesInFlightRef.current.set(zoneKey, promise)
+        const categories = await promise
+        publicCategoriesInFlightRef.current.delete(zoneKey)
+
+        if (!cancelled) setRealCategories(categories)
+      } catch (err) {
+        debugWarn("Failed to fetch categories:", err)
+        if (!cancelled) setRealCategories([])
+      } finally {
+        if (!cancelled) setLoadingRealCategories(false)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [effectiveZoneId, normalizeImageUrl])
+
+  // Fetch hero banners from public API (no auth required)
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingBanners(true);
+    publicGetOnce("/food/hero-banners/public")
+      .then((response) => {
+        if (cancelled) return;
+        const data = response?.data?.data;
+        const list = Array.isArray(data?.banners)
+          ? data.banners
+          : Array.isArray(data)
+            ? data
+            : [];
+        
+        publicBannersRef.current = list;
+        
+        // Append approved local advertisements
+        const stored = localStorage.getItem("restaurant_ads");
+        const localApproved = [];
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const todayStr = new Date().toISOString().split("T")[0];
+            
+            const getZoneIdStr = (z) => {
+              if (!z) return "";
+              if (typeof z === "object") return String(z._id || z.id || "");
+              return String(z);
+            };
+
+            const matchesRestaurant = (res, ad) => {
+              if (!res || !ad) return false;
+              if (ad.restaurantId && res._id && String(res._id) === String(ad.restaurantId)) return true;
+              if (ad.restaurantId && res.id && String(res.id) === String(ad.restaurantId)) return true;
+              const resName = String(res.restaurantName || res.name || "").toLowerCase().trim();
+              const adName = String(ad.restaurantName || ad.restaurant || "").toLowerCase().trim();
+              return resName && adName && resName === adName;
+            };
+
+            const getFallbackZoneId = (ad) => {
+              if (ad.zoneId) return ad.zoneId;
+              const name = String(ad.restaurantName || ad.restaurant || "").toLowerCase().trim();
+              if (name.includes("monarch") || name.includes("atha bakes")) {
+                return "6a265702ca46c4c4b769a82b";
+              }
+              if (name.includes("puppets") || name.includes("yellow capcicum") || name.includes("colours roll")) {
+                return "6a26572bca46c4c4b769a837";
+              }
+              if (name.includes("sarnath")) {
+                return "69ef3b0175e5541b2af8702a";
+              }
+              return null;
+            };
+
+            const getAdImage = (ad) => {
+              if (ad.coverImage) return normalizeImageUrl(ad.coverImage);
+              if (ad.profileImage) {
+                const url = typeof ad.profileImage === "object" ? ad.profileImage?.url : ad.profileImage;
+                if (url) return normalizeImageUrl(url);
+              }
+              const zoneRes = [
+                ...(zoneRestaurantsRef.current || []),
+                ...(restaurantsDataRef.current || [])
+              ].find(r => matchesRestaurant(r, ad));
+              if (zoneRes) {
+                let cover = Array.isArray(zoneRes.coverImages) && zoneRes.coverImages.length > 0
+                  ? zoneRes.coverImages[0]
+                  : (zoneRes.profileImage || zoneRes.image);
+                if (cover && typeof cover === "object") {
+                  cover = cover.url || cover.secure_url || cover.imageUrl || cover.imageURL || "";
+                }
+                if (cover && typeof cover === "string") return normalizeImageUrl(cover);
+              }
+              return null;
+            };
+
+            const approved = Array.isArray(parsed)
+              ? parsed.filter(ad => {
+                  const isStatusAndValidityOk = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
+                  if (!isStatusAndValidityOk) return false;
+                  
+                  const zoneRes = [
+                    ...(zoneRestaurantsRef.current || []),
+                    ...(restaurantsDataRef.current || [])
+                  ].find(r => matchesRestaurant(r, ad));
+
+                  if (zoneRes && (zoneRes.isAcceptingOrders === false || zoneRes.isActive === false || zoneRes.status === "rejected")) {
+                    return false;
+                  }
+
+                  const adZoneId = getFallbackZoneId(ad) || zoneRes?.zoneId;
+                  const adZoneIdStr = getZoneIdStr(adZoneId);
+                  const userZoneIdStr = getZoneIdStr(effectiveZoneId);
+                  if (adZoneIdStr && userZoneIdStr) {
+                    if (adZoneIdStr !== userZoneIdStr) return false;
+                  } else if (userZoneIdStr) {
+                    return false;
+                  } else {
+                    const isMock = ad.restaurantId === "mock-monarch-id" || ad.restaurantId === "mock-puppets-id" || String(ad.restaurantId).includes("mock");
+                    if (!zoneRes && !isMock) return false;
+                  }
+
+                  const img = getAdImage(ad);
+                  if (!img) return false;
+
+                  return true;
+                })
+              : [];
+            approved.forEach(ad => {
+              if (!list.some(b => b.id === ad.adsId)) {
+                localApproved.push({
+                  id: ad.adsId,
+                  title: ad.adsTitle,
+                  imageUrl: getAdImage(ad),
+                  restaurantName: ad.restaurantName,
+                  link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
+                });
+              }
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        
+        const validPublicBanners = list.filter(b => {
+          if (!b || typeof b.imageUrl !== "string" || !b.imageUrl) return false;
+          if (!b.linkedRestaurants || b.linkedRestaurants.length === 0) return false;
+          // Hide if any linked restaurant is offline/inactive
+          const hasOfflineRestaurant = Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
+          if (hasOfflineRestaurant) return false;
+          return true;
+        }).map(b => ({
+          ...b,
+          imageUrl: normalizeImageUrl(b.imageUrl)
+        }));
+
+        const mergedList = [...validPublicBanners, ...localApproved];
+        const images = mergedList.map((b) => b.imageUrl);
+        setHeroBannerImages(images);
+        setHeroBannersData(mergedList);
+        setCurrentBannerIndex(0);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        debugError("Failed to fetch hero banners, attempting local fallback", err);
+        
+        publicBannersRef.current = [];
+        const stored = localStorage.getItem("restaurant_ads");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const todayStr = new Date().toISOString().split("T")[0];
+            
+            const getZoneIdStr = (z) => {
+              if (!z) return "";
+              if (typeof z === "object") return String(z._id || z.id || "");
+              return String(z);
+            };
+
+            const matchesRestaurant = (res, ad) => {
+              if (!res || !ad) return false;
+              if (ad.restaurantId && res._id && String(res._id) === String(ad.restaurantId)) return true;
+              if (ad.restaurantId && res.id && String(res.id) === String(ad.restaurantId)) return true;
+              const resName = String(res.restaurantName || res.name || "").toLowerCase().trim();
+              const adName = String(ad.restaurantName || ad.restaurant || "").toLowerCase().trim();
+              return resName && adName && resName === adName;
+            };
+
+            const getFallbackZoneId = (ad) => {
+              if (ad.zoneId) return ad.zoneId;
+              const name = String(ad.restaurantName || ad.restaurant || "").toLowerCase().trim();
+              if (name.includes("monarch") || name.includes("atha bakes")) {
+                return "6a265702ca46c4c4b769a82b";
+              }
+              if (name.includes("puppets") || name.includes("yellow capcicum") || name.includes("colours roll")) {
+                return "6a26572bca46c4c4b769a837";
+              }
+              if (name.includes("sarnath")) {
+                return "69ef3b0175e5541b2af8702a";
+              }
+              return null;
+            };
+
+            const getAdImage = (ad) => {
+              if (ad.coverImage) return normalizeImageUrl(ad.coverImage);
+              if (ad.profileImage) {
+                const url = typeof ad.profileImage === "object" ? ad.profileImage?.url : ad.profileImage;
+                if (url) return normalizeImageUrl(url);
+              }
+              const zoneRes = [
+                ...(zoneRestaurantsRef.current || []),
+                ...(restaurantsDataRef.current || [])
+              ].find(r => matchesRestaurant(r, ad));
+              if (zoneRes) {
+                let cover = Array.isArray(zoneRes.coverImages) && zoneRes.coverImages.length > 0
+                  ? zoneRes.coverImages[0]
+                  : (zoneRes.profileImage || zoneRes.image);
+                if (cover && typeof cover === "object") {
+                  cover = cover.url || cover.secure_url || cover.imageUrl || cover.imageURL || "";
+                }
+                if (cover && typeof cover === "string") return normalizeImageUrl(cover);
+              }
+              return null;
+            };
+
+            const approved = Array.isArray(parsed)
+              ? parsed.filter(ad => {
+                  const isStatusAndValidityOk = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
+                  if (!isStatusAndValidityOk) return false;
+                  
+                  const zoneRes = [
+                    ...(zoneRestaurantsRef.current || []),
+                    ...(restaurantsDataRef.current || [])
+                  ].find(r => matchesRestaurant(r, ad));
+
+                  if (zoneRes && (zoneRes.isAcceptingOrders === false || zoneRes.isActive === false || zoneRes.status === "rejected")) {
+                    return false;
+                  }
+
+                  const adZoneId = getFallbackZoneId(ad) || zoneRes?.zoneId;
+                  const adZoneIdStr = getZoneIdStr(adZoneId);
+                  const userZoneIdStr = getZoneIdStr(effectiveZoneId);
+                  if (adZoneIdStr && userZoneIdStr) {
+                    if (adZoneIdStr !== userZoneIdStr) return false;
+                  } else if (userZoneIdStr) {
+                    return false;
+                  } else {
+                    const isMock = ad.restaurantId === "mock-monarch-id" || ad.restaurantId === "mock-puppets-id" || String(ad.restaurantId).includes("mock");
+                    if (!zoneRes && !isMock) return false;
+                  }
+
+                  const img = getAdImage(ad);
+                  if (!img) return false;
+
+                  return true;
+                })
+              : [];
+            
+            const localList = [];
+            approved.forEach(ad => {
+              const img = getAdImage(ad);
+              if (img) {
+                localList.push({
+                  id: ad.adsId,
+                  title: ad.adsTitle,
+                  imageUrl: img,
+                  restaurantName: ad.restaurantName,
+                  link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
+                });
+              }
+            });
+
+            if (localList.length > 0) {
+              const images = localList.map(b => b.imageUrl);
+              setHeroBannerImages(images);
+              setHeroBannersData(localList);
+              setCurrentBannerIndex(0);
+              return;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        
+        setHeroBannerImages([]);
+        setHeroBannersData([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBanners(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveZoneId, normalizeImageUrl]);
+
+  // Periodic localStorage sync to immediately update/hide ads div in real-time
+  useEffect(() => {
+    const checkAds = () => {
+      const stored = localStorage.getItem("restaurant_ads");
+      const localApproved = [];
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          const todayStr = new Date().toISOString().split("T")[0];
+          
+          const getZoneIdStr = (z) => {
+            if (!z) return "";
+            if (typeof z === "object") return String(z._id || z.id || "");
+            return String(z);
+          };
+
+          const matchesRestaurant = (res, ad) => {
+            if (!res || !ad) return false;
+            if (ad.restaurantId && res._id && String(res._id) === String(ad.restaurantId)) return true;
+            if (ad.restaurantId && res.id && String(res.id) === String(ad.restaurantId)) return true;
+            const resName = String(res.restaurantName || res.name || "").toLowerCase().trim();
+            const adName = String(ad.restaurantName || ad.restaurant || "").toLowerCase().trim();
+            return resName && adName && resName === adName;
+          };
+
+          const getFallbackZoneId = (ad) => {
+            if (ad.zoneId) return ad.zoneId;
+            const name = String(ad.restaurantName || ad.restaurant || "").toLowerCase().trim();
+            if (name.includes("monarch") || name.includes("atha bakes")) {
+              return "6a265702ca46c4c4b769a82b";
+            }
+            if (name.includes("puppets") || name.includes("yellow capcicum") || name.includes("colours roll")) {
+              return "6a26572bca46c4c4b769a837";
+            }
+            if (name.includes("sarnath")) {
+              return "69ef3b0175e5541b2af8702a";
+            }
+            return null;
+          };
+
+          const getAdImage = (ad) => {
+            if (ad.coverImage) return normalizeImageUrl(ad.coverImage);
+            if (ad.profileImage) {
+              const url = typeof ad.profileImage === "object" ? ad.profileImage?.url : ad.profileImage;
+              if (url) return normalizeImageUrl(url);
+            }
+            const zoneRes = [
+              ...(zoneRestaurantsRef.current || []),
+              ...(restaurantsDataRef.current || [])
+            ].find(r => matchesRestaurant(r, ad));
+            if (zoneRes) {
+              let cover = Array.isArray(zoneRes.coverImages) && zoneRes.coverImages.length > 0
+                ? zoneRes.coverImages[0]
+                : (zoneRes.profileImage || zoneRes.image);
+              if (cover && typeof cover === "object") {
+                cover = cover.url || cover.secure_url || cover.imageUrl || cover.imageURL || "";
+              }
+              if (cover && typeof cover === "string") return normalizeImageUrl(cover);
+            }
+            return null;
+          };
+
+          const approved = Array.isArray(parsed)
+            ? parsed.filter(ad => {
+                const ok = ad.status === "approved" && ad.validity && ad.validity >= todayStr;
+                if (!ok) return false;
+                
+                const zoneRes = [
+                  ...(zoneRestaurantsRef.current || []),
+                  ...(restaurantsDataRef.current || [])
+                ].find(r => matchesRestaurant(r, ad));
+
+                if (zoneRes && (zoneRes.isAcceptingOrders === false || zoneRes.isActive === false || zoneRes.status === "rejected")) {
+                  return false;
+                }
+
+                const adZoneId = getFallbackZoneId(ad) || zoneRes?.zoneId;
+                const adZoneIdStr = getZoneIdStr(adZoneId);
+                const userZoneIdStr = getZoneIdStr(effectiveZoneId);
+                if (adZoneIdStr && userZoneIdStr) {
+                  if (adZoneIdStr !== userZoneIdStr) return false;
+                } else if (userZoneIdStr) {
+                  return false;
+                } else {
+                  const isMock = ad.restaurantId === "mock-monarch-id" || ad.restaurantId === "mock-puppets-id" || String(ad.restaurantId).includes("mock");
+                  if (!zoneRes && !isMock) return false;
+                }
+
+                const img = getAdImage(ad);
+                if (!img) return false;
+
+                return true;
+              })
+            : [];
+          
+          approved.forEach(ad => {
+            localApproved.push({
+              id: ad.adsId,
+              title: ad.adsTitle,
+              imageUrl: getAdImage(ad),
+              restaurantName: ad.restaurantName,
+              link: `/user/restaurants/${ad.restaurantName?.toLowerCase().replace(/\s+/g, "-")}`
+            });
+          });
+        } catch (e) {
+          console.error("[Home] Error parsing restaurant ads:", e);
+        }
+      }
+
+      // If live approved ads is 0 or less, we hide the ads div completely
+      if (localApproved.length <= 0) {
+        // If there are no local ads, still keep valid public banners
+        const list = publicBannersRef.current || [];
+        const validPublicBanners = list.filter(b => {
+          if (!b || typeof b.imageUrl !== "string" || !b.imageUrl) return false;
+          if (!b.linkedRestaurants || b.linkedRestaurants.length === 0) return false;
+          const hasOfflineRestaurant = Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
+          if (hasOfflineRestaurant) return false;
+          return true;
+        }).map(b => ({
+          ...b,
+          imageUrl: normalizeImageUrl(b.imageUrl)
+        }));
+
+        const currentIds = heroBannersData.map(b => b.id).join(",");
+        const newIds = validPublicBanners.map(b => b.id).join(",");
+        if (currentIds !== newIds) {
+          const images = validPublicBanners.map(b => b.imageUrl);
+          setHeroBannerImages(images);
+          setHeroBannersData(validPublicBanners);
+          setCurrentBannerIndex(0);
+        }
+      } else {
+        // If there are live approved ads, merge with public banners and update if changed
+        const list = publicBannersRef.current || [];
+        const validPublicBanners = list.filter(b => {
+          if (!b || typeof b.imageUrl !== "string" || !b.imageUrl) return false;
+          if (!b.linkedRestaurants || b.linkedRestaurants.length === 0) return false;
+          const hasOfflineRestaurant = Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
+          if (hasOfflineRestaurant) return false;
+          return true;
+        }).map(b => ({
+          ...b,
+          imageUrl: normalizeImageUrl(b.imageUrl)
+        }));
+        
+        const merged = [...validPublicBanners];
+        localApproved.forEach(ad => {
+          if (!merged.some(b => b.id === ad.id)) {
+            merged.push(ad);
+          }
+        });
+
+        const currentIds = heroBannersData.map(b => b.id).join(",");
+        const newIds = merged.map(b => b.id).join(",");
+        if (currentIds !== newIds) {
+          const images = merged.map(b => b.imageUrl);
+          setHeroBannerImages(images);
+          setHeroBannersData(merged);
+          setCurrentBannerIndex(0);
+        }
+      }
+    };
+
+    const interval = setInterval(checkAds, 1000);
+    window.addEventListener("focus", checkAds);
+    window.addEventListener("visibilitychange", checkAds);
+    
+    // Run initial check
+    checkAds();
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", checkAds);
+      window.removeEventListener("visibilitychange", checkAds);
+    };
+  }, [effectiveZoneId, heroBannerImages, heroBannersData, normalizeImageUrl]);
 
   // Mock points value - replace with actual points from context/store
   const userPoints = 99;
@@ -2755,6 +3056,8 @@ export default function Home() {
         canonical="/"
         jsonLd={[getOrganizationSchema(), getWebSiteSchema()]}
       />
+
+
 
 
       <div className="transition-all duration-300">

@@ -78,6 +78,8 @@ const foodTransactionSchema = new mongoose.Schema({
         qrExpiresAt: Date
     },
 
+    metadata: { type: mongoose.Schema.Types.Mixed },
+
     // Settlement Tracking
     settlement: {
         isRestaurantSettled: { type: Boolean, default: false },
