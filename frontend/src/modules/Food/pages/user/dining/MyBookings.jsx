@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { ArrowLeft, Calendar, Clock, Users, MapPin, ChevronRight, Utensils, Loader2, CheckCircle2, Tag, Trash2 } from "lucide-react"
-import { diningAPI } from "@food/api"
+import { diningAPI, restaurantAPI } from "@food/api"
 import { initRazorpayPayment } from "@food/utils/razorpay"
 import Loader from "@food/components/Loader"
 import AnimatedPage from "@food/components/user/AnimatedPage"
@@ -303,6 +303,7 @@ export default function MyBookings() {
     const [couponInputs, setCouponInputs] = useState({})
     const [couponLoading, setCouponLoading] = useState({})
     const [appliedCoupons, setAppliedCoupons] = useState({})
+    const [adminCoupons, setAdminCoupons] = useState([])
 
     const getStatusLabel = (status) => {
         const key = String(status || "").toLowerCase()
@@ -325,7 +326,7 @@ export default function MyBookings() {
     }
 
     useEffect(() => {
-        const fetchBookings = async () => {
+        const fetchData = async () => {
             try {
                 const response = await diningAPI.getBookings()
                 if (response.data.success) {
@@ -333,11 +334,20 @@ export default function MyBookings() {
                 }
             } catch (error) {
                 debugError("Error fetching bookings:", error)
+            }
+
+            try {
+                const response = await restaurantAPI.getPublicOffers()
+                const list = response?.data?.data?.allOffers || response?.data?.allOffers || []
+                const diningCoupons = list.filter(o => String(o?.couponType || "").toLowerCase() === "dining")
+                setAdminCoupons(diningCoupons)
+            } catch (error) {
+                debugError("Error fetching admin coupons:", error)
             } finally {
                 setLoading(false)
             }
         }
-        fetchBookings()
+        fetchData()
     }, [])
 
     const handleReviewSubmit = async (reviewData) => {
@@ -363,9 +373,54 @@ export default function MyBookings() {
             booking?.restaurant?.offers ||
             []
 
-        if (!Array.isArray(rawOffers)) return []
+        const restaurantCoupons = Array.isArray(rawOffers)
+            ? rawOffers.filter((offer) => String(offer?.couponType || "").toLowerCase() === "dining")
+            : []
 
-        return rawOffers.filter((offer) => String(offer?.couponType || "").toLowerCase() === "dining")
+        const bookingRestaurantId = String(booking.restaurant?._id || booking.restaurant?.id || booking.restaurantId || "")
+        const billAmount = Number(booking.billAmount || 0)
+
+        // Filter active & applicable admin dining coupons
+        const applicableAdminCoupons = adminCoupons.filter((offer) => {
+            // Must be dining coupon
+            if (String(offer?.couponType || "").toLowerCase() !== "dining") return false
+
+            // If restaurantScope is 'selected', it must match the booking's restaurant
+            if (offer?.restaurantScope === "selected") {
+                const offerRestId = String(offer?.restaurantId || "")
+                if (!offerRestId || !bookingRestaurantId || offerRestId !== bookingRestaurantId) {
+                    return false
+                }
+            }
+
+            // Check min order value
+            if (offer?.minOrderValue && billAmount < Number(offer.minOrderValue)) {
+                return false
+            }
+
+            // Check expiry date
+            if (offer?.endDate) {
+                if (new Date(offer.endDate).getTime() < Date.now()) return false
+            }
+
+            return true
+        })
+
+        // Merge both lists, avoiding duplicate coupon codes
+        const merged = [...restaurantCoupons]
+        const seenCodes = new Set(
+            merged.map(c => String(c?.couponCode || c?.code || "").trim().toUpperCase()).filter(Boolean)
+        )
+
+        applicableAdminCoupons.forEach((offer) => {
+            const code = String(offer?.couponCode || offer?.code || "").trim().toUpperCase()
+            if (code && !seenCodes.has(code)) {
+                seenCodes.add(code)
+                merged.push(offer)
+            }
+        })
+
+        return merged
     }
 
     const handleApplyCoupon = async (booking, codeOverride = "") => {

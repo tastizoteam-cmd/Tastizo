@@ -663,16 +663,19 @@ export function LocationProvider({ children }) {
     async (nextLocation, { mode = "current", selectedAddress = null, syncBackend = true } = {}) => {
       if (!nextLocation) return null
       const selectedId = selectedAddress ? getAddressId(selectedAddress) : null
-      setLocation(nextLocation)
+      const isManual = mode === "saved" || Boolean(selectedAddress) || nextLocation.isManual === true
+      const nextLocationWithFlag = { ...nextLocation, isManual }
+
+      setLocation(nextLocationWithFlag)
       setError(null)
       setDeliveryAddressMode(mode)
       setSelectedAddressId(selectedId ? String(selectedId) : null)
-      setPermissionGranted(Boolean(nextLocation.latitude && nextLocation.longitude))
-      syncLocationStorage(nextLocation, mode, selectedId)
+      setPermissionGranted(Boolean(nextLocationWithFlag.latitude && nextLocationWithFlag.longitude))
+      syncLocationStorage(nextLocationWithFlag, mode, selectedId)
       if (syncBackend) {
-        await syncBackendLocation(nextLocation)
+        await syncBackendLocation(nextLocationWithFlag)
       }
-      return nextLocation
+      return nextLocationWithFlag
     },
     [syncBackendLocation],
   )
@@ -906,6 +909,70 @@ export function LocationProvider({ children }) {
     if (!nextLocation) return
     setLocation((current) => current || nextLocation)
   }, [deliveryAddressMode, selectedAddressId, getDefaultAddress])
+
+  useEffect(() => {
+    if (!navigator.geolocation || deliveryAddressMode !== "current" || !location?.latitude || !location?.longitude || location?.isManual) return
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371000 // Radius of the Earth in meters
+      const dLat = ((lat2 - lat1) * Math.PI) / 180
+      const dLon = ((lon2 - lon1) * Math.PI) / 180
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      return R * c // Distance in meters
+    }
+
+    const handleWatchSuccess = async (position) => {
+      const { latitude, longitude, accuracy } = position.coords
+
+      const distance = calculateDistance(
+        location.latitude,
+        location.longitude,
+        latitude,
+        longitude
+      )
+
+      // Only fetch fresh location if they moved > 100m
+      if (distance <= 100) {
+        return
+      }
+
+      try {
+        const refinedLocation = await reverseGeocode(latitude, longitude, "gps")
+        if (refinedLocation) {
+          if (Number.isFinite(accuracy)) {
+            refinedLocation.accuracy = accuracy
+          }
+          await applyLocation(refinedLocation, {
+            mode: "current",
+            selectedAddress: null,
+            syncBackend: true,
+          })
+        }
+      } catch (err) {
+        debugError("Failed to update location on movement:", err)
+      }
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      handleWatchSuccess,
+      (err) => debugError("watchPosition error:", err),
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000,
+      }
+    )
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId)
+    }
+  }, [deliveryAddressMode, applyLocation, location?.latitude, location?.longitude, location?.isManual])
 
   const value = useMemo(
     () => ({

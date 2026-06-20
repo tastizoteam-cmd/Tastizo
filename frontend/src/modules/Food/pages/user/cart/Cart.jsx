@@ -1584,7 +1584,7 @@ export default function Cart() {
           items,
           restaurantId: checkoutRestaurantObjectId || null,
           deliveryAddress: defaultAddress,
-          couponCode: null
+          couponCode: undefined
         })
 
         if (response?.data?.success && response?.data?.data?.pricing) {

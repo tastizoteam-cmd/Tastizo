@@ -4,6 +4,7 @@ import app from '../src/app.js';
 import mongoose from 'mongoose';
 import { FoodRestaurant } from '../src/modules/food/restaurant/models/restaurant.model.js';
 import { FoodZone } from '../src/modules/food/admin/models/zone.model.js';
+import { FoodOffer } from '../src/modules/food/admin/models/offer.model.js';
 import { createMockUserToken } from './utils/test-helpers.js';
 
 describe('Orders API', () => {
@@ -95,5 +96,50 @@ describe('Orders API', () => {
       expect(res.body.data.pricing.subtotal).toBe(400);
     });
 
+    it('should successfully apply coupon and calculate discount using the 20% default platform commission fallback', async () => {
+      await FoodOffer.create({
+        couponCode: 'NEWUSER500',
+        couponType: 'delivery',
+        discountType: 'percentage',
+        discountValue: 20,
+        customerScope: 'all',
+        restaurantScope: 'all',
+        minOrderValue: 200,
+        maxDiscount: 50,
+        usageLimit: 100,
+        perUserLimit: 1,
+        status: 'active'
+      });
+
+      const res = await request(app)
+        .post('/api/v1/food/orders/calculate')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          restaurantId: restaurantId,
+          couponCode: 'NEWUSER500',
+          items: [
+            {
+              itemId: 'test-item-1',
+              name: 'Test Pizza',
+              price: 200,
+              quantity: 2
+            }
+          ],
+          deliveryAddress: {
+            location: {
+              type: 'Point',
+              coordinates: [75.86, 22.76]
+            }
+          }
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.pricing).toBeDefined();
+      expect(res.body.data.pricing.discount).toBe(50);
+      expect(res.body.data.pricing.appliedCoupon).toBeDefined();
+      expect(res.body.data.pricing.appliedCoupon.code).toBe('NEWUSER500');
+      expect(res.body.data.pricing.appliedCoupon.discount).toBe(50);
+    });
   });
 });

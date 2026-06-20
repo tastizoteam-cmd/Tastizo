@@ -1323,7 +1323,9 @@ export const listApprovedRestaurants = async (query = {}) => {
 
     const zoneIdRaw = resolvedZone?._id ? String(resolvedZone._id) : '';
     const hasResolvedZone = Boolean(zoneIdRaw);
-    filter.$and = [...(filter.$and || [])];
+    if (filter.$and && filter.$and.length === 0) {
+        delete filter.$and;
+    }
     // Accept both radiusKm (preferred) and maxDistance (legacy frontend param).
     const radiusKm = toFiniteNumber(query.radiusKm) ?? toFiniteNumber(query.maxDistance);
     const sortBy = parseSortBy(query.sortBy);

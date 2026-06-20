@@ -456,7 +456,7 @@ export default function AddressSelectorPage() {
       let resolvedLocation = null
       try {
         resolvedLocation = await raceWithTimeout(
-          handleMapMoveEnd(newPos[0], newPos[1], { force: true }),
+          handleMapMoveEnd(newPos[0], newPos[1], { force: true, isManual: false }),
           16000,
           "USE_LOCATION_MAP_TIMEOUT",
         )
@@ -571,7 +571,7 @@ export default function AddressSelectorPage() {
 
   const handleMapMoveEnd = async (lat, lng, options = {}) => {
     if (!ENABLE_LOCATION_REVERSE_GEOCODE) return
-    const { force = false, suppressPersist = false } = options
+    const { force = false, suppressPersist = false, isManual = true } = options
     const roundedLat = parseFloat(Number(lat).toFixed(6))
     const roundedLng = parseFloat(Number(lng).toFixed(6))
 
@@ -677,6 +677,7 @@ export default function AddressSelectorPage() {
             formattedAddress: formatted,
             additionalDetails: formatted,
             sourceType: "gps",
+            isManual,
           }
 
           setCurrentAddress(formatted || `${roundedLat.toFixed(6)}, ${roundedLng.toFixed(6)}`)

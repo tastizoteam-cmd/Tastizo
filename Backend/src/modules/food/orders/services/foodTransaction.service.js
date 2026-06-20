@@ -69,12 +69,12 @@ export async function getRestaurantCommissionSnapshot(orderDoc) {
     null;
 
   if (!rule) {
-    return {
-      commissionAmount: 0,
-      commissionType: 'percentage',
-      commissionValue: 0,
-      baseAmount,
-    };
+    return computeRestaurantCommissionAmount(baseAmount, {
+      defaultCommission: {
+        type: 'percentage',
+        value: 20
+      }
+    });
   }
 
   return computeRestaurantCommissionAmount(baseAmount, rule);
