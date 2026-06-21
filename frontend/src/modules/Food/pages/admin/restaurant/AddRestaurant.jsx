@@ -235,8 +235,8 @@ export default function AddRestaurant() {
   const languageTabs = [
     { key: "default", label: "Default" },
     { key: "en", label: "English(EN)" },
-    { key: "bn", label: "Bengali - ?????(BN)" },
-    { key: "ar", label: "Arabic - ??????? (AR)" },
+    { key: "bn", label: "Bengali - বাংলা(BN)" },
+    { key: "ar", label: "Arabic - العربية (AR)" },
     { key: "es", label: "Spanish - espaï¿½ol(ES)" },
   ]
 

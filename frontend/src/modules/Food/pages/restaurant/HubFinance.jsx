@@ -1153,12 +1153,12 @@ export default function HubFinance() {
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <p className="text-sm font-semibold text-gray-900 mb-1">
-                                  {transaction.type === "dining" ? "Dining ID" : "Order ID"}: {transaction.orderId || transaction.bookingId || 'N/A'}
+                                  {transaction.type === "refund" || transaction.type === "ad_refund" || String(transaction.orderId || "").startsWith("AD-") ? "Refund ID" : transaction.type === "dining" ? "Dining ID" : "Order ID"}: {transaction.orderId || transaction.bookingId || 'N/A'}
                                 </p>
                                 <p className="text-xs text-gray-600">
                                   {transaction.foodNames || (transaction.items && transaction.items.map(item => item.name).join(', ')) || 'N/A'}
                                 </p>
-                                {transaction.type === "dining" ? (
+                                {transaction.type === "dining" || transaction.type === "refund" || transaction.type === "ad_refund" || String(transaction.orderId || "").startsWith("AD-") ? (
                                   <p className="text-[11px] text-gray-500 mt-1">
                                     Paid {formatDateTime(transaction.billPaidAt || transaction.createdAt)}
                                   </p>
@@ -1169,7 +1169,7 @@ export default function HubFinance() {
                                   ₹{Number(transaction.payout || transaction.restaurantEarning || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {transaction.type === "dining" ? "Net earning" : "Earning"}
+                                  {transaction.type === "refund" || transaction.type === "ad_refund" || String(transaction.orderId || "").startsWith("AD-") ? "Net earning" : transaction.type === "dining" ? "Net earning" : "Earning"}
                                 </p>
                               </div>
                             </div>
@@ -1222,12 +1222,12 @@ export default function HubFinance() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {transaction.type === "dining" ? "Dining" : "Order"}: {transaction.orderId || transaction.bookingId || "N/A"}
+                            {transaction.type === "refund" || transaction.type === "ad_refund" || String(transaction.orderId || "").startsWith("AD-") ? "Refund" : transaction.type === "dining" ? "Dining" : "Order"}: {transaction.orderId || transaction.bookingId || "N/A"}
                           </p>
                           <p className="text-xs text-gray-600 mt-0.5">
                             {transaction.paymentMethod || "N/A"} | {transaction.orderStatus || "N/A"}
                           </p>
-                          {transaction.type === "dining" ? (
+                          {transaction.type === "dining" || transaction.type === "refund" || transaction.type === "ad_refund" || String(transaction.orderId || "").startsWith("AD-") ? (
                             <p className="text-xs text-gray-500 mt-1">
                               Net: ₹{Number(transaction.payout || transaction.restaurantEarning || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
@@ -1237,7 +1237,7 @@ export default function HubFinance() {
                           <p className="text-sm font-semibold text-gray-900">
                             ₹{Number(transaction.totalAmount || transaction.orderTotal || transaction.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
-                          <p className="text-xs text-gray-500">{transaction.type === "dining" ? "Bill total" : "Total"}</p>
+                          <p className="text-xs text-gray-500">{transaction.type === "refund" || transaction.type === "ad_refund" || String(transaction.orderId || "").startsWith("AD-") ? "Total" : transaction.type === "dining" ? "Bill total" : "Total"}</p>
                         </div>
                       </div>
                     </div>

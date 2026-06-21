@@ -26,8 +26,8 @@ export default function Cashback() {
   const languageTabs = [
     { key: "default", label: "Default" },
     { key: "en", label: "English(EN)" },
-    { key: "bn", label: "Bengali - à¦¬à¦¾à¦‚à¦²à¦¾ (BN)" },
-    { key: "ar", label: "Arabic - Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© (AR)" },
+    { key: "bn", label: "Bengali - বাংলা(BN)" },
+    { key: "ar", label: "Arabic - العربية (AR)" },
     { key: "es", label: "Spanish - español(ES)" },
   ]
 

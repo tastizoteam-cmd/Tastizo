@@ -11,7 +11,6 @@ const profilePlaceholder = "https://images.unsplash.com/photo-1555396273-367ea4e
 const coverPlaceholder = "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&h=400&fit=crop"
 
 export default function NewAdvertisement() {
-  const [activeLanguage, setActiveLanguage] = useState("default")
   const [restaurants, setRestaurants] = useState([])
 
   useEffect(() => {
@@ -46,14 +45,6 @@ export default function NewAdvertisement() {
   const [formErrors, setFormErrors] = useState({})
   const profileInputRef = useRef(null)
   const coverInputRef = useRef(null)
-
-  const languageTabs = [
-    { key: "default", label: "Default" },
-    { key: "en", label: "English(EN)" },
-    { key: "bn", label: "Bengali - à¦¬à¦¾à¦‚à¦²à¦¾(BN)" },
-    { key: "ar", label: "Arabic - Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© (AR)" },
-    { key: "es", label: "Spanish - español(ES)" },
-  ]
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -242,28 +233,11 @@ export default function NewAdvertisement() {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h1 className="text-2xl font-bold text-slate-900 mb-6">Create Advertisement</h1>
 
-              {/* Language Tabs */}
-              <div className="flex items-center gap-2 border-b border-slate-200 mb-6">
-                {languageTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveLanguage(tab.key)}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                      activeLanguage === tab.key
-                        ? "border-blue-600 text-blue-600"
-                        : "border-transparent text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
               <form onSubmit={handleSubmit}>
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Advertisement Title ({activeLanguage === "default" ? "Default" : languageTabs.find(t => t.key === activeLanguage)?.label}) <span className="text-red-500">*</span>
+                      Advertisement Title <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -281,7 +255,7 @@ export default function NewAdvertisement() {
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Short Description ({activeLanguage === "default" ? "Default" : languageTabs.find(t => t.key === activeLanguage)?.label})
+                      Short Description
                     </label>
                     <input
                       type="text"
@@ -402,57 +376,10 @@ export default function NewAdvertisement() {
                     <label className="block text-sm font-semibold text-slate-700 mb-4">
                       Upload Related Files
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-600 mb-2">
-                          Profile Image (Ratio - 1:1)
-                        </label>
-                        <input
-                          ref={profileInputRef}
-                          type="file"
-                          accept="image/png,image/jpeg,image/jpg,image/webp"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              handleFileUpload("profileImage", e.target.files[0])
-                            }
-                          }}
-                          className="hidden"
-                        />
-                        {profilePreview ? (
-                          <div className="relative border-2 border-slate-300 rounded-lg overflow-hidden">
-                            <img
-                              src={profilePreview}
-                              alt="Profile preview"
-                              className="w-full h-48 object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage("profileImage")}
-                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            onClick={() => profileInputRef.current?.click()}
-                            className={`border-2 border-dashed rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer ${
-                              formErrors.profileImage ? "border-red-500" : "border-slate-300"
-                            }`}
-                          >
-                            <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                            <p className="text-sm font-medium text-blue-600 mb-1">Click to Upload Profile Image</p>
-                            <p className="text-xs text-slate-500">Supports: PNG, JPG, JPEG, WEBP Maximum 2 MB</p>
-                          </div>
-                        )}
-                        {formErrors.profileImage && (
-                          <p className="text-xs text-red-500 mt-1">{formErrors.profileImage}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-2">
-                          Upload Cover (Ratio - 2:1)
+                          Upload Advertisement Image (Ratio - 2:1)
                         </label>
                         <input
                           ref={coverInputRef}
@@ -488,7 +415,7 @@ export default function NewAdvertisement() {
                             }`}
                           >
                             <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                            <p className="text-sm font-medium text-blue-600 mb-1">Click to Upload Cover Image</p>
+                            <p className="text-sm font-medium text-blue-600 mb-1">Click to Upload Advertisement Image</p>
                             <p className="text-xs text-slate-500">Supports: PNG, JPG, JPEG, WEBP Maximum 2 MB</p>
                           </div>
                         )}
@@ -562,25 +489,7 @@ export default function NewAdvertisement() {
                   
                   {/* Content Overlay */}
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                    <div className="flex items-start justify-between">
-                      <div className="w-16 h-16 rounded-full bg-white border-2 border-white shadow-md overflow-hidden">
-                        {profilePreview ? (
-                          <img
-                            src={profilePreview}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <img
-                            src={profilePlaceholder}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = "none"
-                            }}
-                          />
-                        )}
-                      </div>
+                    <div className="flex items-start justify-end">
                       <button className="p-2 rounded-full bg-white/80 hover:bg-white transition-colors">
                         <Heart className="w-4 h-4 text-red-500" />
                       </button>
