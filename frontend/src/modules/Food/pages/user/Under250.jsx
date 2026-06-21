@@ -464,13 +464,13 @@ export default function Under250() {
           ? response.data.data.restaurants
           : []
 
-        // Filter out restaurants that are not currently serving
+        // Filter out restaurants that are explicitly inactive or not accepting orders.
+        // We defer availability check (which needs outletTimings) until after we fetch them.
         const activeRestaurants = restaurantsRaw.filter(restaurant => {
           if (restaurant.isActive === false || restaurant.isAcceptingOrders === false) {
             return false
           }
-          const availability = getRestaurantAvailabilityStatus(restaurant)
-          return availability.isOpen
+          return true
         })
 
         const restaurantsWithUnder250Dishes = await Promise.all(
