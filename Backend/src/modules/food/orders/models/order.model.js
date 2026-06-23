@@ -45,7 +45,17 @@ const pricingSchema = new mongoose.Schema(
         restaurantCommission: { type: Number, default: 0, min: 0 },
         discount: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
-        currency: { type: String, default: 'INR' }
+        currency: { type: String, default: 'INR' },
+        appliedCoupon: {
+            type: new mongoose.Schema({
+                code: { type: String },
+                discount: { type: Number },
+                capped: { type: Boolean },
+                platformCommission: { type: Number },
+                createdBy: { type: String }
+            }, { _id: false }),
+            required: false
+        }
     },
     { _id: false }
 );

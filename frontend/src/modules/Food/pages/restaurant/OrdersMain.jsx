@@ -23,6 +23,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
+import { printOrderPDF } from "../../components/restaurant/printUtils";
 import BottomNavOrders from "@food/components/restaurant/BottomNavOrders";
 import RestaurantNavbar from "@food/components/restaurant/RestaurantNavbar";
 const notificationSound = "/zomato_sms.mp3";
@@ -2998,8 +2999,8 @@ export default function OrdersMain() {
                       <div className="flex flex-row items-center justify-end gap-1 md:gap-2 shrink-0">
                         {/* KOT and ORDER buttons - desktop only */}
                         <div className="hidden md:flex gap-1 mr-2">
-                           <span className="text-[10px] font-bold text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-50 transition-colors uppercase">KOT</span>
-                           <span className="text-[10px] font-bold text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-50 transition-colors uppercase">ORDER</span>
+                           <button type="button" onClick={() => printOrderPDF(popupOrder || newOrder, true)} className="text-[10px] font-bold text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-50 transition-colors uppercase">KOT</button>
+                           <button type="button" onClick={() => printOrderPDF(popupOrder || newOrder, false)} className="text-[10px] font-bold text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer hover:bg-blue-50 transition-colors uppercase">ORDER</button>
                         </div>
                         <div className="flex items-center justify-between border border-gray-200 rounded-lg p-0.5 w-[115px] md:w-[160px] bg-white">
                           <button

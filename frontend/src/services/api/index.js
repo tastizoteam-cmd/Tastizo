@@ -1104,6 +1104,8 @@ export const restaurantAPI = {
   },
   /** Public Offers for users (global/selected restaurant) */
   getPublicOffers: () => apiClient.get("/food/restaurant/offers"),
+  /** Create offer (restaurant dashboard) */
+  createOffer: (body) => apiClient.post("/food/restaurant/offers", body ?? {}, { contextModule: "restaurant" }),
   /** Backward-compat helper used by Cart: returns coupons array for an item by adapting public offers */
   getCouponsByItemIdPublic: (restaurantId, _itemId) =>
     apiClient.get("/food/restaurant/offers").then((res) => {

@@ -207,28 +207,39 @@ export const createDiningPaymentController = async (req, res, next) => {
             }
         }
 
-        // --- Dining coupon: discount is borne ONLY by admin commission ---
-        // Commission is calculated on the FULL bill (before discount).
-        // Restaurant gets: fullBill - fullCommission (same as without coupon).
-        // Admin gets: fullCommission - couponDiscount (admin bears the coupon cost).
-        // Customer pays: fullBill - couponDiscount.
+        // --- Commission and Payout Calculation ---
         const grossBill = Number(totalAmount);
         const commPct = Number(commissionPct) ?? 10;
-        const fullCommission = Number((grossBill * (commPct / 100)).toFixed(2));
+        let fullCommission = 0;
+        let restaurantShare = 0;
+        let adminNetCommission = 0;
+        let customerPays = Number((grossBill - discountAmount).toFixed(2));
 
-        // Enforce cap: coupon discount must not exceed the admin commission
-        if (discountAmount > fullCommission) {
-            discountAmount = fullCommission;
-            effectiveTotal = Number((grossBill - discountAmount).toFixed(2));
-            if (appliedCoupon) {
-                appliedCoupon.discount = discountAmount;
-                appliedCoupon.capped = true;
+        if (appliedCoupon && appliedCoupon.createdBy === 'restaurant') {
+            // Restaurant created the coupon, so they bear the cost.
+            // Admin commission is calculated on the final discounted amount.
+            fullCommission = Number((customerPays * (commPct / 100)).toFixed(2));
+            adminNetCommission = fullCommission;
+            restaurantShare = Number((customerPays - fullCommission).toFixed(2));
+        } else {
+            // Admin created the coupon, so admin bears the cost.
+            // Commission is calculated on the FULL bill (before discount).
+            fullCommission = Number((grossBill * (commPct / 100)).toFixed(2));
+            
+            // Enforce cap: coupon discount must not exceed the admin commission
+            if (discountAmount > fullCommission) {
+                discountAmount = fullCommission;
+                customerPays = Number((grossBill - discountAmount).toFixed(2));
+                if (appliedCoupon) {
+                    appliedCoupon.discount = discountAmount;
+                    appliedCoupon.capped = true;
+                }
             }
+            
+            adminNetCommission = Number((fullCommission - discountAmount).toFixed(2));
+            restaurantShare = Number((grossBill - fullCommission).toFixed(2));
         }
 
-        const restaurantShare = Number((grossBill - fullCommission).toFixed(2));
-        const customerPays = Number((grossBill - discountAmount).toFixed(2));
-        const adminNetCommission = Number((fullCommission - discountAmount).toFixed(2));
         const finalUserId = userId || req.user?.userId;
         
         if (!finalUserId) {
@@ -381,11 +392,19 @@ export const validateDiningCouponController = async (req, res, next) => {
             }
         }
 
-        const fullCommission = Number((amount * (commPct / 100)).toFixed(2));
+        let fullCommission = 0;
         let isCappedByCommission = false;
-        if (discountAmount > fullCommission) {
-            discountAmount = fullCommission;
-            isCappedByCommission = true;
+
+        if (offer.createdBy === 'restaurant') {
+            // Restaurant bears the cost. No need to cap.
+            // Commission will be calculated later on the discounted amount.
+        } else {
+            // Admin bears the cost. Cap to platform commission.
+            fullCommission = Number((amount * (commPct / 100)).toFixed(2));
+            if (discountAmount > fullCommission) {
+                discountAmount = fullCommission;
+                isCappedByCommission = true;
+            }
         }
 
         const finalAmount = Number((amount - discountAmount).toFixed(2));

@@ -869,7 +869,7 @@ export default function ExploreMore() {
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
-                  if (item.id === 5) {
+                  if (item.label === "Schedule off") {
                     // Schedule off card
                     handleScheduleOffClick()
                   } else if (item.route) {
@@ -1278,7 +1278,7 @@ export default function ExploreMore() {
                                 <button
                                   key={item.id}
                                   onClick={() => {
-                                    if (item.id === 5) {
+                                    if (item.label === "Schedule off") {
                                       handleScheduleOffClick()
                                     } else if (item.route) {
                                       navigate(item.route)

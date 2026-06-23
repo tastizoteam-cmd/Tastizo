@@ -450,11 +450,11 @@ export const registerRestaurant = async (payload, files) => {
                 restaurantId: restaurant._id,
                 defaultCommission: {
                     type: 'percentage',
-                    value: 20
+                    value: 10
                 },
                 status: true
             });
-            console.log(`[registerRestaurant] Applied default 20% commission for ${restaurant._id}`);
+            console.log(`[registerRestaurant] Applied default 10% commission for ${restaurant._id}`);
         } catch (e) {
             console.error('Failed to set default commission:', e);
         }

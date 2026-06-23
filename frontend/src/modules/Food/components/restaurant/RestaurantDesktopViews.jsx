@@ -2909,6 +2909,123 @@ export function DesktopReviewsView({ embedded = false }) {
   )
 }
 
+function CreateOfferForm({ setActiveSection }) {
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    couponCode: '',
+    discountValue: '',
+    discountType: 'percentage',
+    minOrderValue: '',
+    maxDiscount: '',
+    couponType: 'delivery',
+    usageLimit: '',
+    perUserLimit: '',
+    startDate: '',
+    endDate: ''
+  })
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!formData.couponCode || !formData.discountValue) {
+      alert("Coupon Code and Discount Value are required.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      await restaurantAPI.createOffer(formData)
+      alert("Offer created successfully!")
+      setActiveSection("track")
+      // Quick reload to show the new offer (or could manage it via state if we passed refreshOffers)
+      window.location.reload()
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to create offer.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  return (
+    <div className="px-6 py-6">
+      <div className="rounded-2xl border border-[#e7ebf4] bg-[#f8fbff] p-6">
+        <h2 className="text-[20px] font-bold tracking-[-0.03em] text-[#2a3240]">Create a New Offer</h2>
+        <p className="mt-2 text-sm text-[#667085]">Setup a promotional code for your customers to use.</p>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4 max-w-xl">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Coupon Code *</label>
+              <input name="couponCode" value={formData.couponCode} onChange={handleChange} required className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" placeholder="e.g. SUMMER20" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Discount Type *</label>
+              <select name="discountType" value={formData.discountType} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]">
+                <option value="percentage">Percentage (%)</option>
+                <option value="flat-price">Flat Price (₹)</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Discount Value *</label>
+              <input type="number" name="discountValue" value={formData.discountValue} onChange={handleChange} required className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" placeholder={formData.discountType === 'percentage' ? "e.g. 20" : "e.g. 100"} />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Max Discount (₹)</label>
+              <input type="number" name="maxDiscount" value={formData.maxDiscount} onChange={handleChange} disabled={formData.discountType === 'flat-price'} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee] disabled:bg-gray-100" placeholder={formData.discountType === 'percentage' ? "e.g. 150" : "N/A"} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Min Order Value (₹)</label>
+              <input type="number" name="minOrderValue" value={formData.minOrderValue} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" placeholder="e.g. 500" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Order Type</label>
+              <select name="couponType" value={formData.couponType} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]">
+                <option value="delivery">Delivery</option>
+                <option value="dining">Dining</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Usage Limit (Total)</label>
+              <input type="number" name="usageLimit" value={formData.usageLimit} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" placeholder="e.g. 100 (optional)" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Per User Limit</label>
+              <input type="number" name="perUserLimit" value={formData.perUserLimit} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" placeholder="e.g. 1 (optional)" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">Start Date</label>
+              <input type="datetime-local" name="startDate" value={formData.startDate} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#344054]">End Date</label>
+              <input type="datetime-local" name="endDate" value={formData.endDate} onChange={handleChange} className="w-full rounded-xl border border-[#d0d5dd] px-3 py-2 text-sm outline-none focus:border-[#4f78ee] focus:ring-1 focus:ring-[#4f78ee]" />
+            </div>
+          </div>
+          
+          <div className="pt-4 flex gap-3">
+            <button type="button" onClick={() => setActiveSection("track")} className="rounded-xl border border-[#dce1eb] bg-white px-5 py-2.5 text-sm font-semibold text-[#344054] transition hover:bg-gray-50">Cancel</button>
+            <button type="submit" disabled={loading} className="rounded-xl bg-[#4f78ee] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#436add] disabled:opacity-70 flex items-center justify-center min-w-[120px]">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Offer'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export function DesktopOffersView({ embedded = false }) {
   const desktopFrame = useRestaurantDesktopFrame()
   const navigate = useNavigate()
@@ -3164,30 +3281,7 @@ export function DesktopOffersView({ embedded = false }) {
               </div>
             </div>
           ) : (
-            <div className="px-6 py-6">
-              <div className="rounded-2xl border border-[#e7ebf4] bg-[#f8fbff] p-6">
-                <h2 className="text-[20px] font-bold tracking-[-0.03em] text-[#2a3240]">Create offers</h2>
-                <p className="mt-2 max-w-[720px] text-sm leading-6 text-[#667085]">
-                  Offer creation is currently managed through the coupon system configured by admins. This desktop view shows live campaigns and their usage, but it does not have a restaurant-side create endpoint yet.
-                </p>
-                <div className="mt-5 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setActiveSection("track")}
-                    className="rounded-xl bg-[#4f78ee] px-4 py-2 text-sm font-semibold text-white"
-                  >
-                    View live campaigns
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/restaurant/share-feedback")}
-                    className="rounded-xl border border-[#dce1eb] bg-white px-4 py-2 text-sm font-semibold text-[#5b6578]"
-                  >
-                    Request offer access
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CreateOfferForm setActiveSection={setActiveSection} />
           )}
         </div>
 

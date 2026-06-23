@@ -222,18 +222,37 @@ export async function calculateOrderPricing(userId, dto) {
         }
 
         const { getRestaurantCommissionSnapshot } = await import('./foodTransaction.service.js');
-        const commissionSnapshot = await getRestaurantCommissionSnapshot({
-          restaurantId: dto.restaurantId,
-          pricing: { subtotal }
-        });
-        const platformCommission = commissionSnapshot?.commissionAmount || 0;
+        let platformCommission = 0;
+        let isCapped = false;
 
-        discount = Math.min(calculatedDiscount, platformCommission);
+        if (offer.createdBy === 'restaurant') {
+            discount = calculatedDiscount;
+            const commissionSnapshot = await getRestaurantCommissionSnapshot({
+                restaurantId: dto.restaurantId,
+                pricing: { subtotal: Math.max(0, subtotal - discount) }
+            });
+            platformCommission = commissionSnapshot?.commissionAmount || 0;
+        } else {
+            const commissionSnapshot = await getRestaurantCommissionSnapshot({
+                restaurantId: dto.restaurantId,
+                pricing: { subtotal }
+            });
+            platformCommission = commissionSnapshot?.commissionAmount || 0;
+            
+            if (calculatedDiscount > platformCommission) {
+                discount = platformCommission;
+                isCapped = true;
+            } else {
+                discount = calculatedDiscount;
+            }
+        }
+
         appliedCoupon = {
           code: codeRaw,
           discount,
-          capped: discount < calculatedDiscount,
-          platformCommission
+          capped: isCapped,
+          platformCommission,
+          createdBy: offer.createdBy
         };
       }
     }

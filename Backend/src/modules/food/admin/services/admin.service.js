@@ -3500,11 +3500,11 @@ export async function createRestaurantByAdmin(body) {
             restaurantId: restaurant._id,
             defaultCommission: {
                 type: 'percentage',
-                value: 20
+                value: 10
             },
             status: true
         });
-        console.log(`[createRestaurantByAdmin] Applied default 20% commission for ${restaurant._id}`);
+        console.log(`[createRestaurantByAdmin] Applied default 10% commission for ${restaurant._id}`);
     } catch (e) {
         console.error('Failed to set default commission:', e);
     }
@@ -3529,6 +3529,25 @@ export async function approveRestaurant(id) {
     ).lean();
 
     if (updated) {
+        try {
+            await FoodRestaurantCommission.findOneAndUpdate(
+                { restaurantId: updated._id },
+                {
+                    $setOnInsert: {
+                        defaultCommission: {
+                            type: 'percentage',
+                            value: 10
+                        },
+                        status: true
+                    }
+                },
+                { upsert: true, new: true }
+            );
+            console.log(`[approveRestaurant] Assured 10% default commission for ${updated._id}`);
+        } catch (e) {
+            console.error('Failed to set default commission on approval:', e);
+        }
+
         try {
             const { notifyOwnersSafely } = await import('../../../../core/notifications/firebase.service.js');
             await notifyOwnersSafely(

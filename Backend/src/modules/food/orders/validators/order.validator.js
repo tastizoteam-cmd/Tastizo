@@ -40,7 +40,15 @@ const pricingSchema = z.object({
     platformFee: z.number().min(0).optional(),
     discount: z.number().min(0).optional(),
     total: z.number().min(0),
-    currency: z.string().optional()
+    currency: z.string().optional(),
+    couponCode: z.string().nullable().optional(),
+    appliedCoupon: z.object({
+        code: z.string(),
+        discount: z.number().min(0),
+        capped: z.boolean().optional(),
+        platformCommission: z.number().min(0).optional(),
+        createdBy: z.string().optional()
+    }).nullable().optional()
 });
 
 export function validateCalculateOrderDto(body) {

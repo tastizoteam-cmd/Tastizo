@@ -309,7 +309,7 @@ export default function AdRequests() {
           ))}
         </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-slate-900">Advertisement</h2>
               <span className="px-3 py-1 rounded-full text-sm font-semibold bg-slate-100 text-slate-700">
@@ -317,7 +317,7 @@ export default function AdRequests() {
               </span>
             </div>
 
-            <div className="flex items-center gap-3 ml-auto">
+            <div className="flex flex-wrap items-center gap-3 ml-auto">
               <div className="relative flex-1 sm:flex-initial min-w-[250px]">
                 <input
                   type="text"
@@ -386,8 +386,8 @@ export default function AdRequests() {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-hidden">
-          <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px]">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 {visibleColumns.si && <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-700 uppercase tracking-wider">SI</th>}

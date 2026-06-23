@@ -72,7 +72,7 @@ export async function getRestaurantCommissionSnapshot(orderDoc) {
     return computeRestaurantCommissionAmount(baseAmount, {
       defaultCommission: {
         type: 'percentage',
-        value: 20
+        value: 10
       }
     });
   }
@@ -98,13 +98,31 @@ export async function createInitialTransaction(order) {
             : (commissionAmount || 0);
     // Restaurant payout must be based only on food base price (subtotal).
     // Platform fee, packaging fee, GST, and delivery fee should never increase restaurant share.
-    const restaurantNet = (order.pricing?.subtotal || 0) - restaurantCommission;
+    
+    // If the restaurant created the coupon, they bear the cost, so it's deducted from their net
+    let restaurantDiscountShare = 0;
+    if (order.pricing?.appliedCoupon?.createdBy === 'restaurant') {
+        restaurantDiscountShare = Number(order.pricing?.discount || 0);
+    }
+    
+    const restaurantNet = (order.pricing?.subtotal || 0) - restaurantCommission - restaurantDiscountShare;
+    
+    // Platform profit = platformFee + packagingFee + deliveryFee + commission - riderShare - adminDiscountShare
+    // Wait, if restaurant bears the discount, admin doesn't. 
+    // If admin bears the discount, it should be deducted from their profit.
+    let adminDiscountShare = 0;
+    if (order.pricing?.appliedCoupon && order.pricing?.appliedCoupon?.createdBy !== 'restaurant') {
+        adminDiscountShare = Number(order.pricing?.discount || 0);
+    }
+    
     const platformNetProfitRaw =
         (order.pricing?.platformFee || 0) +
         (order.pricing?.packagingFee || 0) +
         (order.pricing?.deliveryFee || 0) +
         restaurantCommission -
-        riderShare;
+        riderShare -
+        adminDiscountShare;
+        
     const platformNetProfit = Math.max(0, platformNetProfitRaw);
 
     const transaction = new FoodTransaction({

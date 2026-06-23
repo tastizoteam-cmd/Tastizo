@@ -282,6 +282,7 @@ export async function createOrder(userId, dto) {
     discount: Number(dto.pricing?.discount ?? 0),
     total: Number(dto.pricing?.total ?? 0),
     currency: String(dto.pricing?.currency || "INR"),
+    appliedCoupon: dto.pricing?.appliedCoupon,
   };
   const computedTotal = Math.max(
     0,
@@ -348,13 +349,24 @@ export async function createOrder(userId, dto) {
       ? computedRiderEarning
       : Math.max(0, Number(normalizedPricing.deliveryFee || 0));
   
-  // Calculate restaurant commission from subtotal
-  const { commissionAmount: restaurantCommission } = await foodTransactionService.getRestaurantCommissionSnapshot({
-    pricing: normalizedPricing,
-    restaurantId: dto.restaurantId
-  });
+  // Calculate restaurant commission
+  let restaurantCommission = 0;
+  if (normalizedPricing.appliedCoupon && normalizedPricing.appliedCoupon.platformCommission !== undefined) {
+      restaurantCommission = normalizedPricing.appliedCoupon.platformCommission;
+  } else {
+      const { commissionAmount } = await foodTransactionService.getRestaurantCommissionSnapshot({
+        pricing: normalizedPricing,
+        restaurantId: dto.restaurantId
+      });
+      restaurantCommission = commissionAmount;
+  }
 
   normalizedPricing.restaurantCommission = restaurantCommission || 0;
+
+  let adminDiscountShare = 0;
+  if (normalizedPricing.appliedCoupon && normalizedPricing.appliedCoupon.createdBy !== 'restaurant') {
+      adminDiscountShare = Number(normalizedPricing.discount || 0);
+  }
 
   const platformProfit = Math.max(
     0,
@@ -362,7 +374,8 @@ export async function createOrder(userId, dto) {
       (Number.isFinite(normalizedPricing.packagingFee) ? normalizedPricing.packagingFee : 0) +
       (Number.isFinite(normalizedPricing.platformFee) ? normalizedPricing.platformFee : 0) +
       restaurantCommission -
-      riderEarning,
+      riderEarning -
+      adminDiscountShare,
   );
 
   const order = new FoodOrder({

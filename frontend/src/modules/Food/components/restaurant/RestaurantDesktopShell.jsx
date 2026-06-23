@@ -129,9 +129,13 @@ export default function RestaurantDesktopShell({
           <button
             type="button"
             onClick={() => navigate("/restaurant")}
-            className="border-b border-[#eceef5] px-7 py-4 text-left text-[2.2rem] font-black italic leading-none tracking-tight text-[#16181d]"
+            className="border-b border-[#eceef5] px-7 py-5 flex items-center"
           >
-            {companyName}
+            <img 
+              src="/tastizo-grey-logo.png" 
+              alt={companyName || "Tastizo"} 
+              className="h-12 w-auto object-contain brightness-0" 
+            />
           </button>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">

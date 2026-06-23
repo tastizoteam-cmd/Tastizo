@@ -7,6 +7,7 @@ const foodOfferSchema = new mongoose.Schema(
         discountType: { type: String, enum: ['percentage', 'flat-price'], default: 'percentage', index: true },
         discountValue: { type: Number, required: true, min: 0 },
         customerScope: { type: String, enum: ['all', 'first-time'], default: 'all', index: true },
+        createdBy: { type: String, enum: ['admin', 'restaurant'], default: 'admin', index: true },
         restaurantScope: { type: String, enum: ['all', 'selected'], default: 'all', index: true },
         restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'FoodRestaurant' },
         minOrderValue: { type: Number, default: 0, min: 0 },
