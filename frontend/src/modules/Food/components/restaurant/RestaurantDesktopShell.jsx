@@ -28,6 +28,7 @@ const menuItems = [
   { label: "Menu", icon: FileText, to: "/restaurant/inventory", match: (pathname) => pathname.startsWith("/restaurant/inventory") || pathname.startsWith("/restaurant/hub-menu") },
   { label: "Menu categories", icon: Settings, to: "/restaurant/menu-categories", match: (pathname) => pathname.startsWith("/restaurant/menu-categories") },
   { label: "Order history", icon: LayoutList, to: "/restaurant/orders/all", match: (pathname) => pathname.startsWith("/restaurant/orders/all") },
+  { label: "Reporting", icon: LayoutList, to: "/restaurant/reporting", match: (pathname) => pathname.startsWith("/restaurant/reporting") },
   { label: "Offers", icon: CirclePercent, to: "/restaurant/offers", match: (pathname) => pathname.startsWith("/restaurant/offers") },
   { label: "Ads", icon: Megaphone, to: "/restaurant/ads", match: (pathname) => pathname.startsWith("/restaurant/ads") },
   { label: "Finance", icon: Wallet, to: "/restaurant/hub-finance", match: (pathname) => pathname.startsWith("/restaurant/hub-finance") || pathname.startsWith("/restaurant/withdrawal-history") },

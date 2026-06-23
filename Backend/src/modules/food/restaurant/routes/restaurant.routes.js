@@ -57,6 +57,7 @@ import { authMiddleware } from '../../../../core/auth/auth.middleware.js';
 import { sendError } from '../../../../utils/response.js';
 import { getRestaurantFinanceController } from '../controllers/restaurantFinance.controller.js';
 import { createRestaurantOfferController } from '../controllers/offer.controller.js';
+import { getLiveTracking } from '../controllers/report.controller.js';
 
 import { cacheResponse, invalidateCache } from '../../../../middleware/cache.js';
 
@@ -117,6 +118,7 @@ router.post('/offers', authMiddleware, requireRestaurant, createRestaurantOfferC
 router.get('/finance', authMiddleware, requireRestaurant, getRestaurantFinanceController);
 router.post('/withdraw', authMiddleware, requireRestaurant, createWithdrawalRequestController);
 router.get('/withdrawals', authMiddleware, requireRestaurant, listMyWithdrawalsController);
+router.get('/reports/live-tracking', authMiddleware, requireRestaurant, getLiveTracking);
 router.post(
     '/profile/profile-image',
     authMiddleware,

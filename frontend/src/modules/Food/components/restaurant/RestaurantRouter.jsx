@@ -35,6 +35,7 @@ const DishRatings = lazy(() => import("@food/pages/restaurant/DishRatings"))
 const RestaurantSupport = lazy(() => import("@food/pages/restaurant/RestaurantSupport"))
 const FssaiDetails = lazy(() => import("@food/pages/restaurant/FssaiDetails"))
 const FssaiUpdate = lazy(() => import("@food/pages/restaurant/FssaiUpdate"))
+
 const Hyperpure = lazy(() => import("@food/pages/restaurant/Hyperpure"))
 const ItemDetailsPage = lazy(() => import("@food/pages/restaurant/ItemDetailsPage"))
 const HubFinance = lazy(() => import("@food/pages/restaurant/HubFinance"))
@@ -42,6 +43,7 @@ const FinanceDetailsPage = lazy(() => import("@food/pages/restaurant/FinanceDeta
 const WithdrawalHistoryPage = lazy(() => import("@food/pages/restaurant/WithdrawalHistoryPage"))
 const PhoneNumbersPage = lazy(() => import("@food/pages/restaurant/PhoneNumbersPage"))
 const DownloadReport = lazy(() => import("@food/pages/restaurant/DownloadReport"))
+const Reporting = lazy(() => import("@food/pages/restaurant/Reporting"))
 
 const ManageOutlets = lazy(() => import("@food/pages/restaurant/ManageOutlets"))
 const Ads = lazy(() => import("@food/pages/restaurant/Ads"))
@@ -79,6 +81,7 @@ export default function RestaurantRouter() {
           <Route path="" element={<RestaurantOrdersEntry />} />
           <Route path="orders" element={<RestaurantOrdersEntry />} />
           <Route path="orders/all" element={<RestaurantOrderHistoryEntry />} />
+          <Route path="reporting" element={<Reporting />} />
           <Route path="orders/:id" element={<OrderDetails />} />
           <Route path="notifications" element={<RestaurantNotifications />} />
           <Route path="delivery-settings" element={<DeliverySettings />} />
