@@ -1,6 +1,16 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Search, Download, ChevronDown, Plus, MoreVertical, Building2, Settings, Filter, FileDown, FileSpreadsheet, FileText, Code, Eye, Edit, Trash2 } from "lucide-react"
+
+const getAdDisplayStatus = (ad) => {
+  if (ad.status === "approved" && ad.validity) {
+    const today = new Date().toISOString().split("T")[0];
+    if (ad.validity < today) {
+      return "expired";
+    }
+  }
+  return ad.status;
+};
 import { emptyAds } from "@food/utils/adminFallbackData"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@food/components/ui/dialog"
@@ -136,7 +146,7 @@ export default function AdsList() {
     }
 
     if (filters.status) {
-      result = result.filter(ad => ad.status === filters.status)
+      result = result.filter(ad => getAdDisplayStatus(ad) === filters.status)
     }
 
     if (filters.restaurant) {
@@ -192,7 +202,7 @@ export default function AdsList() {
   }
 
   const handleEditAd = (ad) => {
-    navigate("/admin/new-advertisement", { state: { editAd: ad } })
+    navigate("/admin/food/advertisement/new", { state: { editAd: ad } })
   }
 
   const handleDeleteClick = (ad) => {
@@ -245,7 +255,7 @@ export default function AdsList() {
   }
 
   const restaurants = [...new Set(ads.map(ad => ad.restaurantName))].filter(Boolean)
-  const statuses = [...new Set(ads.map(ad => ad.status))].filter(Boolean)
+  const statuses = [...new Set(ads.map(getAdDisplayStatus))].filter(Boolean)
 
   return (
     <div className="p-4 lg:p-6 bg-slate-50 min-h-screen">
@@ -277,7 +287,7 @@ export default function AdsList() {
               />
             </div>
             <button 
-              onClick={() => navigate("/admin/new-advertisement")}
+              onClick={() => navigate("/admin/food/advertisement/new")}
               className="px-4 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 transition-all shadow-md"
             >
               <Plus className="w-4 h-4" />
@@ -438,8 +448,12 @@ export default function AdsList() {
                     )}
                     {visibleColumns.status && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          {ad.status}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          getAdDisplayStatus(ad) === 'expired' ? 'bg-red-100 text-red-700' :
+                          getAdDisplayStatus(ad) === 'approved' ? 'bg-blue-100 text-blue-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {getAdDisplayStatus(ad)}
                         </span>
                       </td>
                     )}
@@ -618,7 +632,7 @@ export default function AdsList() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Status</p>
-                  <p className="text-sm text-slate-900">{selectedAd.status}</p>
+                  <p className="text-sm text-slate-900">{getAdDisplayStatus(selectedAd)}</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Priority</p>

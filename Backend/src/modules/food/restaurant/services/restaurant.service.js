@@ -255,7 +255,8 @@ const toRestaurantProfile = (doc) => {
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
         rating: normalizeRatingValue(doc.rating),
-        totalRatings: normalizeTotalRatingsValue(doc.totalRatings)
+        totalRatings: normalizeTotalRatingsValue(doc.totalRatings),
+        costForTwo: doc.costForTwo || null
     };
 };
 
@@ -521,6 +522,7 @@ export const getCurrentRestaurantProfile = async (restaurantId) => {
                 'estimatedDeliveryTimeMinutes',
                 'diningSettings',
                 'isAcceptingOrders',
+                'costForTwo',
                 'status',
                 'createdAt',
                 'updatedAt'
@@ -659,6 +661,8 @@ export const updateCurrentRestaurantDiningSettings = async (restaurantId, body =
 
     const isEnabled = parseBoolean(body.isEnabled, currentDiningSettings.isEnabled);
     
+    const costForTwo = body.costForTwo !== undefined ? parseInt(body.costForTwo, 10) || null : currentRestaurant.costForTwo;
+
     // First, update the FoodDiningRestaurant collection to keep it synced
     await FoodDiningRestaurant.findOneAndUpdate(
         { restaurantId },
@@ -676,6 +680,7 @@ export const updateCurrentRestaurantDiningSettings = async (restaurantId, body =
         restaurantId,
         {
             $set: buildApprovalPreservingUpdate(currentRestaurant, {
+                costForTwo,
                 diningSettings: {
                     isEnabled,
                     totalSeats,

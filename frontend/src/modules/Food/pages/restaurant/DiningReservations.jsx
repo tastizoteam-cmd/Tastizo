@@ -95,6 +95,7 @@ export default function DiningReservations() {
     const [diningEnabled, setDiningEnabled] = useState(false)
     const [totalSeatsLimit, setTotalSeatsLimit] = useState(30)
     const [maxGuestsLimit, setMaxGuestsLimit] = useState(6)
+    const [costForTwo, setCostForTwo] = useState("")
     const [savingDiningSettings, setSavingDiningSettings] = useState(false)
     const [diningSettingsMessage, setDiningSettingsMessage] = useState("")
     const [diningSettingsError, setDiningSettingsError] = useState("")
@@ -110,6 +111,7 @@ export default function DiningReservations() {
         setDiningEnabled(Boolean(restaurantData?.diningSettings?.isEnabled))
         setTotalSeatsLimit(Math.max(1, parseInt(restaurantData?.diningSettings?.totalSeats, 10) || 30))
         setMaxGuestsLimit(Math.max(1, parseInt(restaurantData?.diningSettings?.maxGuests, 10) || 6))
+        setCostForTwo(restaurantData?.costForTwo || "")
         
         const rawDiningType = restaurantData?.diningSettings?.diningType
         setDiningType(Array.isArray(rawDiningType) ? rawDiningType : (rawDiningType ? [rawDiningType].filter(Boolean) : []))
@@ -292,6 +294,7 @@ export default function DiningReservations() {
             isEnabled: Boolean(diningEnabled),
             totalSeats: nextTotalSeats,
             maxGuests: nextMaxGuests,
+            costForTwo: Number(costForTwo) || 0,
             diningType: Array.isArray(diningType) ? [...new Set(diningType)] : [diningType],
         }
 
@@ -852,6 +855,24 @@ export default function DiningReservations() {
                                             +
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                            
+                            {/* Cost For Two */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-slate-50/50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-semibold text-slate-700">Cost for Two (₹)</label>
+                                    <p className="text-xs text-slate-500 font-medium">Average cost for two people</p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-white p-1 rounded-[14px] border border-slate-200 shadow-sm">
+                                    <input
+                                        type="number"
+                                        value={costForTwo}
+                                        onChange={(e) => setCostForTwo(e.target.value)}
+                                        placeholder="e.g. 500"
+                                        min="0"
+                                        className="w-24 text-center text-[15px] font-bold text-slate-700 border-none outline-none bg-transparent"
+                                    />
                                 </div>
                             </div>
 

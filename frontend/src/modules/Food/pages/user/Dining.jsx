@@ -338,6 +338,7 @@ export default function Dining() {
             (restaurant?.estimatedDeliveryTimeMinutes ? `${restaurant.estimatedDeliveryTimeMinutes} mins` : "30-40 mins")
           ).trim(),
           distanceValue: distanceKm,
+          distance: Number.isFinite(distanceKm) ? `${distanceKm.toFixed(1)} km` : "Distance unavailable",
           diningType: (() => {
             const rawType = restaurant?.diningSettings?.diningType
             let types = []
@@ -1070,10 +1071,15 @@ export default function Dining() {
 
                             {/* Delivery Time & Distance */}
                             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mb-2">
-                              <Clock className="h-4 w-4" strokeWidth={1.5} />
-                              <span className="font-medium">{restaurant.deliveryTime}</span>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" strokeWidth={1.5} />
+                                <span className="font-medium">{restaurant.deliveryTime}</span>
+                              </div>
                               <span className="mx-1">|</span>
-                              <span className="font-medium">{restaurant.distance}</span>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
+                                <span className="font-medium">{restaurant.distance || "Distance unavailable"}</span>
+                              </div>
                             </div>
 
                             {/* Dining Status Badge */}

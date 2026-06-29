@@ -250,6 +250,10 @@ const restaurantSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    costForTwo: {
+      type: Number,
+      default: null,
+    },
     panNumber: {
       type: String,
     },

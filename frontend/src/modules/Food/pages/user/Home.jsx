@@ -3660,7 +3660,9 @@ export default function Home() {
         )}
 
         {/* Hero Banner Section (Carousel for Ads) */}
-        {HeroBannerSection}
+        <div className="md:hidden">
+          {HeroBannerSection}
+        </div>
 
         {/* Featured Foods - Horizontal Scroll */}
 
