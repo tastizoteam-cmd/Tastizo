@@ -645,7 +645,8 @@ export async function tryAutoAssign(orderId, options = {}) {
               {
                 title: `New Order #${prettyOrderId}`,
                 body: 'You have a new delivery request',
-                dataOnly: true,
+                dataOnly: false,
+                sound: 'default',
                 data: {
                   type: 'NEW_ORDER',
                   legacyType: 'new_order',
