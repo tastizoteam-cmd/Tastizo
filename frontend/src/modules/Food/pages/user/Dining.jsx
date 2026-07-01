@@ -1082,6 +1082,8 @@ export default function Dining() {
                                 <MapPin className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
                                 <span className="font-medium">{restaurant.distance || "Distance unavailable"}</span>
                               </div>
+                              <span className="mx-1">|</span>
+                              <span className="font-medium">{restaurant.costForTwo ? `₹${restaurant.costForTwo} for two` : "₹1900 for two"}</span>
                             </div>
 
                             {/* Dining Status Badge */}
@@ -1293,6 +1295,8 @@ export default function Dining() {
                                 <MapPin className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
                                 <span>{restaurant.distance || "Distance unavailable"}</span>
                               </div>
+                              <span className="mx-0.5 text-gray-300">|</span>
+                              <span>{restaurant.costForTwo ? `₹${restaurant.costForTwo} for two` : "₹1900 for two"}</span>
                             </div>
 
                             {/* Pre-book Table Promo (If applicable) */}

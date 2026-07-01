@@ -422,6 +422,8 @@ export default function DiningExploreNear() {
                           <span className="font-medium">{restaurant.deliveryTime}</span>
                           <span className="mx-1">|</span>
                           <span className="font-medium">{restaurant.distance}</span>
+                          <span className="mx-1">|</span>
+                          <span className="font-medium">{restaurant.costForTwo ? `₹${restaurant.costForTwo} for two` : (restaurant.price || "Price on request")}</span>
                         </div>
 
                         {/* Offer Badge */}
