@@ -305,7 +305,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const lastAutoArrivalRef = useRef({ PICKING_UP: false, PICKED_UP: false });
   const gpsErrorToastShownRef = useRef(false);
 
-  const [zoom, setZoom] = useState(14);
+  const [zoom, setZoom] = useState(18);
   const [isSimMode, setIsSimMode] = useState(false);
   const [simPath, setSimPath] = useState([]);
   const [simIndex, setSimIndex] = useState(0);
@@ -1455,6 +1455,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
         lat: parseFloat(loc.lat || loc.latitude), 
         lng: parseFloat(loc.lng || loc.longitude) 
       });
+      setZoom(18);
     }
   };
 
@@ -1610,25 +1611,6 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                }, [activeOrder, tripStatus, eta])}
                zoom={zoom}
              />
-             
-             <div className="absolute right-4 bottom-28 md:bottom-32 flex flex-col gap-4 z-[120]">
-                <div className="flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-                   <button onClick={() => setZoom(z => Math.min(22, z + 1))} className="p-3 hover:bg-gray-50 border-b border-gray-100 text-gray-900 active:scale-90 transition-all" aria-label="Zoom in"><Plus className="w-5 h-5 stroke-[2.75]" /></button>
-                   <button onClick={() => setZoom(z => Math.max(8, z - 1))} className="p-3 hover:bg-gray-50 text-gray-900 active:scale-90 transition-all" aria-label="Zoom out"><Minus className="w-5 h-5 stroke-[2.75]" /></button>
-                </div>
-                <button 
-                   onClick={() => mapRef.current?.setOptions({ gestureHandling: 'greedy' })} 
-                   className="w-14 h-14 bg-white rounded-full shadow-2xl flex items-center justify-center text-blue-600 border border-gray-100 active:scale-90 transition-all"
-                >
-                  <div className="w-8 h-8 rounded-full border-2 border-blue-600 flex items-center justify-center"><Navigation2 className="w-4 h-4" /></div>
-                </button>
-                <button 
-                  onClick={handleCenterMap}
-                  className="w-14 h-14 bg-white rounded-full shadow-2xl flex items-center justify-center text-gray-900 border border-gray-100 group active:scale-90 transition-all"
-                >
-                  <Target className="w-7 h-7" />
-                </button>
-             </div>
            </div>
          ) : tab === 'pocket' ? (
            <PocketV2 />

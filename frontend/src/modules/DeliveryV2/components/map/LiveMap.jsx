@@ -131,7 +131,7 @@ const AnimatedRiderOverlay = React.memo(({ targetLocation, iconUrl }) => {
   );
 });
 
-export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineReceived, zoom = 12 }) => {
+export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineReceived, zoom = 18 }) => {
   const { activeOrder, tripStatus } = useDeliveryStore();
   const riderLocation = useTrackingStore(state => state.riderLocation);
   
@@ -328,12 +328,18 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
     
     if (!hasInitialBoundsFitted.current) {
       if (map._setProgrammaticChange) map._setProgrammaticChange(true);
-      const bounds = new window.google.maps.LatLngBounds();
-      if (restaurantPoint) bounds.extend(restaurantPoint);
-      if (customerPoint) bounds.extend(customerPoint);
-      if (parsedRiderLocation) bounds.extend(parsedRiderLocation);
+      
+      if (hasAnchors) {
+        const bounds = new window.google.maps.LatLngBounds();
+        if (restaurantPoint) bounds.extend(restaurantPoint);
+        if (customerPoint) bounds.extend(customerPoint);
+        if (parsedRiderLocation) bounds.extend(parsedRiderLocation);
+        map.fitBounds(bounds, { top: 70, right: 70, bottom: 120, left: 70 });
+      } else if (parsedRiderLocation) {
+        map.panTo(parsedRiderLocation);
+        map.setZoom(zoom);
+      }
 
-      map.fitBounds(bounds, { top: 70, right: 70, bottom: 120, left: 70 });
       hasInitialBoundsFitted.current = true;
       lastBoundsUpdateRef.current = now;
       

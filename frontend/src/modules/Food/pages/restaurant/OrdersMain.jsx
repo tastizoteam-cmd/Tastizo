@@ -91,11 +91,16 @@ const getOrderTotalValue = (orderLike) => {
   return Number.isFinite(itemsTotal) ? itemsTotal : 0;
 };
 
+const capitalizeCustomerName = (name) => {
+  if (!name) return "Customer";
+  return name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 const transformOrderForList = (order) => ({
   orderId: order.orderId || order._id,
   mongoId: order._id,
   status: order.status || "pending",
-  customerName: order.userId?.name || order.customerName || "Customer",
+  customerName: capitalizeCustomerName(order.userId?.name || order.customerName),
   type: "Home Delivery",
   tableOrToken: null,
   timePlaced: new Date(getAllOrdersTimestamp(order)).toLocaleDateString(
@@ -103,6 +108,7 @@ const transformOrderForList = (order) => ({
     {
       month: "short",
       day: "numeric",
+      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     },
@@ -3582,6 +3588,10 @@ function OrderCard({
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  const displayStatus = (normalizedStatus === "delivered" || normalizedStatus === "completed")
+    ? "Delivered"
+    : statusLabel;
+
   const handleSelect = () =>
     onSelect?.({
       orderId,
@@ -3609,10 +3619,28 @@ function OrderCard({
   };
 
   const statusToneClass = isReady
-    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-    : normalizedStatus === "confirmed"
-      ? "bg-amber-50 text-amber-600 border-amber-100"
-      : "bg-slate-50 text-slate-500 border-slate-100";
+    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+    : isPreparing
+      ? "bg-blue-50 text-blue-600 border-blue-200"
+      : normalizedStatus === "confirmed"
+        ? "bg-amber-50 text-amber-600 border-amber-200"
+        : normalizedStatus === "delivered" || normalizedStatus === "completed"
+          ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+          : normalizedStatus === "cancelled"
+            ? "bg-rose-50 text-rose-600 border-rose-200"
+            : "bg-slate-50 text-slate-500 border-slate-200";
+
+  const dotBgClass = isReady
+    ? "bg-emerald-500"
+    : isPreparing
+      ? "bg-blue-500"
+      : normalizedStatus === "confirmed"
+        ? "bg-amber-500"
+        : normalizedStatus === "delivered" || normalizedStatus === "completed"
+          ? "bg-emerald-500"
+          : normalizedStatus === "cancelled"
+            ? "bg-rose-500"
+            : "bg-slate-500";
 
   const scheduledDisplay = scheduledAt
     ? new Date(scheduledAt).toLocaleString("en-US", {
@@ -3624,189 +3652,53 @@ function OrderCard({
       })
     : null;
 
-  const riderStatusLabel = deliveryPartnerId
-    ? deliveryPartnerName || "Delivery partner assigned"
-    : "Delivery partner not assigned";
-
-  const timelineLabel = isPreparing
-    ? `Preparing since ${timePlaced}`
-    : isReady
-      ? "Order is marked ready"
-      : scheduledDisplay
-        ? `Scheduled for ${scheduledDisplay}`
-        : `${statusLabel} order`;
-
   const showResendAction =
     (isPreparing || isReady || normalizedStatus === "confirmed") &&
     dispatchStatus !== "accepted";
 
-  const normalizedPaymentMethod = String(paymentMethod || "Cash")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-
   return (
-    <div className="relative mb-3 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-colors active:bg-slate-50 md:rounded-[22px] md:px-4 md:py-3.5">
-      <div 
-        className="absolute top-0 left-0 w-1 h-full" 
-        style={{ backgroundColor: brandColor }}
-      />
-      
-      <div
+    <div className="relative mb-2.5 w-full bg-white rounded-xl p-3 border border-gray-100 shadow-sm transition-all hover:bg-slate-50/50">
+      <button
+        type="button"
         onClick={handleSelect}
-        className="flex cursor-pointer items-start gap-3 pl-1 md:gap-4 md:pl-0">
-
-        <div className="mt-0.5 h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-slate-100 bg-slate-50 md:h-16 md:w-16 md:rounded-xl">
+        className="w-full text-left flex gap-3 items-stretch">
+        
+        <div className="h-16 w-16 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0 my-auto border border-gray-100">
           {photoUrl ? (
             <img src={photoUrl} alt={photoAlt} className="h-full w-full object-cover" />
           ) : (
-            <div className="h-full w-full flex items-center justify-center p-1 bg-slate-50">
-              <span className="text-[8px] font-bold text-slate-300 text-center leading-none uppercase">
+            <div className="h-full w-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-1">
+              <span className="text-[9px] font-medium text-gray-400 text-center leading-tight">
                 {photoAlt}
               </span>
             </div>
           )}
         </div>
 
-        <div className="min-w-0 flex-1 flex-col md:hidden">
-          <div className="mb-1 flex items-start justify-between gap-2 md:mb-0">
-            <div className="min-w-0">
-              <h3 className="truncate text-[13px] font-black text-slate-900 md:text-[15px]">
-                #<span style={{ color: brandColor }}>{orderId}</span>
-              </h3>
-              <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-tight text-slate-400 md:text-[11px]">
+        <div className="flex-1 flex flex-col justify-between min-h-[80px]">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[13px] font-bold text-slate-900 leading-none">
+                Order #{orderId}
+              </p>
+              <p className="text-[10px] text-gray-500 mt-1 font-medium capitalize truncate">
                 {customerName}
               </p>
-              <p className="mt-1 truncate text-[10px] font-bold italic text-slate-600 md:mt-2 md:text-[14px] md:not-italic">
-                {itemsSummary}
-              </p>
             </div>
 
-            <div className="flex flex-shrink-0 items-start gap-1.5 md:flex-col md:items-end md:gap-1">
-              {scheduledAt && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-1.5 py-0.5 text-[8px] font-black uppercase text-green-600 md:px-2 md:py-1 md:text-[9px]">
-                  <Calendar className="w-2 h-2" />
-                  Scheduled
-                </span>
-              )}
-              <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider md:px-2 md:py-1 md:text-[9px] ${statusToneClass}`}>
-                {statusLabel}
-              </span>
-              <span className="hidden text-[10px] font-bold uppercase tracking-tight text-slate-400 md:block">
-                {type}
-              </span>
-
-              {isPreparing && onCancel && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCancel({ orderId, mongoId, customerName });
-                  }}
-                  className="rounded-full bg-rose-50 p-1 text-rose-500 md:p-1.5"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-tight text-slate-400 md:hidden">
-            <span className="truncate max-w-[60%]">{customerName}</span>
-            <span className="whitespace-nowrap">{type}</span>
-          </div>
-
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-50 pt-2 md:mt-4 md:pt-3">
-              {scheduledAt ? (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8px] font-bold uppercase text-green-600 md:text-[10px]">Scheduled For</span>
-                  <span className="text-[10px] font-black text-green-700 md:text-[12px]">
-                    {scheduledDisplay}
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1.5">
+                {scheduledAt && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-1.5 py-0.5 text-[9px] font-bold text-green-600">
+                    <Calendar className="w-2.5 h-2.5" />
+                    Scheduled
                   </span>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-0.5">
-                  {!isReady && eta && (
-                    <div className="flex items-center gap-1 md:gap-1.5">
-                      <span className="text-[8px] font-bold uppercase text-slate-400 md:text-[10px]">ETA</span>
-                      <span className="text-[11px] font-black text-slate-800 md:text-[22px] md:leading-none">{eta}</span>
-                    </div>
-                  )}
-                  <span className="text-[7px] font-bold uppercase text-slate-300 md:text-[10px]">{timePlaced}</span>
-                </div>
-              )}
-
-            <div className="flex flex-shrink-0 items-center gap-1.5 md:gap-2">
-              {(isPreparing || isReady || normalizedStatus === "confirmed") && (
-                <>
-                  {deliveryPartnerId && (
-                    <button
-                      type="button"
-                      onClick={handleRiderDetails}
-                      className="flex flex-col items-end gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-1 text-right transition hover:border-emerald-200 hover:bg-emerald-100/70"
-                    >
-                      <span className="text-[8px] font-black uppercase tracking-tight text-emerald-700 md:text-[9px]">
-                        {deliveryPartnerName || "Delivery Partner"}
-                      </span>
-                      {pickupOtp ? (
-                        <span className="text-[9px] font-black tracking-[0.22em] text-emerald-800 md:text-[10px]">
-                          OTP {pickupOtp}
-                        </span>
-                      ) : null}
-                    </button>
-                  )}
-                  
-                  {!deliveryPartnerId && isPreparing && (
-                    <div className="rounded border border-slate-100 bg-slate-50 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-tighter text-slate-400 md:px-2 md:py-1 md:text-[9px]">
-                      No Rider
-                    </div>
-                  )}
-
-                  {dispatchStatus !== "accepted" && (
-                    <ResendNotificationButton
-                      orderId={orderId}
-                      mongoId={mongoId}
-                      onSuccess={onSelect}
-                    />
-                  )}
-                </>
-              )}
-
-              {isPreparing && onMarkReady && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkReady({ orderId, mongoId, customerName });
-                  }}
-                  disabled={isMarkingReady}
-                  className="rounded-lg px-3 py-1.5 text-[9px] font-black text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50 md:rounded-xl md:px-4 md:py-2 md:text-[11px]"
-                  style={{ backgroundColor: brandColor }}>
-                  {isMarkingReady ? "..." : "MARK READY"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden min-w-0 flex-1 md:flex md:flex-col">
-          <div className="mb-2 flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h3 className="truncate text-[15px] font-black text-slate-900">
-                #<span style={{ color: brandColor }}>{orderId}</span>
-              </h3>
-              <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-tight text-slate-400">
-                {customerName}
-              </p>
-              <p className="mt-2 truncate text-[14px] font-bold text-slate-700">
-                {itemsSummary}
-              </p>
-            </div>
-
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] ${statusToneClass}`}>
-                  {statusLabel}
+                )}
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${statusToneClass}`}>
+                  <span className={`h-1 w-1 rounded-full ${dotBgClass}`} />
+                  {displayStatus}
                 </span>
+                
                 {isPreparing && onCancel && (
                   <button
                     type="button"
@@ -3814,93 +3706,98 @@ function OrderCard({
                       e.stopPropagation();
                       onCancel({ orderId, mongoId, customerName });
                     }}
-                    className="rounded-full bg-rose-50 p-1.5 text-rose-500"
+                    className="rounded-full bg-rose-50 p-1 text-rose-500 hover:bg-rose-100 transition-colors"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="w-3 h-3" />
                   </button>
                 )}
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-tight text-slate-400">
-                {type}
+              
+              <span className="text-[9px] text-gray-400 font-medium">
+                {scheduledDisplay || timePlaced}
               </span>
             </div>
           </div>
 
-          <div className="mt-auto flex items-end justify-between gap-4">
+          <div className="mt-2">
+            <p className="text-xs text-gray-600 line-clamp-1">
+              {itemsSummary}
+            </p>
+          </div>
+
+          <div className="mt-2 flex items-end justify-between gap-2">
             <div className="flex flex-col gap-1">
-              {scheduledAt ? (
-                <>
-                  <span className="text-[10px] font-bold uppercase text-green-600">Scheduled For</span>
-                  <span className="text-[12px] font-black text-green-700">{scheduledDisplay}</span>
-                </>
-              ) : (
-                <>
-                  {!isReady && eta && (
-                    <div className="flex items-end gap-1.5">
-                      <span className="text-[10px] font-bold uppercase text-slate-400">ETA</span>
-                      <span className="text-[24px] font-black leading-none text-slate-800">{eta}</span>
-                    </div>
-                  )}
-                  <span className="text-[10px] font-bold uppercase text-slate-300">{timePlaced}</span>
-                </>
+              <p className="text-[11px] text-gray-500">
+                {type}
+              </p>
+              {!isReady && eta && (
+                <span className="text-[10px] font-semibold text-slate-700">
+                  ETA: {eta}
+                </span>
               )}
             </div>
 
             <div className="flex items-center gap-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-[11px] text-gray-500">
+                  Amount
+                </span>
+                <span className="text-xs font-medium text-black">
+                  ₹{total.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Action Buttons for active orders */}
               {(isPreparing || isReady || normalizedStatus === "confirmed") && (
-                <>
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {deliveryPartnerId ? (
                     <button
                       type="button"
                       onClick={handleRiderDetails}
-                      className="flex flex-col items-end gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-right transition hover:border-emerald-200 hover:bg-emerald-100/70"
-                      title={riderStatusLabel}
+                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase text-emerald-700 transition hover:border-emerald-200 hover:bg-emerald-100/70"
                     >
-                      <span className="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">
-                        {deliveryPartnerName || "Delivery Partner"}
+                      <span>
+                        {deliveryPartnerName || "Rider"}
                       </span>
                       {pickupOtp ? (
-                        <span className="text-[12px] font-black tracking-[0.28em] text-emerald-900">
+                        <span className="text-[8.5px] font-black tracking-wider text-emerald-800 bg-emerald-100 px-1 py-0.5 rounded ml-1">
                           OTP {pickupOtp}
                         </span>
                       ) : null}
                     </button>
                   ) : isPreparing ? (
-                    <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1 text-[9px] font-black uppercase tracking-tight text-slate-400">
+                    <div className="rounded border border-slate-100 bg-slate-50 px-1.5 py-1 text-[8.5px] font-black uppercase tracking-tight text-slate-400">
                       No Rider
                     </div>
                   ) : null}
 
                   {showResendAction && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <ResendNotificationButton
-                        orderId={orderId}
-                        mongoId={mongoId}
-                        onSuccess={onSelect}
-                      />
-                    </div>
+                    <ResendNotificationButton
+                      orderId={orderId}
+                      mongoId={mongoId}
+                      onSuccess={onSelect}
+                    />
                   )}
-                </>
-              )}
 
-              {isPreparing && onMarkReady && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkReady({ orderId, mongoId, customerName });
-                  }}
-                  disabled={isMarkingReady}
-                  className="rounded-xl px-4 py-2 text-[11px] font-black text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50"
-                  style={{ backgroundColor: brandColor }}
-                >
-                  {isMarkingReady ? "..." : "MARK READY"}
-                </button>
+                  {isPreparing && onMarkReady && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMarkReady({ orderId, mongoId, customerName });
+                      }}
+                      disabled={isMarkingReady}
+                      className="rounded-lg px-2.5 py-1 text-[9px] font-black text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+                      style={{ backgroundColor: brandColor }}>
+                      {isMarkingReady ? "..." : "MARK READY"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 }
