@@ -114,7 +114,13 @@ export default function DiningReservations() {
         setCostForTwo(restaurantData?.costForTwo || "")
         
         const rawDiningType = restaurantData?.diningSettings?.diningType
-        setDiningType(Array.isArray(rawDiningType) ? rawDiningType : (rawDiningType ? [rawDiningType].filter(Boolean) : []))
+        let parsedDiningType = []
+        if (Array.isArray(rawDiningType)) {
+            parsedDiningType = rawDiningType.flatMap(item => typeof item === 'string' ? item.split(',') : []).map(s => s.trim()).filter(Boolean)
+        } else if (typeof rawDiningType === 'string') {
+            parsedDiningType = rawDiningType.split(',').map(s => s.trim()).filter(Boolean)
+        }
+        setDiningType(parsedDiningType)
     }
 
     useEffect(() => {

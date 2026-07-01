@@ -6,6 +6,7 @@ import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodRestaurantCommission } from '../../admin/models/restaurantCommission.model.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
 import { FoodDiningRestaurant } from '../../dining/models/diningRestaurant.model.js';
+import { FoodDiningCategory } from '../../dining/models/diningCategory.model.js';
 import { resolveZoneFromAddressLike, resolveZoneFromQuery, restaurantBelongsToResolvedZone } from '../../shared/zoneResolver.js';
 
 const PUBLIC_VISIBLE_RESTAURANT_STATUSES = ['approved'];
@@ -655,13 +656,24 @@ export const updateCurrentRestaurantDiningSettings = async (restaurantId, body =
         1,
         parseInt(body.totalSeats ?? currentDiningSettings.totalSeats ?? 30, 10) || 30
     );
-    const diningType =
-        String(body.diningType ?? currentDiningSettings.diningType ?? 'family-dining').trim() ||
-        'family-dining';
+    let diningType = body.diningType ?? currentDiningSettings.diningType ?? ['family-dining'];
+    if (!Array.isArray(diningType)) {
+        diningType = String(diningType || '').split(',').map(s => s.trim()).filter(Boolean);
+    }
+    diningType = [...new Set(diningType)];
+    if (diningType.length === 0) {
+        diningType = ['family-dining'];
+    }
 
     const isEnabled = parseBoolean(body.isEnabled, currentDiningSettings.isEnabled);
     
     const costForTwo = body.costForTwo !== undefined ? parseInt(body.costForTwo, 10) || null : currentRestaurant.costForTwo;
+
+    // First, resolve the Category IDs based on slugs
+    const selectedCategories = await FoodDiningCategory.find({
+        slug: { $in: diningType }
+    }).select('_id').lean();
+    const categoryIds = selectedCategories.map(c => c._id);
 
     // First, update the FoodDiningRestaurant collection to keep it synced
     await FoodDiningRestaurant.findOneAndUpdate(
@@ -671,10 +683,25 @@ export const updateCurrentRestaurantDiningSettings = async (restaurantId, body =
                 isEnabled,
                 totalSeats,
                 maxGuests,
+                categoryIds,
+                primaryCategoryId: categoryIds[0] || null
             }
         },
         { upsert: true }
     );
+
+    // Sync categories links
+    await FoodDiningCategory.updateMany(
+        { restaurantIds: restaurantId, _id: { $nin: categoryIds } },
+        { $pull: { restaurantIds: restaurantId } }
+    );
+
+    if (categoryIds.length > 0) {
+        await FoodDiningCategory.updateMany(
+            { _id: { $in: categoryIds } },
+            { $addToSet: { restaurantIds: restaurantId } }
+        );
+    }
 
     const doc = await FoodRestaurant.findByIdAndUpdate(
         restaurantId,

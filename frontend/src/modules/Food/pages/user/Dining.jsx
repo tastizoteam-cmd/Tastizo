@@ -750,22 +750,24 @@ export default function Dining() {
                       {category.name}
                     </p>
 
-                    <div className="flex-1 relative overflow-hidden rounded-xl bg-white/40">
-                      {category.imageUrl ? (
-                        <OptimizedImage
-                          src={category.imageUrl}
-                          alt={category.name}
-                          className="w-full h-full transition-transform duration-500 group-hover:scale-[1.05]"
-                          objectFit="contain"
-                          sizes="(max-width: 640px) 31vw, (max-width: 768px) 180px, 220px"
-                          placeholder="blur"
-                          priority={index < 6}
-                        />
-                      ) : (
-                        <div className={`relative h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(235,89,14,0.15),transparent_35%),linear-gradient(180deg,#fff7ee_0%,#fff1e1_100%)] ${shimmerClassName}`}>
-                          <div className="absolute inset-x-0 bottom-0 h-[60%] rounded-t-[50%] bg-white/30" />
-                        </div>
-                      )}
+                    <div className="flex-1 flex items-center justify-center min-h-0 mt-1.5">
+                      <div className="h-full aspect-square rounded-full overflow-hidden bg-white/60 relative border border-white/80 shadow-sm">
+                        {category.imageUrl ? (
+                          <OptimizedImage
+                            src={category.imageUrl}
+                            alt={category.name}
+                            className="w-full h-full transition-transform duration-500 group-hover:scale-[1.05]"
+                            objectFit="cover"
+                            sizes="(max-width: 640px) 31vw, (max-width: 768px) 180px, 220px"
+                            placeholder="blur"
+                            priority={index < 6}
+                          />
+                        ) : (
+                          <div className={`relative h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(235,89,14,0.15),transparent_35%),linear-gradient(180deg,#fff7ee_0%,#fff1e1_100%)] ${shimmerClassName}`}>
+                            <div className="absolute inset-x-0 bottom-0 h-[60%] rounded-t-[50%] bg-white/30" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>

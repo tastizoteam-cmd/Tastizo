@@ -179,6 +179,7 @@ const OptimizedImage = React.memo(({
             sizes={supportsOptimization(imageSrc) ? sizes : undefined}
             alt={alt}
             className={`w-full h-full ${objectFit === 'cover' ? 'object-cover' : objectFit === 'contain' ? 'object-contain' : ''} ${priority || isLoaded ? 'opacity-100' : 'opacity-0'} ${!priority && 'transition-opacity duration-300'}`}
+            style={{ objectFit, ...props.style }}
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
             fetchPriority={priority ? 'high' : 'auto'}
