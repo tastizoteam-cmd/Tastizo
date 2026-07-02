@@ -626,34 +626,72 @@ const normalizeStatusFilter = (status) => {
     return s;
 };
 
+const getIstDateString = (date) => {
+    if (typeof date === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+        date = new Date(date);
+    }
+    const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    return formatter.format(d);
+};
+
 const toStartOfDay = (d) => {
-    const x = new Date(d);
-    x.setHours(0, 0, 0, 0);
-    return x;
+    const dateStr = getIstDateString(d);
+    return new Date(`${dateStr}T00:00:00+05:30`);
 };
 
 const toEndOfDay = (d) => {
-    const x = new Date(d);
-    x.setHours(23, 59, 59, 999);
-    return x;
+    const dateStr = getIstDateString(d);
+    return new Date(`${dateStr}T23:59:59.999+05:30`);
 };
 
 const getWeekRange = (anchorDate) => {
-    const d = new Date(anchorDate);
-    const start = toStartOfDay(d);
-    start.setDate(start.getDate() - start.getDay()); // Sunday
-    const end = toEndOfDay(start);
-    end.setDate(start.getDate() + 6);
-    return { start, end };
+    const dateStr = getIstDateString(anchorDate);
+    const anchor = new Date(`${dateStr}T12:00:00+05:30`);
+    const istTime = anchor.getTime() + 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(istTime);
+    
+    const dayOfWeek = istDate.getUTCDay();
+    const startIstDate = new Date(istTime);
+    startIstDate.setUTCDate(startIstDate.getUTCDate() - dayOfWeek);
+    
+    const endIstDate = new Date(startIstDate);
+    endIstDate.setUTCDate(startIstDate.getUTCDate() + 6);
+    
+    const startStr = `${startIstDate.getUTCFullYear()}-${String(startIstDate.getUTCMonth() + 1).padStart(2, '0')}-${String(startIstDate.getUTCDate()).padStart(2, '0')}`;
+    const endStr = `${endIstDate.getUTCFullYear()}-${String(endIstDate.getUTCMonth() + 1).padStart(2, '0')}-${String(endIstDate.getUTCDate()).padStart(2, '0')}`;
+    
+    return {
+        start: new Date(`${startStr}T00:00:00+05:30`),
+        end: new Date(`${endStr}T23:59:59.999+05:30`)
+    };
 };
 
 const getMonthRange = (anchorDate) => {
-    const d = new Date(anchorDate);
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
+    const dateStr = getIstDateString(anchorDate);
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    
+    const startStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextMonthYear = month === 12 ? year + 1 : year;
+    const tempDate = new Date(`${nextMonthYear}-${String(nextMonth).padStart(2, '0')}-01T12:00:00+05:30`);
+    tempDate.setUTCDate(0);
+    
+    const endStr = `${tempDate.getUTCFullYear()}-${String(tempDate.getUTCMonth() + 1).padStart(2, '0')}-${String(tempDate.getUTCDate()).padStart(2, '0')}`;
+    
+    return {
+        start: new Date(`${startStr}T00:00:00+05:30`),
+        end: new Date(`${endStr}T23:59:59.999+05:30`)
+    };
 };
 
 const computeRange = (period, date) => {

@@ -30,15 +30,9 @@ const mapOptions = {
   fullscreenControl: false,
   gestureHandling: "greedy",
   styles: [
-    { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
-    { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
-    { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#bdbdbd" }] },
-    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#eeeeee" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9c9c9" }] },
-    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#9e9e9e" }] }
+    { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+    { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ visibility: 'off' }] },
+    { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   ]
 };
 const LIBRARIES = ['places', 'geometry'];
@@ -124,7 +118,7 @@ const AnimatedRiderOverlay = React.memo(({ targetLocation, iconUrl }) => {
 
   return (
     <OverlayView position={animatedLoc} mapPaneName={OverlayView.MARKER_LAYER}>
-      <div style={{ transform: `translate(-50%, -50%) rotate(${animatedLoc.heading || 0}deg)`, transition: 'transform 0.1s linear' }} className="relative w-[72px] h-[72px]">
+      <div style={{ transform: `translate(-50%, -50%) rotate(${((animatedLoc.heading || 0) + 135) % 360}deg)`, transition: 'transform 0.1s linear' }} className="relative w-[72px] h-[72px]">
         <img src={iconUrl} alt="Rider" className="w-full h-full object-contain" onError={(e) => { e.target.src = "/MapRider.png"; }} />
       </div>
     </OverlayView>
@@ -156,7 +150,8 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
       streetViewControl: false,
       rotateControl: false,
       fullscreenControl: false,
-      gestureHandling: "greedy"
+      gestureHandling: "greedy",
+      styles: mapOptions.styles
     });
 
     let isProgrammaticChange = false;
@@ -454,7 +449,7 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
         )}
 
         {zones.map((zone) => (
-          <Polygon key={zone._id} paths={zone.paths} options={{ fillColor: "#22c55e", fillOpacity: 0.1, strokeColor: "#22c55e", strokeOpacity: 0.4, strokeWeight: 2, zIndex: 1 }} />
+          <Polygon key={zone._id} paths={zone.paths} options={{ fillColor: "#ffffff", fillOpacity: 0.35, strokeColor: "#ffffff", strokeOpacity: 0.6, strokeWeight: 2, zIndex: 1 }} />
         ))}
       </GoogleMap>
     </div>

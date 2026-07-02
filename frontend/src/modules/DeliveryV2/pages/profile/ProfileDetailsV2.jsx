@@ -397,12 +397,12 @@ export const ProfileDetailsV2 = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center font-poppins">
+      <div className="min-h-screen bg-white flex items-center justify-center font-poppins">
          <div className="flex flex-col items-center gap-4">
             <div className="relative">
-               <div className="w-16 h-16 border-4 border-orange-100 border-t-orange-500 rounded-full animate-spin" />
+               <div className="w-16 h-16 border-4 border-gray-100 border-t-black rounded-full animate-spin" />
                <div className="absolute inset-0 flex items-center justify-center">
-                  <User className="w-6 h-6 text-orange-500" />
+                  <User className="w-6 h-6 text-black" />
                </div>
             </div>
             <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Initializing Profile...</p>
@@ -411,22 +411,22 @@ export const ProfileDetailsV2 = () => {
     )
   }
 
-  const InfoCard = ({ icon: Icon, label, value, color = "blue", badge = null, onEdit = null }) => (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100/80 flex items-center justify-between group">
+  const InfoCard = ({ icon: Icon, label, value, badge = null, onEdit = null }) => (
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex items-center justify-between group hover:border-black transition-colors">
       <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-xl bg-${color}-50 flex items-center justify-center text-${color}-600 border border-${color}-100 transition-transform group-hover:scale-105`}>
+        <div className={`w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-black border border-gray-200 transition-transform group-hover:scale-105`}>
           <Icon className="w-6 h-6" />
         </div>
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-0.5">{label}</p>
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-0.5">{label}</p>
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-bold text-gray-900">{value || "—"}</h4>
+            <h4 className="text-sm font-bold text-black">{value || "—"}</h4>
             {badge}
           </div>
         </div>
       </div>
       {onEdit && (
-        <button onClick={onEdit} className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-orange-500 transition-all active:scale-90">
+        <button onClick={onEdit} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-black transition-all active:scale-90">
           <Edit2 className="w-4 h-4" />
         </button>
       )}
@@ -434,24 +434,24 @@ export const ProfileDetailsV2 = () => {
   )
 
   return (
-    <div className="min-h-screen bg-[#FDFEFE] font-poppins pb-24">
+    <div className="min-h-screen bg-white font-poppins pb-24">
       {/* ─── HEADER ─── */}
-      <div className="fixed top-0 inset-x-0 h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 z-50 px-4 flex items-center justify-between">
+      <div className="fixed top-0 inset-x-0 h-16 bg-white/80 backdrop-blur-xl border-b border-gray-200 z-50 px-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={goBack} className="p-2 hover:bg-gray-100 rounded-xl transition-all active:scale-90">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowLeft className="w-5 h-5 text-black" />
           </button>
           <h1 className="text-lg font-black text-black uppercase tracking-tight leading-none">Profile</h1>
         </div>
-        <div className="bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
+        <div className="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">
           ID: {profile?.deliveryId || "..."}
         </div>
       </div>
 
-      <div className="pt-20 px-4 space-y-6 max-w-lg mx-auto">
+      <div className="pt-24 px-4 space-y-8 max-w-lg mx-auto">
         {/* ─── PROFILE AVATAR BLOCK ─── */}
-        <div className="relative group">
-           <div className="w-32 h-32 rounded-[2.5rem] bg-gray-100 border-2 border-white shadow-2xl mx-auto overflow-hidden relative">
+        <div className="relative group mb-8">
+           <div className="w-32 h-32 rounded-full bg-gray-50 border border-gray-200 mx-auto overflow-hidden relative">
               {profileImageUrl ? (
                 <img src={profileImageUrl} alt="Avatar" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
               ) : (
@@ -464,72 +464,68 @@ export const ProfileDetailsV2 = () => {
               )}
            </div>
            
-           <div className="flex items-center justify-center absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 gap-2">
+           <div className="flex items-center justify-center absolute -bottom-4 left-1/2 -translate-x-1/2 gap-2">
               <button 
                 onClick={() => handleTakeCameraPhoto('profilePhoto')}
-                className="bg-black text-white p-3 rounded-2xl shadow-xl hover:bg-gray-900 transition-all active:scale-95 border-4 border-white flex items-center justify-center"
+                className="bg-black text-white p-2.5 rounded-full hover:bg-gray-800 transition-all active:scale-95 border-2 border-white flex items-center justify-center shadow-sm"
                 title="Take Photo"
               >
-                <Camera className="w-5 h-5" />
+                <Camera className="w-4 h-4" />
               </button>
               
               <button 
                 onClick={() => handlePickFromGallery('profilePhoto', fileInputRef)}
-                className="bg-blue-600 text-white p-3 rounded-2xl shadow-xl hover:bg-blue-700 transition-all active:scale-95 border-4 border-white flex items-center justify-center"
+                className="bg-white text-black p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-95 border-2 border-gray-200 flex items-center justify-center shadow-sm"
                 title="Gallery"
               >
-                <ImageIcon className="w-5 h-5" />
+                <ImageIcon className="w-4 h-4" />
               </button>
 
               {profileImageUrl && (
                 <button 
                   onClick={() => setShowDeletePopup(true)}
-                  className="bg-red-500 text-white p-3 rounded-2xl shadow-xl hover:bg-red-600 transition-all active:scale-95 border-4 border-white flex items-center justify-center"
+                  className="bg-gray-100 text-black p-2.5 rounded-full hover:bg-gray-200 transition-all active:scale-95 border-2 border-white flex items-center justify-center shadow-sm"
                   title="Remove"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
            </div>
         </div>
 
-        <div className="text-center pt-6">
-           <h2 className="text-2xl font-black text-gray-900 leading-none">{profile?.name}</h2>
-           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2 mb-4">Delivery Partner • {profile?.location?.city}</p>
+        <div className="text-center pt-2">
+           <h2 className="text-2xl font-black text-black leading-none">{profile?.name}</h2>
+           <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.1em] mt-2 mb-4">Delivery Partner • {profile?.location?.city}</p>
            
            <div className="flex items-center justify-center gap-2">
-              <div className={`${isAdminApproved ? 'bg-blue-600 text-white' : 'bg-orange-500/10 text-orange-500'} px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border ${isAdminApproved ? 'border-blue-700 shadow-lg' : 'border-orange-500/20'} flex items-center gap-2`}>
-                 <CheckCircle className="w-4 h-4" /> {isAdminApproved ? "Approved" : (profile?.status || "Pending")}
+              <div className={`${isAdminApproved ? 'bg-black text-white border-black' : 'bg-gray-100 text-black border-gray-200'} px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-2`}>
+                 <CheckCircle className="w-3 h-3" /> {isAdminApproved ? "Approved" : (profile?.status || "Pending")}
               </div>
-              <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2">
-                 <Smartphone className="w-4 h-4" /> {profile?.phone}
+              <div className="bg-white text-black px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-gray-200 flex items-center gap-2">
+                 <Smartphone className="w-3 h-3" /> {profile?.phone}
               </div>
            </div>
         </div>
 
         {/* ─── RIDER STATS ─── */}
-        <div className="grid grid-cols-2 gap-3">
-           <div className="bg-white border border-gray-100 p-4 rounded-3xl shadow-sm text-center">
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rider Level</p>
-              <h4 className="text-xl font-black text-gray-900">{riderLevel}</h4>
+        <div className="grid grid-cols-2 gap-4">
+           <div className="bg-white border border-gray-200 p-4 rounded-2xl text-center">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Rider Level</p>
+              <h4 className="text-lg font-black text-black">{riderLevel}</h4>
            </div>
-           <div className="bg-white border border-gray-100 p-4 rounded-3xl shadow-sm text-center">
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Rating</p>
-              <h4 className="text-xl font-black text-gray-900">{ratingDisplay}</h4>
+           <div className="bg-white border border-gray-200 p-4 rounded-2xl text-center">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Rating</p>
+              <h4 className="text-lg font-black text-black">{ratingDisplay}</h4>
            </div>
         </div>
 
+        <div className="h-px bg-gray-100 w-full" />
+
         {/* ─── VEHICLE SECTION ─── */}
         <section>
-          <div className="flex items-center justify-between mb-3 px-1">
-             <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest flex items-center gap-2">
-                {(() => {
-                  const type = String(profile?.vehicle?.type || "").toLowerCase();
-                  if (type.includes("car")) return <Car className="w-4 h-4 text-gray-400" />;
-                  if (type.includes("bike") || type.includes("scooter") || type.includes("motorcycle")) return <Bike className="w-4 h-4 text-gray-400" />;
-                  if (type.includes("bicycle")) return <Bike className="w-4 h-4 text-gray-400" />;
-                  return <Truck className="w-4 h-4 text-gray-400" />;
-                })()} Vehicle Assets
+          <div className="flex items-center justify-between mb-4 px-1">
+             <h3 className="text-[11px] font-black text-black uppercase tracking-widest flex items-center gap-2">
+                Vehicle Assets
              </h3>
           </div>
           <InfoCard 
@@ -542,8 +538,7 @@ export const ProfileDetailsV2 = () => {
             })()} 
             label="Vehicle Details" 
             value={[profile?.vehicle?.type, profile?.vehicle?.brand, vehicleNumber].filter(Boolean).map(v => String(v).toUpperCase()).join(" • ") || "N/A"} 
-            color="blue"
-            badge={!vehicleNumber && <span className="text-[9px] bg-red-50 text-red-500 px-1.5 rounded uppercase font-bold">Missing</span>}
+            badge={!vehicleNumber && <span className="text-[9px] bg-gray-100 text-black px-1.5 rounded uppercase font-bold border border-gray-200">Missing</span>}
             onEdit={() => { 
                 setVehicleInput({ number: vehicleNumber, brand: vehicleBrand, type: vehicleType }); 
                 setShowVehiclePopup(true); 
@@ -551,11 +546,13 @@ export const ProfileDetailsV2 = () => {
           />
         </section>
 
+        <div className="h-px bg-gray-100 w-full" />
+
         {/* ─── BANK & PAYMENTS SECTION (ENHANCED) ─── */}
         <section>
            <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest flex items-center gap-2">
-                 <Banknote className="w-4 h-4 text-gray-400" /> Bank & Payments
+              <h3 className="text-[11px] font-black text-black uppercase tracking-widest flex items-center gap-2">
+                 Bank & Payments
               </h3>
               <button 
                 onClick={() => {
@@ -573,82 +570,84 @@ export const ProfileDetailsV2 = () => {
                   setUpiQrPreview(null)
                   setShowBankDetailsPopup(true)
                 }} 
-                className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                className="text-[10px] font-bold text-black uppercase tracking-widest hover:underline"
               >
                 Edit Details
               </button>
            </div>
            
-           <div className="space-y-3">
-              <div className="bg-[#121212] rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden group">
+           <div className="space-y-4">
+              <div className="bg-black rounded-2xl p-6 text-white relative overflow-hidden group border border-gray-800">
                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
                  <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-10">
+                    <div className="flex justify-between items-start mb-8">
                        <div>
-                          <p className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Bank Account</p>
+                          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Bank Account</p>
                           <h4 className="text-lg font-bold tracking-tight">{bankDetails.bankName || "Link Account"}</h4>
                        </div>
-                       <Banknote className="w-8 h-8 text-blue-500/50" />
+                       <Banknote className="w-6 h-6 text-white/50" />
                     </div>
                     <div className="flex justify-between items-end">
                        <div>
-                          <p className="text-xs font-mono font-medium text-white/60 tracking-[0.2em]">
+                          <p className="text-xs font-mono font-medium text-gray-300 tracking-[0.2em]">
                              {bankDetails.accountNumber ? `•••• •••• •••• ${bankDetails.accountNumber.slice(-4)}` : "XXXX XXXX XXXX XXXX"}
                           </p>
-                          <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-2">{bankDetails.accountHolderName || "Account Holder"}</p>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-2">{bankDetails.accountHolderName || "Account Holder"}</p>
                        </div>
                        <div className="text-right">
-                          <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">IFSC Code</p>
-                          <p className="text-sm font-black tracking-widest">{bankDetails.ifscCode || "—"}</p>
+                          <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">IFSC Code</p>
+                          <p className="text-sm font-bold tracking-widest">{bankDetails.ifscCode || "—"}</p>
                        </div>
                     </div>
                  </div>
               </div>
 
               {/* UPI Section */}
-              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-between group">
-                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 border border-purple-100 group-hover:scale-105 transition-transform">
-                       <Smartphone className="w-7 h-7" />
+              <div className="bg-white rounded-2xl p-4 border border-gray-200 flex items-center justify-between group hover:border-black transition-colors">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-black border border-gray-200 group-hover:scale-105 transition-transform">
+                       <Smartphone className="w-5 h-5" />
                     </div>
                     <div>
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">UPI ID</p>
-                       <h4 className="text-base font-black text-gray-900">{bankDetails.upiId || "Not added"}</h4>
+                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">UPI ID</p>
+                       <h4 className="text-sm font-bold text-black">{bankDetails.upiId || "Not added"}</h4>
                     </div>
                  </div>
                  {bankDetails.upiQrCode && (
                     <button 
                       onClick={() => { setSelectedDocument({ name: "UPI Scanner", url: bankDetails.upiQrCode }); setShowDocumentModal(true); }}
-                      className="w-14 h-14 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black hover:border-black/20 transition-all"
+                      className="w-10 h-10 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center text-black hover:bg-gray-100 transition-all"
                     >
-                       <QrCode className="w-6 h-6" />
+                       <QrCode className="w-5 h-5" />
                     </button>
                  )}
               </div>
            </div>
         </section>
 
+        <div className="h-px bg-gray-100 w-full" />
+
         {/* ─── DOCUMENTS SECTION ─── */}
         <section>
           <div className="flex items-center justify-between mb-4 px-1">
-             <h3 className="text-xs font-black text-gray-950 uppercase tracking-widest flex items-center gap-2">
-                <Shield className="w-4 h-4 text-gray-400" /> Verification Docs
+             <h3 className="text-[11px] font-black text-black uppercase tracking-widest flex items-center gap-2">
+                Verification Docs
              </h3>
           </div>
           
-          <div className="grid gap-3">
+          <div className="grid gap-4">
              {[
                { icon: FileText, label: "Aadhar Card", doc: profile?.documents?.aadhar },
                { icon: FileText, label: "PAN Card", doc: profile?.documents?.pan },
                { icon: Truck, label: "Driving License", doc: profile?.documents?.drivingLicense, number: getDrivingLicenseNumber() }
              ].map((item, i) => (
-               <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+               <div key={i} className="bg-white p-4 rounded-2xl border border-gray-200 flex items-center justify-between hover:border-black transition-colors group">
                   <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400"><item.icon className="w-5 h-5" /></div>
+                     <div className="w-10 h-10 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center text-black"><item.icon className="w-4 h-4" /></div>
                      <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.label}</p>
-                        <p className="text-xs font-bold text-gray-600">{getDocumentVerificationLabel(item.doc)}</p>
-                        <p className="text-[11px] font-semibold text-gray-500 mt-0.5">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{item.label}</p>
+                        <p className="text-xs font-bold text-black">{getDocumentVerificationLabel(item.doc)}</p>
+                        <p className="text-[10px] font-medium text-gray-500 mt-0.5">
                           {item.number || getDocumentNumber(item.doc) || "Number not added"}
                         </p>
                      </div>
@@ -656,7 +655,7 @@ export const ProfileDetailsV2 = () => {
                   {item.doc?.document && (
                     <button 
                       onClick={() => { setSelectedDocument({ name: item.label, url: item.doc.document }); setShowDocumentModal(true); }}
-                      className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:text-black transition-colors"
+                      className="p-2 bg-gray-50 border border-gray-200 text-black rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -728,17 +727,17 @@ export const ProfileDetailsV2 = () => {
                     <div className="w-8 h-8 flex items-center justify-center">
                         {(() => {
                            const t = String(vehicleInput.type || "").toLowerCase();
-                           if (t.includes("car")) return <Car className="w-5 h-5 text-blue-600" />;
-                           if (t.includes("bicycle")) return <Bike className="w-5 h-5 text-blue-600" />;
-                           return <Truck className="w-5 h-5 text-blue-600" />;
+                           if (t.includes("car")) return <Car className="w-5 h-5 text-black" />;
+                           if (t.includes("bicycle")) return <Bike className="w-5 h-5 text-black" />;
+                           return <Truck className="w-5 h-5 text-black" />;
                         })()}
                     </div>
                     <div className="flex-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle Type</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vehicle Type</p>
                         <select 
                             value={vehicleInput.type} 
                             onChange={(e) => setVehicleInput({...vehicleInput, type: e.target.value})} 
-                            className="w-full bg-transparent text-lg font-black text-black outline-none border-b-2 border-transparent focus:border-blue-600 cursor-pointer"
+                            className="w-full bg-transparent text-base font-bold text-black outline-none border-b-2 border-transparent focus:border-black cursor-pointer"
                         >
                             <option value="bike">Bike</option>
                             <option value="scooter">Scooter</option>
@@ -752,15 +751,15 @@ export const ProfileDetailsV2 = () => {
 
                 {/* Name/Brand Input */}
                 <div className="flex items-center gap-4 w-full">
-                    <div className="w-8 h-8 flex items-center justify-center"><Plus className="w-4 h-4 text-blue-600/50" /></div>
+                    <div className="w-8 h-8 flex items-center justify-center"><Plus className="w-4 h-4 text-gray-400" /></div>
                     <div className="flex-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle Name/Brand</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vehicle Name/Brand</p>
                         <input 
                             type="text" 
                             value={vehicleInput.brand} 
                             onChange={(e) => setVehicleInput({...vehicleInput, brand: e.target.value})} 
                             placeholder="E.g. Honda Splendor"
-                            className="w-full bg-transparent text-lg font-black text-black outline-none border-b-2 border-transparent focus:border-blue-600 placeholder:text-gray-200"
+                            className="w-full bg-transparent text-base font-bold text-black outline-none border-b-2 border-transparent focus:border-black placeholder:text-gray-300"
                         />
                     </div>
                 </div>
@@ -769,15 +768,15 @@ export const ProfileDetailsV2 = () => {
 
                 {/* Number Input */}
                 <div className="flex items-center gap-4 w-full">
-                    <div className="w-8 h-8 flex items-center justify-center"><QrCode className="w-4 h-4 text-blue-600/50" /></div>
+                    <div className="w-8 h-8 flex items-center justify-center"><QrCode className="w-4 h-4 text-gray-400" /></div>
                     <div className="flex-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vehicle Number</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vehicle Number</p>
                         <input 
                             type="text" 
                             value={vehicleInput.number} 
                             onChange={(e) => setVehicleInput({...vehicleInput, number: e.target.value.toUpperCase()})} 
                             placeholder="E.g. UP 80 AB 1234"
-                            className="w-full bg-transparent text-lg font-black text-black outline-none border-b-2 border-transparent focus:border-blue-600 placeholder:text-gray-200"
+                            className="w-full bg-transparent text-base font-bold text-black outline-none border-b-2 border-transparent focus:border-black placeholder:text-gray-300"
                         />
                     </div>
                 </div>
@@ -811,11 +810,11 @@ export const ProfileDetailsV2 = () => {
                      setVehicleBrand(brand)
                      setVehicleType(type)
                      setShowVehiclePopup(false)
-                     toast.success("Flight details updated!")
+                     toast.success("Details updated!")
                      await refreshProfile()
                    } catch (e) { toast.error("Cloud storage sync failed") }
                }}
-               className="w-full bg-black text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-gray-900 transition-all active:scale-95"
+               className="w-full bg-black text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[11px] active:scale-95"
             >
                Save Changes
             </button>

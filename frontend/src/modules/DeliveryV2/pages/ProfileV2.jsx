@@ -87,134 +87,139 @@ export const ProfileV2 = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center font-poppins">
-        <div className="flex items-center gap-2 text-gray-700">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm font-medium">Loading profile...</span>
+      <div className="min-h-screen bg-white flex items-center justify-center font-poppins">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+             <div className="w-16 h-16 border-4 border-gray-100 border-t-black rounded-full animate-spin" />
+             <div className="absolute inset-0 flex items-center justify-center">
+                <User className="w-6 h-6 text-black" />
+             </div>
+          </div>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Loading...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-poppins pb-24">
+    <div className="min-h-screen bg-[#F8F9FA] text-black font-poppins pb-24">
       {/* Profile Header Block */}
-      <div className="bg-white p-4 w-full shadow-sm">
+      <div className="px-6 py-8 bg-white border-b border-gray-100">
         <div 
           onClick={() => navigate("/food/delivery/profile/details")}
-          className="flex items-start justify-between cursor-pointer"
+          className="flex items-center gap-4 cursor-pointer"
         >
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-2xl md:text-3xl font-bold">{profile?.name || ""}</h2>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </div>
-            <p className="text-gray-600 text-sm md:text-base mb-3 font-medium">{profile?.deliveryId || ""}</p>
-          </div>
-          <div className="relative shrink-0 ml-4">
+          <div className="relative shrink-0">
             {profile?.profileImage?.url ? (
-              <img src={profile.profileImage.url} alt="Profile" className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-2 border-gray-200" />
+              <img src={profile.profileImage.url} alt="Profile" className="w-[72px] h-[72px] rounded-full object-cover border border-gray-100 shadow-sm" />
             ) : (
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                <User className="w-10 h-10 md:w-12 md:h-12 text-gray-400" />
+              <div className="w-[72px] h-[72px] rounded-full bg-gray-50 flex items-center justify-center border border-gray-100 shadow-sm">
+                <User className="w-8 h-8 text-gray-400" />
               </div>
             )}
-            <div className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md border-2 border-white">
-              <Briefcase className="w-4 h-4 text-gray-600" />
-            </div>
           </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{profile?.name || "Delivery Partner"}</h2>
+            <p className="text-gray-500 text-[11px] font-semibold uppercase tracking-wider">ID: {profile?.deliveryId || "N/A"}</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
         </div>
       </div>
 
-      <div className="px-4 py-6">
-        {/* Navigation Buttons */}
-        <div className="grid grid-cols-1 gap-3 mb-6">
-          <button
+      <div className="px-5 py-6">
+        {/* Actions Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Trips History */}
+          <div 
             onClick={() => navigate("/food/delivery/history")}
-            className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-transparent active:bg-gray-50 transition-colors"
+            className="flex items-center gap-4 p-4 border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
           >
-            <div className="rounded-full bg-gray-50 p-3">
-              <Bike className="w-6 h-6 text-gray-700" />
+            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+              <Bike className="w-5 h-5 text-gray-800" />
             </div>
-            <span className="text-sm font-bold text-gray-900">Trips history</span>
-          </button>
+            <div className="flex-1">
+              <h3 className="text-[15px] font-semibold text-gray-900">Trips History</h3>
+              <p className="text-xs text-gray-500 mt-0.5">View past deliveries</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-300" />
+          </div>
+
+          {/* Share & Earn */}
+          <div 
+            onClick={handleShareReferral}
+            className="flex items-center gap-4 p-4 border-b border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+              <Share2 className="w-5 h-5 text-gray-800" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-[15px] font-semibold text-gray-900">Share & Earn</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{referralReward > 0 ? `Earn ₹${referralReward} per referral` : 'Invite your friends'}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-300" />
+          </div>
+
+          {/* Support Tickets */}
+          <div 
+            onClick={() => navigate("/food/delivery/help/tickets")}
+            className="flex items-center gap-4 p-4 cursor-pointer active:bg-gray-50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+              <Ticket className="w-5 h-5 text-gray-800" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-[15px] font-semibold text-gray-900">Support Tickets</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Get help & support</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-300" />
+          </div>
         </div>
 
-        {/* Sections */}
-        <div className="space-y-4">
-          {/* Share & Earn */}
-          <div className="bg-white rounded-xl p-4 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <h3 className="text-base font-bold text-gray-900 mb-1">
-                Share & Earn{referralReward > 0 ? ` ₹${referralReward}` : ""}
-              </h3>
-              <p className="text-gray-500 text-xs font-medium">Invite friends to join the delivery partner fleet.</p>
-            </div>
-            <button
-              onClick={handleShareReferral}
-              className="shrink-0 bg-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest shadow-md"
-            >
-              Share
-            </button>
+        {/* Logout */}
+        <div 
+          onClick={() => setShowLogoutConfirm(true)}
+          className="flex items-center gap-4 p-4 mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+            <LogOut className="w-5 h-5 text-gray-800" />
           </div>
-
-          {/* Support Section */}
-          <div>
-            <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 px-1">Support</h3>
-            <div 
-              onClick={() => navigate("/food/delivery/help/tickets")}
-              className="bg-white rounded-xl p-4 flex items-center justify-between cursor-pointer active:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <Ticket className="w-5 h-5 text-gray-700" />
-                <span className="text-sm font-bold text-gray-900">Support tickets</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-300" />
-            </div>
+          <div className="flex-1">
+            <h3 className="text-[15px] font-semibold text-gray-900">Log Out</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Exit your account</p>
           </div>
-
-          {/* Partner options Section */}
-          {/* Logout Section */}
-          <div className="pt-4">
-            <div 
-              onClick={() => setShowLogoutConfirm(true)}
-              className="bg-white rounded-xl p-4 flex items-center justify-between cursor-pointer border border-red-50 hover:bg-red-50/30 active:bg-red-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <LogOut className="w-5 h-5 text-red-600" />
-                <span className="text-sm font-bold text-red-600">Log out</span>
-              </div>
-              <ArrowRight className="w-5 h-5 text-red-100" />
-            </div>
-          </div>
+          <ChevronRight className="w-5 h-5 text-gray-300" />
         </div>
       </div>
 
       {/* Logout Confirm Popup */}
       {showLogoutConfirm && (
         <div 
-          className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center px-6"
           onClick={() => setShowLogoutConfirm(false)}
         >
           <div 
-            className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-5"
+            className="bg-white w-full max-w-[320px] rounded-3xl shadow-xl p-6 text-center animate-in fade-in zoom-in duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-black text-gray-900 mb-2">Do you want to log out?</h3>
-            <p className="text-sm text-gray-500 mb-5">You will be signed out from your delivery account.</p>
-            <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4 border border-gray-100">
+              <LogOut className="w-6 h-6 text-gray-800" />
+            </div>
+            <h3 className="text-[19px] font-bold text-gray-900 mb-2">Log Out</h3>
+            <p className="text-[13px] text-gray-500 mb-8 px-2">Are you sure you want to securely log out from your account?</p>
+            
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 h-11 rounded-xl border border-gray-200 text-gray-700 font-bold"
+                className="flex-1 py-3.5 rounded-2xl bg-gray-50 text-gray-700 font-semibold text-[13px] active:scale-95 transition-all"
               >
-                No
+                Cancel
               </button>
               <button
                 onClick={handleLogout}
                 disabled={logoutSubmitting}
-                className="flex-1 h-11 rounded-xl bg-red-600 text-white font-bold disabled:opacity-60"
+                className="flex-1 py-3.5 rounded-2xl bg-black text-white font-semibold text-[13px] active:scale-95 transition-all disabled:opacity-70"
               >
-                {logoutSubmitting ? "Logging out..." : "Yes"}
+                {logoutSubmitting ? "Wait..." : "Log Out"}
               </button>
             </div>
           </div>

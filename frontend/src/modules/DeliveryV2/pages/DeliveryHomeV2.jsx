@@ -1468,134 +1468,144 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   return (
     <div className="relative h-screen w-full bg-white text-gray-900 overflow-hidden flex flex-col">
       {/* ─── 1. TOP HEADER (Premium Dark Gray) ─── */}
-      {tab !== 'history' && (
-      <div className="absolute top-0 inset-x-0 bg-[#121212]/95 backdrop-blur-2xl shadow-2xl z-[200] safe-top pb-2 border-b border-white/10">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-4">
-             <div 
-                onClick={() => navigate('/food/delivery/profile')}
-                className="w-10 h-10 rounded-full border border-white/20 p-1 shadow-xl overflow-hidden bg-white/10 flex items-center justify-center cursor-pointer active:scale-95 transition-all"
-             >
-                {profileImage ? (
-                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover rounded-full" />
-                ) : (
-                  <UserIcon className="w-6 h-6 text-white/80" />
-                )}
-             </div>
-              <button 
-                onClick={async () => {
-                  const nextState = !isOnline;
-                  toggleOnline(); // Store action
-                  if (nextState) {
-                     // Try to get location and sync immediately so we are visible for dispatch right away
-                     navigator.geolocation.getCurrentPosition((pos) => {
-                         syncDeliveryZoneState(pos.coords.latitude, pos.coords.longitude, true).catch(() => {});
-                     }, (err) => console.warn('Online sync position failed:', err), { enableHighAccuracy: true });
-                  } else {
-                     deliveryAPI.updateOnlineStatus(false).catch(() => {});
-                  }
-                }}
-                className={`delivery-online-toggle relative w-[92px] h-8 rounded-full p-1 transition-all duration-500 flex items-center ${isOnline ? 'is-online bg-green-500 shadow-lg shadow-green-500/20' : 'is-offline bg-green-400 shadow-lg shadow-green-400/20'}`}
+      {tab !== 'history' && tab !== 'pocket' && (
+       <div className="absolute top-0 inset-x-0 bg-white/30 backdrop-blur-md border-b border-gray-200/30 shadow-sm z-[200] safe-top pb-2">
+         <div className="flex items-center justify-between px-4 py-2">
+           <div className="flex items-center gap-4">
+              <div 
+                 onClick={() => navigate('/food/delivery/profile')}
+                 className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center cursor-pointer active:scale-95 transition-all"
               >
-                <div className={`flex items-center justify-between w-full px-2 text-[8.5px] font-black uppercase tracking-widest text-white`}>
-                  <span>{isOnline ? 'Online' : ''}</span>
-                  <span>{!isOnline ? 'Offline' : ''}</span>
-                </div>
-                <motion.div animate={{ x: isOnline ? 59 : 0 }} className="absolute left-1 w-6 h-6 bg-white rounded-full shadow-sm" />
-              </button>
+                 {profileImage ? (
+                   <img src={profileImage} alt="Profile" className="w-full h-full object-cover rounded-full" />
+                 ) : (
+                   <UserIcon className="w-6 h-6 text-gray-500" />
+                 )}
+              </div>
+               <button 
+                 onClick={async () => {
+                   const nextState = !isOnline;
+                   toggleOnline(); // Store action
+                   if (nextState) {
+                      // Try to get location and sync immediately so we are visible for dispatch right away
+                      navigator.geolocation.getCurrentPosition((pos) => {
+                          syncDeliveryZoneState(pos.coords.latitude, pos.coords.longitude, true).catch(() => {});
+                      }, (err) => console.warn('Online sync position failed:', err), { enableHighAccuracy: true });
+                   } else {
+                      deliveryAPI.updateOnlineStatus(false).catch(() => {});
+                   }
+                 }}
+                 className={`relative w-[92px] h-8 rounded-full p-1 transition-all duration-500 flex items-center ${isOnline ? 'bg-[#22C55E] shadow-lg shadow-[#22C55E]/20' : 'bg-gray-200'}`}
+               >
+                 <div className={`flex items-center justify-between w-full px-2 text-[8.5px] font-black uppercase tracking-widest ${isOnline ? 'text-white' : 'text-gray-500'}`}>
+                   <span>{isOnline ? 'Online' : ''}</span>
+                   <span>{!isOnline ? 'Offline' : ''}</span>
+                 </div>
+                 <motion.div animate={{ x: isOnline ? 59 : 0 }} className="absolute left-1 w-6 h-6 bg-white rounded-full shadow-sm" />
+               </button>
 
+            </div>
+           <div className="flex items-center gap-3">
+              <button onClick={() => setShowEmergencyPopup(true)} className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-700 border border-gray-100 active:scale-95 transition-all shadow-sm"><AlertTriangle className="w-4 h-4" /></button>
+              <button onClick={() => navigate('/food/delivery/help/id-card')} className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-700 border border-gray-100 active:scale-95 transition-all shadow-sm"><Contact className="w-4 h-4" /></button>
+              <button onClick={() => setShowNotifications(true)} className="relative w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center text-gray-700 border border-gray-100 active:scale-95 transition-all shadow-sm"><Bell className="w-4 h-4" />{notificationUnreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-black" />}</button>
            </div>
-          <div className="flex items-center gap-3">
-             <button onClick={() => setShowEmergencyPopup(true)} className="w-9 h-9 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 active:scale-95 transition-all shadow-lg"><AlertTriangle className="w-4 h-4" /></button>
-             <button onClick={() => navigate('/food/delivery/help/id-card')} className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20 active:scale-95 transition-all shadow-lg"><Contact className="w-4 h-4" /></button>
-             <button onClick={() => setShowNotifications(true)} className="relative w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/10 active:scale-95 transition-all shadow-lg"><Bell className="w-4 h-4" />{notificationUnreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-400 border border-[#1f1f1f]" />}</button>
-          </div>
-        </div>
+         </div>
 
-        {/* ─── LIVE STATUS / PROGRESS BADGE (MATCHED PRO) ─── */}
-        <AnimatePresence>
-          {tab === 'feed' && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="px-4 mt-1"
-            >
-              {activeOrder ? (
-                <div className="grid grid-cols-2 gap-3 w-full">
-                  {/* LEFT: DISTANCE (Vibrant Orange Card) */}
-                  <div className="bg-[#ff8100] rounded-2xl p-3.5 shadow-xl shadow-orange-500/20 border border-orange-400/50 flex items-center justify-between overflow-hidden relative">
-                    <div className="flex flex-col z-10">
-                      <span className="text-[9px] text-white/70 font-black uppercase tracking-[0.15em] mb-1">Distance</span>
-                      <div className="flex items-end gap-1">
-                        <span className="text-2xl font-black text-white leading-none tracking-tighter">
-                          {distanceToTarget && distanceToTarget !== Infinity ? (distanceToTarget / 1000).toFixed(1) : '--'}
-                        </span>
-                        <span className="text-[11px] text-white/80 font-bold mb-0.5">KM</span>
-                      </div>
-                    </div>
-                    <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center z-10 shadow-lg">
-                      <Navigation2 className="w-4 h-4 text-[#ff8100] rotate-45" />
-                    </div>
-                  </div>
+         {/* ─── LIVE STATUS / PROGRESS BADGE (MATCHED PRO) ─── */}
+         <AnimatePresence>
+           {tab === 'feed' && (
+             <motion.div 
+               initial={{ opacity: 0, y: -10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, y: -10 }}
+               className="px-4 mt-1"
+             >
+               {activeOrder ? (
+                 <div className="grid grid-cols-2 gap-3 w-full">
+                   {/* LEFT: DISTANCE (Clean White Card) */}
+                   <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 flex items-center justify-between overflow-hidden relative">
+                     <div className="flex flex-col z-10">
+                       <span className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-1">Distance</span>
+                       <div className="flex items-end gap-1">
+                         <span className="text-2xl font-black text-gray-900 leading-none tracking-tighter">
+                           {distanceToTarget && distanceToTarget !== Infinity ? (distanceToTarget / 1000).toFixed(1) : '--'}
+                         </span>
+                         <span className="text-[11px] text-gray-500 font-bold mb-0.5">KM</span>
+                       </div>
+                     </div>
+                     <div className="w-9 h-9 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center z-10 shadow-sm">
+                       <Navigation2 className="w-4 h-4 text-black rotate-45" />
+                     </div>
+                   </div>
 
-                  {/* RIGHT: TIME (Emerald PRO Content) */}
-                  <div className="bg-[#10B981] rounded-2xl p-3.5 shadow-xl shadow-green-500/20 border border-green-400/50 flex items-center justify-between relative overflow-hidden group">
-                    <div className="flex flex-col z-10">
-                      <span className="text-[9px] text-white/70 font-black uppercase tracking-[0.15em] mb-1">Arrival</span>
-                      <div className="flex items-end gap-1">
-                        <span className="text-2xl font-black text-white leading-none tracking-tighter">
-                          {eta ? String(eta) : '--'}
-                        </span>
-                        <span className="text-[11px] text-white/80 font-bold mb-0.5">MIN</span>
-                      </div>
-                    </div>
-                    <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center z-10 shadow-lg">
-                       <Clock className="w-4 h-4 text-[#10B981]" />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white/5 rounded-2xl p-4 flex items-center border border-white/5 shadow-sm backdrop-blur-md">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center">
-                      <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-black text-[11px] uppercase tracking-widest leading-none mb-1">
-                        {isOnline ? 'System Online' : 'System Offline'} 
-                        {isOnline && deliveryZone?.name && (
-                          <span className="ml-2 text-green-400">• {deliveryZone.name}</span>
-                        )}
-                      </h3>
-                      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-tight">
-                        {isOnline 
-                          ? (currentZoneId ? 'Receiving orders in your zone' : 'Outside service area') 
-                          : 'Go online to receive jobs'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                   {/* RIGHT: TIME (Clean White Card) */}
+                   <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 flex items-center justify-between relative overflow-hidden group">
+                     <div className="flex flex-col z-10">
+                       <span className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] mb-1">Arrival</span>
+                       <div className="flex items-end gap-1">
+                         <span className="text-2xl font-black text-gray-900 leading-none tracking-tighter">
+                           {eta ? String(eta) : '--'}
+                         </span>
+                         <span className="text-[11px] text-gray-500 font-bold mb-0.5">MIN</span>
+                       </div>
+                     </div>
+                     <div className="w-9 h-9 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center z-10 shadow-sm">
+                        <Clock className="w-4 h-4 text-black" />
+                     </div>
+                   </div>
+                 </div>
+               ) : (
+                 <div className="bg-white/45 backdrop-blur-md rounded-[20px] p-5 flex items-center border border-gray-100/50 shadow-sm transition-all duration-300">
+                   <div className="flex items-center gap-4">
+                     {/* Clean modern status dot container */}
+                     <div className="relative flex items-center justify-center">
+                       <span className="relative flex h-3 w-3">
+                         {isOnline && (
+                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
+                         )}
+                         <span className={`relative inline-flex rounded-full h-3 w-3 ${isOnline ? 'bg-[#22C55E]' : 'bg-gray-400'}`}></span>
+                       </span>
+                     </div>
+                     <div>
+                       <div className="flex items-center gap-2">
+                         <h3 className="text-sm font-bold text-gray-900 leading-none">
+                           {isOnline ? 'System Online' : 'System Offline'}
+                         </h3>
+                         {isOnline && deliveryZone?.name && (
+                           <span className="bg-black/[0.04] border border-black/10 text-[9px] font-bold text-gray-600 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              {deliveryZone.name}
+                           </span>
+                         )}
+                       </div>
+                       <p className="text-xs text-gray-400 font-medium mt-1 leading-none">
+                         {isOnline 
+                           ? (currentZoneId ? 'Receiving orders in your zone' : 'Outside service area') 
+                           : 'Go online to receive jobs'}
+                       </p>
+                     </div>
+                   </div>
+                 </div>
+               )}
 
-              {!activeOrder && cashLimitNotice?.blocked && (
-                <div className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-500/10 px-4 py-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
-                    Cash Limit Alert
-                  </p>
-                  <p className="mt-1 text-[11px] font-semibold text-amber-100">
-                    {cashLimitNotice?.message || 'Please deposit your amount to get orders.'}
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+               {!activeOrder && cashLimitNotice?.blocked && (
+                 <div className="mt-3 rounded-2xl border border-red-100 bg-red-50/50 px-4 py-3">
+                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-red-600">
+                     Cash Limit Alert
+                   </p>
+                   <p className="mt-1 text-[11px] font-semibold text-red-700">
+                     {cashLimitNotice?.message || 'Please deposit your amount to get orders.'}
+                   </p>
+                 </div>
+               )}
+             </motion.div>
+           )}
+         </AnimatePresence>
+       </div>
       )}
 
       {/* ─── 2. MAIN CONTENT ─── */}
-      <div className={`flex-1 relative overflow-y-auto ${tab === 'history' ? 'pt-0' : 'pt-[120px]'} no-scrollbar`}>
+      <div className={`flex-1 relative overflow-y-auto ${(tab === 'history' || tab === 'pocket') ? 'pt-0' : 'pt-[120px]'} no-scrollbar`}>
          {tab === 'feed' ? (
            <div className="absolute inset-0 top-[-120px]">
              <LiveMap 

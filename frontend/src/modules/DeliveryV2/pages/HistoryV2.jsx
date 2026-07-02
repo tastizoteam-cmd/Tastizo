@@ -88,24 +88,59 @@ export const HistoryV2 = () => {
      }
   }, [showBonusModal]);
 
+  const getWeekDisplayRange = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const start = new Date(d);
+    start.setDate(d.getDate() - day);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const format = (dateObj) => dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    return `${format(start)} - ${format(end)}`;
+  };
+
   const formatDateDisplay = (date) => {
+    if (activeTab === 'monthly') {
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    if (activeTab === 'weekly') {
+      return getWeekDisplayRange(date);
+    }
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const day = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    
     if (date.toDateString() === today.toDateString()) return `Today: ${day}`;
     if (date.toDateString() === yesterday.toDateString()) return `Yesterday: ${day}`;
     return day;
   };
 
-  const recentDates = useMemo(() => {
+  const dateOptions = useMemo(() => {
+    if (activeTab === 'monthly') {
+      return [...Array(6)].map((_, i) => {
+        const d = new Date();
+        d.setDate(1);
+        d.setMonth(d.getMonth() - i);
+        return d;
+      });
+    }
+    if (activeTab === 'weekly') {
+      return [...Array(8)].map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i * 7);
+        return d;
+      });
+    }
     return [...Array(30)].map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       return d;
     });
-  }, []);
+  }, [activeTab]);
+
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, [activeTab]);
 
   const metrics = useMemo(() => {
      return trips.reduce((acc, trip) => {
@@ -128,56 +163,55 @@ export const HistoryV2 = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-poppins pb-32">
-       {/* 1. Header (Premium V2 Styled) */}
-       <div className="bg-[#121212] border-b border-white/10 px-6 py-3 flex items-center justify-between sticky top-0 z-[100] backdrop-blur-2xl">
+    <div className="min-h-screen bg-[#F8F9FA] font-poppins pb-32">
+       {/* 1. Header (Clean White / Minimal) */}
+       <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
           <div className="flex items-center gap-4">
-            <button onClick={goBack} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all">
+            <button onClick={goBack} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-800 border border-gray-100 active:scale-90 transition-all">
                <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-               <h1 className="text-xl font-black text-white uppercase tracking-tighter">Trip History</h1>
-               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">Your delivery milestones</p>
+               <h1 className="text-xl font-bold text-gray-950 uppercase tracking-tight">Trip History</h1>
+               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5">Your delivery milestones</p>
             </div>
           </div>
-          <button onClick={() => setShowBonusModal(true)} className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-[#10B981] border border-green-500/20 relative active:scale-90 transition-all">
+          <button onClick={() => setShowBonusModal(true)} className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-800 border border-gray-100 relative active:scale-90 transition-all">
              <Gift className="w-5 h-5" />
              {bonusTransactions.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#10B981] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center border border-white shadow-sm">
                    {bonusTransactions.length}
                 </span>
              )}
           </button>
        </div>
-
        {/* 2. Selection Tabs (Matched to Image) */}
        <div className="bg-white px-4 flex items-center gap-8 sticky top-[61px] z-[90] border-b border-gray-100">
           {['daily', 'weekly', 'monthly'].map((tab) => (
              <button
                key={tab}
                onClick={() => setActiveTab(tab)}
-               className={`py-4 text-base font-medium capitalize relative ${activeTab === tab ? 'text-[#10B981]' : 'text-gray-400'}`}
+               className={`py-4 text-base font-semibold capitalize relative ${activeTab === tab ? 'text-black font-bold' : 'text-gray-400'}`}
              >
                 {tab}
-                {activeTab === tab && <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10B981]" />}
+                {activeTab === tab && <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
              </button>
           ))}
        </div>
 
        {/* 3. Filter Controls (Matched to Image) */}
-       <div className="bg-white px-4 py-4 flex gap-3 sticky top-[118px] z-[80]">
+       <div className="bg-[#F8F9FA] px-4 py-4 flex gap-3 sticky top-[118px] z-[80]">
           <button 
              onClick={() => { setShowDatePicker(!showDatePicker); setShowTripTypePicker(false); }}
-             className="flex-1 px-4 py-3 bg-[#f8f9fa] border border-gray-100 rounded-xl flex items-center justify-between text-gray-800"
+             className="flex-1 px-4 py-3 bg-white border border-gray-100 rounded-xl flex items-center justify-between text-gray-800 shadow-sm active:scale-[0.98] transition-all"
           >
-             <span className="text-sm font-medium">{formatDateDisplay(selectedDate)}</span>
+             <span className="text-sm font-semibold">{formatDateDisplay(selectedDate)}</span>
              <ChevronDown className={`w-4 h-4 text-gray-400 transform transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
           </button>
           <button 
              onClick={() => { setShowTripTypePicker(!showTripTypePicker); setShowDatePicker(false); }}
-             className="w-[140px] px-4 py-3 bg-[#f8f9fa] border border-gray-100 rounded-xl flex items-center justify-between text-gray-800"
+             className="w-[140px] px-4 py-3 bg-white border border-gray-100 rounded-xl flex items-center justify-between text-gray-800 shadow-sm active:scale-[0.98] transition-all"
           >
-             <span className="text-sm font-medium">{selectedTripType}</span>
+             <span className="text-sm font-semibold">{selectedTripType}</span>
              <ChevronDown className={`w-4 h-4 text-gray-400 transform transition-transform ${showTripTypePicker ? 'rotate-180' : ''}`} />
           </button>
        </div>
@@ -186,15 +220,31 @@ export const HistoryV2 = () => {
        <AnimatePresence>
           {showDatePicker && (
              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="fixed left-4 right-4 top-[185px] z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-[300px] overflow-y-auto p-2">
-                {recentDates.map((date, idx) => (
-                   <button 
-                      key={idx} 
-                      onClick={() => { setSelectedDate(date); setShowDatePicker(false); }}
-                      className={`w-full text-left p-4 rounded-xl text-sm font-medium ${date.toDateString() === selectedDate.toDateString() ? 'bg-green-50 text-[#10B981] font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
-                   >
-                      {formatDateDisplay(date)}
-                   </button>
-                ))}
+                {dateOptions.map((date, idx) => {
+                   let isSelected = false;
+                   if (activeTab === 'monthly') {
+                      isSelected = date.getFullYear() === selectedDate.getFullYear() && date.getMonth() === selectedDate.getMonth();
+                   } else if (activeTab === 'weekly') {
+                      const getStartOfWeekString = (d) => {
+                         const temp = new Date(d);
+                         temp.setDate(temp.getDate() - temp.getDay());
+                         return temp.toDateString();
+                      };
+                      isSelected = getStartOfWeekString(date) === getStartOfWeekString(selectedDate);
+                   } else {
+                      isSelected = date.toDateString() === selectedDate.toDateString();
+                   }
+
+                   return (
+                      <button 
+                         key={idx} 
+                         onClick={() => { setSelectedDate(date); setShowDatePicker(false); }}
+                         className={`w-full text-left p-4 rounded-xl text-sm font-medium ${isSelected ? 'bg-gray-100 text-black font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
+                      >
+                         {formatDateDisplay(date)}
+                      </button>
+                   );
+                })}
              </motion.div>
           )}
           {showTripTypePicker && (
@@ -203,7 +253,7 @@ export const HistoryV2 = () => {
                    <button 
                       key={idx} 
                       onClick={() => { setSelectedTripType(type); setShowTripTypePicker(false); }}
-                      className={`w-full text-left p-4 rounded-xl text-sm font-medium ${type === selectedTripType ? 'bg-green-50 text-[#10B981] font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
+                      className={`w-full text-left p-4 rounded-xl text-sm font-medium ${type === selectedTripType ? 'bg-gray-100 text-black font-bold' : 'text-gray-700 hover:bg-gray-50'}`}
                    >
                       {type}
                    </button>
@@ -214,22 +264,22 @@ export const HistoryV2 = () => {
 
        {/* 4. Page Content */}
        <div className="px-4 py-2 space-y-5">
-          {/* Performance Summary Banner (Matched to Image) */}
-          <div className="bg-[#E9F9F4] rounded-2xl p-6 border border-[#D1F2E8] flex justify-between items-center">
+          {/* Performance Summary Banner */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 flex justify-between items-center shadow-sm">
              <div>
-                <p className="text-[11px] font-bold text-[#10B981] mb-1">COD Collected</p>
-                <h3 className="text-xl font-bold text-gray-950">{formatMoney(metrics.cod)}</h3>
+                <p className="text-[11px] font-bold text-gray-500 mb-1 uppercase tracking-wider">COD Collected</p>
+                <h3 className="text-xl font-bold text-gray-900">{formatMoney(metrics.cod)}</h3>
              </div>
              <div className="text-right">
-                <p className="text-[11px] font-bold text-[#10B981] mb-1">Earnings</p>
-                <h3 className="text-xl font-bold text-gray-950">{formatMoney(metrics.earnings)}</h3>
+                <p className="text-[11px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Earnings</p>
+                <h3 className="text-xl font-bold text-gray-900">{formatMoney(metrics.earnings)}</h3>
              </div>
           </div>
 
           {/* Trip List */}
           {loading ? (
              <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-[#10B981]" />
+                <Loader2 className="w-8 h-8 animate-spin text-black" />
                 <p className="text-gray-400 text-xs font-medium">Fetching trips...</p>
              </div>
           ) : trips.length > 0 ? (
@@ -247,33 +297,33 @@ export const HistoryV2 = () => {
                       <div key={trip.orderId || idx} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm active:scale-[0.99] transition-all">
                          <div className="flex justify-between items-start mb-2">
                              <div>
-                                <h4 className="text-base font-bold text-gray-950">{trip.orderId || 'ORDER-ID'}</h4>
+                                <h4 className="text-base font-bold text-gray-900">{trip.orderId || 'ORDER-ID'}</h4>
                                 <p className="text-sm font-medium text-gray-500 mt-0.5">{trip.restaurant || trip.restaurantName || 'Sayaji'}</p>
                                 <p className="text-xs text-gray-400 font-medium mt-0.5 line-clamp-1">{extractItems(trip)}</p>
                              </div>
-                             <span className={`text-sm font-bold ${isCompleted ? 'text-[#10B981]' : isCancelled ? 'text-red-500' : 'text-orange-500'}`}>
+                             <span className={`text-sm font-bold ${isCompleted ? 'text-green-600' : isCancelled ? 'text-red-500' : 'text-orange-500'}`}>
                                 {trip.status || 'Status'}
                              </span>
                          </div>
                          
                          <div className="flex gap-2 mb-4 mt-3">
-                             <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${(isCOD || isQR) ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-[#10B981]'}`}>
+                             <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-100">
                                 {isQR ? 'COD (QR)' : isCOD ? 'COD' : 'Online'}
                              </span>
                          </div>
 
-                         <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-50">
+                         <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
                              <div>
                                 <p className="text-[11px] font-medium text-gray-400 mb-1">Time</p>
-                                <p className="text-sm font-bold text-gray-950">{trip.time || '--:--'}</p>
+                                <p className="text-sm font-bold text-gray-900">{trip.time || '--:--'}</p>
                              </div>
                              <div className="text-center">
                                 <p className="text-[11px] font-medium text-gray-400 mb-1">COD</p>
-                                <p className="text-sm font-bold text-gray-950">{formatMoney(collection)}</p>
+                                <p className="text-sm font-bold text-gray-900">{formatMoney(collection)}</p>
                              </div>
                              <div className="text-right">
                                 <p className="text-[11px] font-medium text-gray-400 mb-1">Earning</p>
-                                <p className="text-sm font-bold text-gray-950">{formatMoney(payout)}</p>
+                                <p className="text-sm font-bold text-gray-900">{formatMoney(payout)}</p>
                              </div>
                          </div>
                       </div>
@@ -282,7 +332,7 @@ export const HistoryV2 = () => {
              </div>
           ) : (
              <div className="py-20 text-center flex flex-col items-center">
-                <Clock className="w-12 h-12 text-gray-100 mb-4" />
+                <Clock className="w-12 h-12 text-gray-200 mb-4" />
                 <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No Trips Recorded</p>
              </div>
           )}
@@ -297,11 +347,11 @@ export const HistoryV2 = () => {
                    <div className="w-12 h-1 bg-gray-100 rounded-full mx-auto mb-8 shrink-0" />
                    <div className="flex items-center justify-between mb-8 shrink-0">
                       <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-[#10B981] border border-green-100">
+                         <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-black border border-gray-100">
                             <Gift className="w-6 h-6" />
                          </div>
                          <div>
-                            <h3 className="text-lg font-bold text-gray-950">Incentive Records</h3>
+                            <h3 className="text-lg font-bold text-gray-900">Incentive Records</h3>
                             <p className="text-xs text-gray-400 font-medium">Extra bonuses credited by team</p>
                          </div>
                       </div>
@@ -310,21 +360,21 @@ export const HistoryV2 = () => {
                    
                    <div className="flex-1 overflow-y-auto pr-1 space-y-4">
                       {bonusLoading ? (
-                         <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#10B981]" /></div>
+                         <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-black" /></div>
                       ) : bonusTransactions.length > 0 ? bonusTransactions.map((tx, i) => (
                          <div key={i} className="bg-gray-50 rounded-2xl p-5 border border-gray-100 flex justify-between items-center">
                             <div>
-                               <p className="text-lg font-bold text-gray-950 mb-0.5">{formatMoney(tx.amount)}</p>
+                               <p className="text-lg font-bold text-gray-900 mb-0.5">{formatMoney(tx.amount)}</p>
                                <p className="text-sm font-medium text-gray-600 line-clamp-1">{tx.description || 'Bonus Payout'}</p>
                                <p className="text-[10px] text-gray-400 font-medium mt-1">{new Date(tx.createdAt || tx.date).toLocaleDateString()}</p>
                             </div>
-                            <span className="bg-green-100 text-[#10B981] text-[10px] font-bold px-3 py-1 rounded-full uppercase">DELIVERED</span>
+                            <span className="bg-gray-100 text-gray-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase border border-gray-200">DELIVERED</span>
                          </div>
                       )) : (
                          <div className="py-20 text-center flex flex-col items-center">
-                             <Search className="w-12 h-12 text-gray-100 mb-4" />
+                             <Search className="w-12 h-12 text-gray-200 mb-4" />
                              <p className="text-sm font-bold text-gray-400">Nothing to show</p>
-                         </div>
+                          </div>
                       )}
                    </div>
                    

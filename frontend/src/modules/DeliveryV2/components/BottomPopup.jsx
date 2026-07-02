@@ -325,7 +325,11 @@ export default function BottomPopup({
                   debugLog('?? Handle touched, current collapsed:', isCollapsed)
                   e.stopPropagation()
                   e.preventDefault()
-                  handleCollapseToggle(e)
+                  if (closeOnHandleClick) {
+                    handleClose()
+                  } else {
+                    handleCollapseToggle(e)
+                  }
                 }}
                 onMouseDown={(e) => {
                   // Prevent drag when clicking handle
