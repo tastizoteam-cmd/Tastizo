@@ -600,10 +600,26 @@ export default function UserOrderDetails() {
               <span className="text-gray-500">Platform fee</span>
               <span className="text-gray-800">{formatCurrency(pricing.platformFee || 0, "₹").replace("₹ ", "₹")}</span>
             </div>
+            {Number(pricing.packagingFee || order.packagingFee || 0) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Packaging fee</span>
+                <span className="text-gray-800">
+                  {formatCurrency(pricing.packagingFee || order.packagingFee || 0, "₹").replace("₹ ", "₹")}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-500">Subscription / other fees</span>
               <span className="text-gray-800">{formatCurrency(pricing.subscriptionFee || 0, "₹").replace("₹ ", "₹")}</span>
             </div>
+            {Number(pricing.discount || order.discount || 0) > 0 && (
+              <div className="flex justify-between text-green-600 font-medium">
+                <span>Discount</span>
+                <span>
+                  -{formatCurrency(pricing.discount || order.discount || 0, "₹").replace("₹ ", "₹")}
+                </span>
+              </div>
+            )}
 
             <div className="border-t border-gray-100 my-2 pt-2 flex justify-between items-center">
               <span className="font-bold text-gray-800">Paid</span>

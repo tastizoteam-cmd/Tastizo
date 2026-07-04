@@ -289,9 +289,9 @@ export const HistoryV2 = () => {
                    const isCancelled = (trip.status || '').toLowerCase() === 'cancelled';
                    const isPending = !isCompleted && !isCancelled;
                    const payout = getTripEarning(trip);
-                   const collection = Number(trip.codCollectedAmount || trip.orderTotal || 0);
                    const isQR = (trip.paymentMethod || '').toLowerCase() === 'razorpay_qr';
                    const isCOD = (trip.paymentMethod || '').toLowerCase() === 'cash' || (trip.paymentMethod || '').toLowerCase() === 'cod';
+                   const collection = (isCOD || isQR) ? Number(trip.codCollectedAmount || trip.orderTotal || 0) : 0;
 
                    return (
                       <div key={trip.orderId || idx} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm active:scale-[0.99] transition-all">
