@@ -29,6 +29,7 @@ import { exportToCSV as exportOrdersToCSV } from "@food/components/admin/orders/
 import ResendNotificationButton from "@food/components/restaurant/ResendNotificationButton"
 import RestaurantDesktopShell from "./RestaurantDesktopShell"
 import { useRestaurantDesktopFrame } from "./RestaurantDesktopLayout"
+import { printOrderPDF } from "./printUtils"
 
 const toNumber = (value) => {
   const num = Number(value)
@@ -188,119 +189,7 @@ const getOrderCountdownSeconds = (order) => {
 }
 
 const printOrderReceipt = async (order) => {
-  if (!order) return
-
-  const doc = new jsPDF()
-
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(20)
-  doc.text("Order Receipt", 105, 20, { align: "center" })
-
-  doc.setFontSize(14)
-  doc.setFont("helvetica", "normal")
-  doc.text(order.restaurantName || "Restaurant", 105, 30, { align: "center" })
-
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "bold")
-  doc.text(`Order ID: ${order.orderId || "N/A"}`, 20, 45)
-  doc.setFont("helvetica", "normal")
-
-  const orderDate = order.createdAt
-    ? new Date(order.createdAt).toLocaleString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : new Date().toLocaleString("en-GB")
-
-  doc.text(`Date: ${orderDate}`, 20, 52)
-
-  if (order.customerAddress) {
-    doc.setFont("helvetica", "bold")
-    doc.text("Delivery Address:", 20, 62)
-    doc.setFont("helvetica", "normal")
-    const addressText =
-      [
-        order.customerAddress.street,
-        order.customerAddress.city,
-        order.customerAddress.state,
-      ]
-        .filter(Boolean)
-        .join(", ") || "Address not available"
-    const addressLines = doc.splitTextToSize(addressText, 170)
-    doc.text(addressLines, 20, 69)
-  }
-
-  let yPos = 85
-  if (order.items && order.items.length > 0) {
-    doc.setFont("helvetica", "bold")
-    doc.text("Items:", 20, yPos)
-    yPos += 8
-
-    const tableData = order.items.map((item) => [
-      item.name || "Item",
-      item.quantity || 1,
-      `Rs.${(item.price || 0).toFixed(2)}`,
-      `Rs.${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`,
-    ])
-
-    autoTable(doc, {
-      startY: yPos,
-      head: [["Item", "Qty", "Price", "Total"]],
-      body: tableData,
-      theme: "striped",
-      headStyles: {
-        fillColor: [0, 0, 0],
-        textColor: 255,
-        fontStyle: "bold",
-      },
-      styles: { fontSize: 9 },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 30, halign: "center" },
-        2: { cellWidth: 35, halign: "right" },
-        3: { cellWidth: 35, halign: "right" },
-      },
-    })
-
-    yPos = doc.lastAutoTable.finalY + 10
-  }
-
-  doc.setFontSize(12)
-  doc.text(`Total: Rs.${(getOrderTotalValue(order) || 0).toFixed(2)}`, 20, yPos)
-
-  yPos += 10
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "normal")
-  doc.text(`Payment Status: ${getOrderPaymentStatusLabel(order)}`, 20, yPos)
-
-  if (order.estimatedDeliveryTime) {
-    yPos += 8
-    doc.text(`Estimated Delivery: ${order.estimatedDeliveryTime} minutes`, 20, yPos)
-  }
-
-  if (order.note) {
-    yPos += 10
-    doc.setFont("helvetica", "bold")
-    doc.text("Note:", 20, yPos)
-    doc.setFont("helvetica", "normal")
-    const noteLines = doc.splitTextToSize(order.note, 170)
-    doc.text(noteLines, 20, yPos + 7)
-  }
-
-  yPos += 15
-  doc.setFont("helvetica", "normal")
-  doc.text(order.sendCutlery === false ? "Don't send cutlery" : "Send cutlery requested", 20, yPos)
-
-  const pageHeight = doc.internal.pageSize.height
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "italic")
-  doc.text(`Generated on ${new Date().toLocaleString("en-GB")}`, 105, pageHeight - 10, { align: "center" })
-
-  const fileName = `Order-${order.orderId || "Receipt"}-${Date.now()}.pdf`
-  doc.save(fileName)
+  printOrderPDF(order, false)
 }
 
 const addMinutes = (value, minutes) => {
@@ -1014,6 +903,8 @@ export function DesktopOrdersView({ embedded = false }) {
       return {
         subtotal: 0,
         packagingFee: 0,
+        platformFee: 0,
+        deliveryFee: 0,
         taxes: 0,
         discount: 0,
         total: 0,
@@ -1023,6 +914,8 @@ export function DesktopOrdersView({ embedded = false }) {
     return {
       subtotal: firstFiniteNumber(desktopPopupOrder.pricing?.subtotal, desktopPopupOrder.pricing?.itemsTotal, desktopPopupOrder.subtotal, getOrderTotalValue(desktopPopupOrder)),
       packagingFee: firstFiniteNumber(desktopPopupOrder.pricing?.packagingFee, desktopPopupOrder.packagingFee),
+      platformFee: firstFiniteNumber(desktopPopupOrder.pricing?.platformFee, desktopPopupOrder.platformFee),
+      deliveryFee: firstFiniteNumber(desktopPopupOrder.pricing?.deliveryFee, desktopPopupOrder.pricing?.deliveryCharge, desktopPopupOrder.deliveryFee, desktopPopupOrder.deliveryCharge),
       taxes: getOrderTaxValue(desktopPopupOrder),
       discount: getOrderDiscountValue(desktopPopupOrder),
       total: getOrderTotalValue(desktopPopupOrder),
@@ -1081,7 +974,7 @@ export function DesktopOrdersView({ embedded = false }) {
           ) : (
             filteredOrders.map((order) => {
               const orderKey = String(order._id || order.orderId)
-              const total = order?.pricing?.total || order?.total || 0
+              const total = getOrderTotalValue(order)
               const customer = order?.userId?.name || order?.customerName || "Customer"
               const items = Array.isArray(order?.items) ? order.items.slice(0, 3) : []
               const normalizedStatus = normalizeStatus(order.status)
@@ -1234,6 +1127,15 @@ export function DesktopOrdersView({ embedded = false }) {
                                   onSuccess={reloadOrders}
                                 />
                               )}
+
+                              <button
+                                type="button"
+                                onClick={() => printOrderReceipt(order)}
+                                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
+                              >
+                                <Printer className="h-3.5 w-3.5" />
+                                PRINT
+                              </button>
                             </>
                           )}
 
@@ -1356,6 +1258,18 @@ export function DesktopOrdersView({ embedded = false }) {
                   <span>Restaurant Packaging Charges</span>
                   <span>{currency(desktopPopupTotals.packagingFee)}</span>
                 </div>
+                {desktopPopupTotals.platformFee > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Platform Fee</span>
+                    <span>{currency(desktopPopupTotals.platformFee)}</span>
+                  </div>
+                )}
+                {desktopPopupTotals.deliveryFee > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Delivery Fee</span>
+                    <span>{currency(desktopPopupTotals.deliveryFee)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span>Taxes</span>
                   <span>{currency(desktopPopupTotals.taxes)}</span>
@@ -1876,7 +1790,7 @@ export function DesktopOrderHistoryView({ embedded = false }) {
     const exportOrders = historyOrders.map((order) => ({
       ...order,
       customerName: order.userId?.name || order.customerName || "Customer",
-      total: order.pricing?.total || order.total || 0,
+      total: getOrderTotalValue(order),
     }))
     exportOrdersToCSV(exportOrders, "restaurant_order_history")
   }, [historyOrders])
@@ -2081,7 +1995,7 @@ export function DesktopOrderHistoryView({ embedded = false }) {
                     <p className="mt-3 text-xs text-[#7b8498]">By {order.userId?.name || order.customerName || "Customer"}</p>
                     <div className="mt-3 flex items-center justify-between gap-4 text-sm text-[#596275]">
                       <span className="line-clamp-1">{(order.items || []).map((item) => `${item.quantity || 1} x ${item.name}`).join(", ") || "No items"}</span>
-                      <span className="font-semibold text-[#2b3343]">{currency(order.pricing?.total || order.total || 0)}</span>
+                      <span className="font-semibold text-[#2b3343]">{currency(getOrderTotalValue(order))}</span>
                     </div>
                   </button>
                 )
@@ -2112,6 +2026,10 @@ export function DesktopOrderHistoryView({ embedded = false }) {
                 const selectedPaymentStatus = getOrderPaymentStatusLabel(selectedOrder)
                 const selectedTaxValue = getOrderTaxValue(selectedOrder)
                 const selectedDiscountValue = getOrderDiscountValue(selectedOrder)
+                const selectedSubtotalValue = firstFiniteNumber(selectedOrder.pricing?.subtotal, selectedOrder.pricing?.itemsTotal, selectedOrder.subtotal, getOrderTotalValue(selectedOrder))
+                const selectedPackagingFeeValue = firstFiniteNumber(selectedOrder.pricing?.packagingFee, selectedOrder.packagingFee)
+                const selectedPlatformFeeValue = firstFiniteNumber(selectedOrder.pricing?.platformFee, selectedOrder.platformFee)
+                const selectedDeliveryFeeValue = firstFiniteNumber(selectedOrder.pricing?.deliveryFee, selectedOrder.pricing?.deliveryCharge, selectedOrder.deliveryFee, selectedOrder.deliveryCharge)
                 const cancellationMeta = getOrderCancellationMeta(selectedOrder)
                 const isCancelledOrder = Boolean(cancellationMeta)
                 const selectedCustomerName = selectedOrder.userId?.name || selectedOrder.customerName || "Customer"
@@ -2273,12 +2191,24 @@ export function DesktopOrderHistoryView({ embedded = false }) {
                 </div>
 
                 <div className="mt-5 space-y-2 text-sm text-[#6d7488]">
+                  <div className="flex items-center justify-between"><span>Subtotal</span><span>{currency(selectedSubtotalValue)}</span></div>
+                  {selectedPackagingFeeValue > 0 && (
+                    <div className="flex items-center justify-between"><span>Packaging Charges</span><span>{currency(selectedPackagingFeeValue)}</span></div>
+                  )}
+                  {selectedPlatformFeeValue > 0 && (
+                    <div className="flex items-center justify-between"><span>Platform Fee</span><span>{currency(selectedPlatformFeeValue)}</span></div>
+                  )}
+                  {selectedDeliveryFeeValue > 0 && (
+                    <div className="flex items-center justify-between"><span>Delivery Fee</span><span>{currency(selectedDeliveryFeeValue)}</span></div>
+                  )}
                   <div className="flex items-center justify-between"><span>Taxes</span><span>{currency(selectedTaxValue)}</span></div>
-                  <div className="flex items-center justify-between"><span>Discount</span><span>-{currency(selectedDiscountValue)}</span></div>
+                  {selectedDiscountValue > 0 && (
+                    <div className="flex items-center justify-between"><span>Discount</span><span>-{currency(selectedDiscountValue)}</span></div>
+                  )}
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-[#edf0f5] pt-4 text-[18px] font-semibold text-[#2b3343]">
                   <span>Total Bill <span className="ml-2 rounded-md bg-[#dbf5e8] px-2 py-0.5 text-[11px] text-[#209663]">{selectedPaymentStatus}</span></span>
-                  <span>{currency(selectedOrder.pricing?.total || selectedOrder.total || 0)}</span>
+                  <span>{currency(getOrderTotalValue(selectedOrder))}</span>
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-[#e7ebf4] bg-white p-4">

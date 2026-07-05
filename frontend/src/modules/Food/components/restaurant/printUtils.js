@@ -13,7 +13,26 @@ export const printOrderPDF = async (orderToPrint, isKOT = false) => {
 
     doc.setFontSize(14)
     doc.setFont("helvetica", "normal")
-    doc.text(orderToPrint.restaurantName || "Restaurant", 105, 30, { align: "center" })
+    let restName = orderToPrint.restaurantName;
+    if (!restName || restName === "Restaurant") {
+      try {
+        const userStr = localStorage.getItem("restaurant_user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          restName = user.restaurantName || user.restaurant_name || user.restaurant?.name || user.name;
+        }
+        if (!restName || restName === "Restaurant") {
+          const dataStr = localStorage.getItem("restaurant_data");
+          if (dataStr) {
+            const data = JSON.parse(dataStr);
+            restName = data.restaurantName?.english || data.restaurantName;
+          }
+        }
+      } catch (e) {
+        console.error("Error getting restaurant name fallback:", e);
+      }
+    }
+    doc.text(restName || "Restaurant", 105, 30, { align: "center" })
 
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
@@ -78,14 +97,75 @@ export const printOrderPDF = async (orderToPrint, isKOT = false) => {
     }
 
     if (!isKOT) {
-      doc.setFontSize(12)
-      const total = orderToPrint.total || orderToPrint.pricing?.total || orderToPrint.totalAmount || 0
-      doc.text(`Total: Rs.${Number(total).toFixed(2)}`, 20, yPos)
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "bold")
+      doc.text("Bill Summary:", 20, yPos)
+      yPos += 7
 
-      yPos += 10
+      doc.setFont("helvetica", "normal")
+      const pricing = orderToPrint.pricing || {};
+      const itemTotal = pricing.subtotal || pricing.itemTotal || 0;
+      const deliveryCharge = pricing.deliveryCharge || pricing.deliveryFee || 0;
+      const platformFee = pricing.platformFee || 0;
+      const packagingFee = pricing.packagingCharge || pricing.packagingFee || 0;
+      const gst = pricing.tax || pricing.gst || 0;
+      const discount = pricing.discount || pricing.couponDiscount || 0;
+      const totalBill = pricing.total || orderToPrint.total || orderToPrint.totalAmount || 0;
+
+      if (itemTotal > 0) {
+        doc.text("Item Total:", 20, yPos)
+        doc.text(`Rs.${Number(itemTotal).toFixed(2)}`, 190, yPos, { align: "right" })
+        yPos += 5
+      }
+      if (packagingFee > 0) {
+        doc.text("Packaging Fee:", 20, yPos)
+        doc.text(`Rs.${Number(packagingFee).toFixed(2)}`, 190, yPos, { align: "right" })
+        yPos += 5
+      }
+      if (gst > 0) {
+        doc.text("GST / Taxes:", 20, yPos)
+        doc.text(`Rs.${Number(gst).toFixed(2)}`, 190, yPos, { align: "right" })
+        yPos += 5
+      }
+      if (deliveryCharge > 0) {
+        doc.text("Delivery Fee:", 20, yPos)
+        doc.text(`Rs.${Number(deliveryCharge).toFixed(2)}`, 190, yPos, { align: "right" })
+        yPos += 5
+      }
+      if (platformFee > 0) {
+        doc.text("Platform Fee:", 20, yPos)
+        doc.text(`Rs.${Number(platformFee).toFixed(2)}`, 190, yPos, { align: "right" })
+        yPos += 5
+      }
+      if (discount > 0) {
+        doc.text("Discount:", 20, yPos)
+        doc.text(`-Rs.${Number(discount).toFixed(2)}`, 190, yPos, { align: "right" })
+        yPos += 5
+      }
+
+      yPos += 2
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.5)
+      doc.line(20, yPos, 190, yPos)
+      yPos += 6
+
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.text("Total Paid:", 20, yPos)
+      doc.text(`Rs.${Number(totalBill).toFixed(2)}`, 190, yPos, { align: "right" })
+      yPos += 8
+
       doc.setFontSize(10)
       doc.setFont("helvetica", "normal")
-      doc.text(`Payment Status: ${orderToPrint.status === "confirmed" ? "Paid" : "Pending"}`, 20, yPos)
+      const isCOD = (orderToPrint.paymentMethod || "").toLowerCase() === "cash" || (orderToPrint.paymentMethod || "").toLowerCase() === "cod";
+      const isDelivered = orderToPrint.status === "delivered";
+      const isPaid = !isCOD || isDelivered || orderToPrint.payment?.status === "paid" || orderToPrint.paymentStatus === "paid" || orderToPrint.status === "confirmed" || orderToPrint.status === "preparing" || orderToPrint.status === "ready" || orderToPrint.status === "out_for_delivery";
+      const paymentStatusStr = isPaid ? "Paid" : "Pending";
+      doc.text(`Payment Status: ${paymentStatusStr}`, 20, yPos)
+      yPos += 5
+      if (orderToPrint.paymentMethod) {
+        doc.text(`Payment Method: ${orderToPrint.paymentMethod}`, 20, yPos)
+      }
     }
 
     if (orderToPrint.note) {

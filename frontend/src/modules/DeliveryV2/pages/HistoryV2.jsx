@@ -291,7 +291,7 @@ export const HistoryV2 = () => {
                    const payout = getTripEarning(trip);
                    const isQR = (trip.paymentMethod || '').toLowerCase() === 'razorpay_qr';
                    const isCOD = (trip.paymentMethod || '').toLowerCase() === 'cash' || (trip.paymentMethod || '').toLowerCase() === 'cod';
-                   const collection = (isCOD || isQR) ? Number(trip.codCollectedAmount || trip.orderTotal || 0) : 0;
+                   const collection = Number(trip.codCollectedAmount || trip.orderTotal || trip.amount || 0);
 
                    return (
                       <div key={trip.orderId || idx} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm active:scale-[0.99] transition-all">
@@ -318,7 +318,7 @@ export const HistoryV2 = () => {
                                 <p className="text-sm font-bold text-gray-900">{trip.time || '--:--'}</p>
                              </div>
                              <div className="text-center">
-                                <p className="text-[11px] font-medium text-gray-400 mb-1">COD</p>
+                                <p className="text-[11px] font-medium text-gray-400 mb-1">{isCOD || isQR ? "COD" : "Online"}</p>
                                 <p className="text-sm font-bold text-gray-900">{formatMoney(collection)}</p>
                              </div>
                              <div className="text-right">

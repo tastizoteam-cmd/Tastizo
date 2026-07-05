@@ -132,6 +132,11 @@ const transformOrderForList = (order) => ({
   initialETA: order.estimatedDeliveryTime || 30,
   sortTimestamp: new Date(getAllOrdersTimestamp(order)).getTime(),
   scheduledAt: order.scheduledAt || null,
+  rawOrder: order,
+  items: order.items || [],
+  restaurantName: order.restaurantName || order.restaurant_name || order.restaurantId?.restaurantName || order.restaurantId?.name || "Restaurant",
+  deliveryAddress: order.deliveryAddress || order.address || order.customerAddress || null,
+  note: order.note || "",
 });
 
 const transformOrderForSheet = (order) => {
@@ -277,7 +282,8 @@ function CompletedOrders({ onSelectOrder, refreshToken = 0 }) {
                 .join(", ") || "No items",
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || "Order",
-            amount: order.pricing?.total || order.total || 0,
+            amount: getOrderTotalValue(order),
+            total: getOrderTotalValue(order),
             paymentMethod: order.paymentMethod || order.payment?.method || null,
           }));
 
@@ -486,7 +492,8 @@ function CancelledOrders({ onSelectOrder, refreshToken = 0 }) {
                 .join(", ") || "No items",
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || "Order",
-            amount: order.pricing?.total || order.total || 0,
+            amount: getOrderTotalValue(order),
+            total: getOrderTotalValue(order),
             paymentMethod: order.paymentMethod || order.payment?.method || null,
           }));
 
@@ -991,6 +998,7 @@ function AllOrders({ onSelectOrder, onCancel, onOpenRiderDetails }) {
               <OrderCard
                 key={order.orderId || order.mongoId}
                 {...order}
+                rawOrder={order.rawOrder}
                 eta={etaDisplay}
                 onSelect={onSelectOrder}
                 onOpenRiderDetails={onOpenRiderDetails}
@@ -1047,6 +1055,7 @@ function SearchResults({ query, results, isLoading, onSelectOrder }) {
             <OrderCard
               key={order.orderId || order.mongoId}
               {...order}
+              rawOrder={order.rawOrder}
               onSelect={onSelectOrder}
               onOpenRiderDetails={onOpenRiderDetails}
             />
@@ -1146,6 +1155,7 @@ function ScheduledOrders({ onSelectOrder, refreshToken, onOpenRiderDetails }) {
             <OrderCard
               key={order.orderId || order.mongoId}
               {...order}
+              rawOrder={order.rawOrder}
               onSelect={onSelectOrder}
             />
           ))}
@@ -2143,162 +2153,7 @@ export default function OrdersMain() {
       debugWarn("No order data available for PDF generation");
       return;
     }
-
-    try {
-      // Create new PDF document
-      const doc = new jsPDF();
-
-      // Set font
-      doc.setFont("helvetica", "bold");
-
-      // Header
-      doc.setFontSize(20);
-      doc.text("Order Receipt", 105, 20, { align: "center" });
-
-      // Restaurant name
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "normal");
-      doc.text(orderToPrint.restaurantName || "Restaurant", 105, 30, {
-        align: "center",
-      });
-
-      // Order details
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text(`Order ID: ${orderToPrint.orderId || "N/A"}`, 20, 45);
-      doc.setFont("helvetica", "normal");
-
-      const orderDate = orderToPrint.createdAt
-        ? new Date(orderToPrint.createdAt).toLocaleString("en-GB", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : new Date().toLocaleString("en-GB");
-
-      doc.text(`Date: ${orderDate}`, 20, 52);
-
-      // Customer address
-      if (orderToPrint.customerAddress) {
-        doc.setFont("helvetica", "bold");
-        doc.text("Delivery Address:", 20, 62);
-        doc.setFont("helvetica", "normal");
-        const addressText =
-          [
-            orderToPrint.customerAddress.street,
-            orderToPrint.customerAddress.city,
-            orderToPrint.customerAddress.state,
-          ]
-            .filter(Boolean)
-            .join(", ") || "Address not available";
-        const addressLines = doc.splitTextToSize(addressText, 170);
-        doc.text(addressLines, 20, 69);
-      }
-
-      // Items table
-      let yPos = 85;
-      if (orderToPrint.items && orderToPrint.items.length > 0) {
-        doc.setFont("helvetica", "bold");
-        doc.text("Items:", 20, yPos);
-        yPos += 8;
-
-        // Prepare table data
-        const tableData = orderToPrint.items.map((item) => [
-          item.name || "Item",
-          item.quantity || 1,
-          `Rs.${(item.price || 0).toFixed(2)}`,
-          `Rs.${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`,
-        ]);
-
-        autoTable(doc, {
-          startY: yPos,
-          head: [["Item", "Qty", "Price", "Total"]],
-          body: tableData,
-          theme: "striped",
-          headStyles: {
-            fillColor: [0, 0, 0],
-            textColor: 255,
-            fontStyle: "bold",
-          },
-          styles: { fontSize: 9 },
-          columnStyles: {
-            0: { cellWidth: 80 },
-            1: { cellWidth: 30, halign: "center" },
-            2: { cellWidth: 35, halign: "right" },
-            3: { cellWidth: 35, halign: "right" },
-          },
-        });
-
-        yPos = doc.lastAutoTable.finalY + 10;
-      }
-
-      // Total
-      doc.setFontSize(12);
-      doc.text(`Total: Rs.${(orderToPrint.total || 0).toFixed(2)}`, 20, yPos);
-
-      // Payment status
-      yPos += 10;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `Payment Status: ${orderToPrint.status === "confirmed" ? "Paid" : "Pending"}`,
-        20,
-        yPos,
-      );
-
-      // Estimated delivery time
-      if (orderToPrint.estimatedDeliveryTime) {
-        yPos += 8;
-        doc.text(
-          `Estimated Delivery: ${orderToPrint.estimatedDeliveryTime} minutes`,
-          20,
-          yPos,
-        );
-      }
-
-      // Notes
-      if (orderToPrint.note) {
-        yPos += 10;
-        doc.setFont("helvetica", "bold");
-        doc.text("Note:", 20, yPos);
-        doc.setFont("helvetica", "normal");
-        const noteLines = doc.splitTextToSize(orderToPrint.note, 170);
-        doc.text(noteLines, 20, yPos + 7);
-      }
-
-      // Cutlery preference
-      yPos += 15;
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        orderToPrint.sendCutlery === false
-          ? "? Don't send cutlery"
-          : "? Send cutlery requested",
-        20,
-        yPos,
-      );
-
-      // Footer
-      const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.text(
-        `Generated on ${new Date().toLocaleString("en-GB")}`,
-        105,
-        pageHeight - 10,
-        { align: "center" },
-      );
-
-      // Download PDF
-      const fileName = `Order-${orderToPrint.orderId || "Receipt"}-${Date.now()}.pdf`;
-      doc.save(fileName);
-
-      debugLog("? PDF generated successfully:", fileName);
-    } catch (error) {
-      debugError("? Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
-    }
+    printOrderPDF(newOrder, false);
   };
 
   // Handle swipe gestures with smooth animations
@@ -3578,6 +3433,11 @@ function OrderCard({
   onMarkReady,
   isMarkingReady = false,
   scheduledAt = null,
+  rawOrder = null,
+  items = [],
+  restaurantName = "Restaurant",
+  deliveryAddress = null,
+  note = "",
 }) {
   const normalizedStatus = String(status || "").toLowerCase();
   const isReady = normalizedStatus === "ready";
@@ -3737,65 +3597,87 @@ function OrderCard({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-baseline gap-1">
-                <span className="text-[11px] text-gray-500">
-                  Amount
-                </span>
-                <span className="text-xs font-medium text-black">
-                  ₹{total.toFixed(2)}
-                </span>
-              </div>
-
-              {/* Action Buttons for active orders */}
-              {(isPreparing || isReady || normalizedStatus === "confirmed") && (
-                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                  {deliveryPartnerId ? (
-                    <button
-                      type="button"
-                      onClick={handleRiderDetails}
-                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase text-emerald-700 transition hover:border-emerald-200 hover:bg-emerald-100/70"
-                    >
-                      <span>
-                        {deliveryPartnerName || "Rider"}
-                      </span>
-                      {pickupOtp ? (
-                        <span className="text-[8.5px] font-black tracking-wider text-emerald-800 bg-emerald-100 px-1 py-0.5 rounded ml-1">
-                          OTP {pickupOtp}
-                        </span>
-                      ) : null}
-                    </button>
-                  ) : isPreparing ? (
-                    <div className="rounded border border-slate-100 bg-slate-50 px-1.5 py-1 text-[8.5px] font-black uppercase tracking-tight text-slate-400">
-                      No Rider
-                    </div>
-                  ) : null}
-
-                  {showResendAction && (
-                    <ResendNotificationButton
-                      orderId={orderId}
-                      mongoId={mongoId}
-                      onSuccess={onSelect}
-                    />
-                  )}
-
-                  {isPreparing && onMarkReady && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onMarkReady({ orderId, mongoId, customerName });
-                      }}
-                      disabled={isMarkingReady}
-                      className="rounded-lg px-2.5 py-1 text-[9px] font-black text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50"
-                      style={{ backgroundColor: brandColor }}>
-                      {isMarkingReady ? "..." : "MARK READY"}
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className="flex items-baseline gap-1">
+              <span className="text-[11px] text-gray-500">
+                Amount
+              </span>
+              <span className="text-xs font-medium text-black">
+                ₹{total.toFixed(2)}
+              </span>
             </div>
           </div>
+
+          {/* Action Buttons for active orders */}
+          {(isPreparing || isReady || normalizedStatus === "confirmed") && (
+            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+              {deliveryPartnerId ? (
+                <button
+                  type="button"
+                  onClick={handleRiderDetails}
+                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase text-emerald-700 transition hover:border-emerald-200 hover:bg-emerald-100/70"
+                >
+                  <span>
+                    {deliveryPartnerName || "Rider"}
+                  </span>
+                  {pickupOtp ? (
+                    <span className="text-[8.5px] font-black tracking-wider text-emerald-800 bg-emerald-100 px-1 py-0.5 rounded ml-1">
+                      OTP {pickupOtp}
+                    </span>
+                  ) : null}
+                </button>
+              ) : isPreparing ? (
+                <div className="rounded border border-slate-100 bg-slate-50 px-1.5 py-1 text-[8.5px] font-black uppercase tracking-tight text-slate-400">
+                  No Rider
+                </div>
+              ) : null}
+
+              {showResendAction && (
+                <ResendNotificationButton
+                  orderId={orderId}
+                  mongoId={mongoId}
+                  onSuccess={onSelect}
+                />
+              )}
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  printOrderPDF(rawOrder || {
+                    orderId,
+                    _id: mongoId,
+                    status,
+                    customerName,
+                    type,
+                    total,
+                    paymentMethod,
+                    items,
+                    restaurantName,
+                    deliveryAddress,
+                    note,
+                  }, false);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black uppercase text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print</span>
+              </button>
+
+              {isPreparing && onMarkReady && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkReady({ orderId, mongoId, customerName });
+                  }}
+                  disabled={isMarkingReady}
+                  className="rounded-lg px-2.5 py-1 text-[9px] font-black text-white shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+                  style={{ backgroundColor: brandColor }}>
+                  {isMarkingReady ? "..." : "MARK READY"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </button>
     </div>
@@ -3870,6 +3752,11 @@ function PreparingOrders({
               total: getOrderTotalValue(order),
               sendCutlery: order.sendCutlery,
               scheduledAt: order.scheduledAt || null,
+              rawOrder: order,
+              items: order.items || [],
+              restaurantName: order.restaurantName || order.restaurant_name || order.restaurantId?.restaurantName || order.restaurantId?.name || "Restaurant",
+              deliveryAddress: order.deliveryAddress || order.address || order.customerAddress || null,
+              note: order.note || "",
             };
           });
 
@@ -4122,6 +4009,11 @@ function PreparingOrders({
                 onCancel={onCancel}
                 onMarkReady={handleMarkReady}
                 onOpenRiderDetails={onOpenRiderDetails}
+                rawOrder={order.rawOrder}
+                items={order.items}
+                restaurantName={order.restaurantName}
+                deliveryAddress={order.deliveryAddress}
+                note={order.note}
                 isMarkingReady={Boolean(
                   markingReadyOrderIds[order.mongoId || order.orderId],
                 )}
@@ -4176,12 +4068,18 @@ function ReadyOrders({ onSelectOrder, refreshToken = 0, onOpenRiderDetails }) {
                 .join(", ") || "No items",
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || "Order",
+            total: getOrderTotalValue(order),
             paymentMethod: order.paymentMethod || order.payment?.method || null,
             deliveryPartnerId: order.deliveryPartnerId || null,
             deliveryPartnerName: order.deliveryPartnerName || "",
             pickupOtp: order.pickupOtp || "",
             dispatchStatus: order.dispatch?.status || null,
             scheduledAt: order.scheduledAt || null,
+            rawOrder: order,
+            items: order.items || [],
+            restaurantName: order.restaurantName || order.restaurant_name || order.restaurantId?.restaurantName || order.restaurantId?.name || "Restaurant",
+            deliveryAddress: order.deliveryAddress || order.address || order.customerAddress || null,
+            note: order.note || "",
           }));
 
           if (isMounted) {
@@ -4246,6 +4144,7 @@ function ReadyOrders({ onSelectOrder, refreshToken = 0, onOpenRiderDetails }) {
             <OrderCard
               key={order.orderId || order.mongoId}
               {...order}
+              rawOrder={order.rawOrder}
               onSelect={onSelectOrder}
               onOpenRiderDetails={onOpenRiderDetails}
             />
@@ -4298,12 +4197,18 @@ const OutForDeliveryOrders = ({ onSelectOrder, refreshToken = 0, onOpenRiderDeta
                 .join(", ") || "No items",
             photoUrl: order.items?.[0]?.image || null,
             photoAlt: order.items?.[0]?.name || "Order",
+            total: getOrderTotalValue(order),
             paymentMethod: order.paymentMethod || order.payment?.method || null,
             deliveryPartnerId: order.deliveryPartnerId || null,
             deliveryPartnerName: order.deliveryPartnerName || "",
             pickupOtp: order.pickupOtp || "",
             dispatchStatus: order.dispatch?.status || null,
             scheduledAt: order.scheduledAt || null,
+            rawOrder: order,
+            items: order.items || [],
+            restaurantName: order.restaurantName || order.restaurant_name || order.restaurantId?.restaurantName || order.restaurantId?.name || "Restaurant",
+            deliveryAddress: order.deliveryAddress || order.address || order.customerAddress || null,
+            note: order.note || "",
           }));
 
           if (isMounted) {
@@ -4368,6 +4273,7 @@ const OutForDeliveryOrders = ({ onSelectOrder, refreshToken = 0, onOpenRiderDeta
             <OrderCard
               key={order.orderId || order.mongoId}
               {...order}
+              rawOrder={order.rawOrder}
               onSelect={onSelectOrder}
               onOpenRiderDetails={onOpenRiderDetails}
             />

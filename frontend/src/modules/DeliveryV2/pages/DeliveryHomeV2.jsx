@@ -31,7 +31,7 @@ import ProfileV2 from '@/modules/DeliveryV2/pages/ProfileV2';
 import { 
   Bell, HelpCircle, AlertTriangle, 
   Wallet, History, User as UserIcon, LayoutGrid,
-  Plus, Minus, Navigation2, Target, CheckCircle2, Clock, ChevronDown,
+  Plus, Minus, Navigation2, Navigation, Target, CheckCircle2, Clock, ChevronDown,
   Contact, Package, MapPin, Phone
 } from 'lucide-react';
 
@@ -1693,31 +1693,72 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                                </p>
                             </div>
                           </div>
-                          {(() => {
-                            const cPhone = activeOrder?.userPhone || activeOrder?.customerPhone || activeOrder?.deliveryAddress?.phone || activeOrder?.userId?.phone || '';
-                            if (!cPhone) return null;
-                            return (
-                              <button
-                                onClick={(e) => {
-                                  if (e && e.stopPropagation) e.stopPropagation();
-                                  const cleanPhone = String(cPhone).replace(/[^\d+]/g, '');
-                                  try {
-                                    const link = document.createElement('a');
-                                    link.href = `tel:${cleanPhone}`;
-                                    link.setAttribute('target', '_self');
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                  } catch (err) {
-                                    window.location.href = `tel:${cleanPhone}`;
-                                  }
-                                }}
-                                className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 border border-green-100 active:scale-95 transition-all shadow-md shrink-0"
-                              >
-                                <Phone className="w-5 h-5" />
-                              </button>
-                            );
-                          })()}
+                          <div className="flex gap-3 shrink-0">
+                            {(() => {
+                              const customerCoords = activeOrder?.customerLocation;
+                              const deliveryAddressObj = activeOrder?.deliveryAddress || {};
+                              const addressParts = [
+                                deliveryAddressObj.street,
+                                deliveryAddressObj.additionalDetails,
+                                deliveryAddressObj.city,
+                                deliveryAddressObj.state,
+                                deliveryAddressObj.zipCode,
+                              ].map((v) => String(v || '').trim()).filter(Boolean);
+
+                              const customerAddress =
+                                activeOrder?.customerAddress ||
+                                activeOrder?.customer_address ||
+                                (addressParts.length ? addressParts.join(', ') : '') ||
+                                '';
+
+                              const mapsLink =
+                                customerCoords?.lat != null && customerCoords?.lng != null
+                                  ? `https://www.google.com/maps?q=${encodeURIComponent(`${customerCoords.lat},${customerCoords.lng}`)}`
+                                  : customerAddress
+                                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customerAddress)}`
+                                    : null;
+
+                              if (!mapsLink) return null;
+                              return (
+                                <button
+                                  onClick={(e) => {
+                                    if (e && e.stopPropagation) e.stopPropagation();
+                                    window.open(mapsLink, '_blank');
+                                  }}
+                                  className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-white active:scale-95 transition-all shadow-md"
+                                  title="Navigate in Google Maps"
+                                >
+                                  <Navigation className="w-5 h-5" />
+                                </button>
+                              );
+                            })()}
+
+                            {(() => {
+                              const cPhone = activeOrder?.userPhone || activeOrder?.customerPhone || activeOrder?.deliveryAddress?.phone || activeOrder?.userId?.phone || '';
+                              if (!cPhone) return null;
+                              return (
+                                <button
+                                  onClick={(e) => {
+                                    if (e && e.stopPropagation) e.stopPropagation();
+                                    const cleanPhone = String(cPhone).replace(/[^\d+]/g, '');
+                                    try {
+                                      const link = document.createElement('a');
+                                      link.href = `tel:${cleanPhone}`;
+                                      link.setAttribute('target', '_self');
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    } catch (err) {
+                                      window.location.href = `tel:${cleanPhone}`;
+                                    }
+                                  }}
+                                  className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 border border-green-100 active:scale-95 transition-all shadow-md"
+                                >
+                                  <Phone className="w-5 h-5" />
+                                </button>
+                              );
+                            })()}
+                          </div>
                         </div>
 
                         {/* Customer Instructions Panel */}
