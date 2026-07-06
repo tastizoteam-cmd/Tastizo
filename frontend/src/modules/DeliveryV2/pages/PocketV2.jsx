@@ -534,7 +534,7 @@ export const PocketV2 = () => {
                    )}
                 </div>
                 <div>
-                   <p className="text-xs font-bold text-gray-800">Payout</p>
+                   <p className="text-sm font-bold text-gray-800">Payout</p>
                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight mt-1">
                       {walletState.payoutPeriod !== 'No recent payout' ? getPreviousWeekRange() : 'No recent payout'}
                    </p>
@@ -549,7 +549,7 @@ export const PocketV2 = () => {
                 <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white mb-4 shadow-sm">
                    <FileText className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-xs font-bold text-gray-800 leading-tight">Pocket statement</p>
+                <p className="text-sm font-bold text-gray-800 leading-tight">Pocket statement</p>
              </div>
           </div>
 
@@ -563,7 +563,7 @@ export const PocketV2 = () => {
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-800 mb-4 border border-gray-100 shadow-sm">
                    <Receipt className="w-5 h-5" />
                 </div>
-                <p className="text-xs font-bold text-gray-800 leading-tight">Limit Settlement</p>
+                <p className="text-sm font-bold text-gray-800 leading-tight">Limit Settlement</p>
              </div>
 
              {/* Deduction List */}
@@ -574,7 +574,7 @@ export const PocketV2 = () => {
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-800 mb-4 border border-gray-100 shadow-sm">
                    <FileText className="w-5 h-5" />
                 </div>
-                <p className="text-xs font-bold text-gray-800 leading-tight">Deduction List</p>
+                <p className="text-sm font-bold text-gray-800 leading-tight">Deduction List</p>
              </div>
           </div>
 

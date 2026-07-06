@@ -111,7 +111,7 @@ export default function BottomNavigation() {
           {TabLabel(isActive("/food/delivery/pocket"), "Pocket")}
         </button>
 
-        {/* Trip History */}
+        {/* History */}
         <button
           onClick={() => navigate("/food/delivery/history")}
           className="flex flex-col items-center gap-1.5 p-2.5"
