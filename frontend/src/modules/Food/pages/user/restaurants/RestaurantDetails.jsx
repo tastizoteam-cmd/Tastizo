@@ -4194,176 +4194,156 @@ function RestaurantDetailsContent() {
                   </div>
 
                   {/* Header */}
-                  <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-                    <div>
-                      <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                        Outlet Information
-                      </h2>
-                      <p className="text-[10px] font-black text-[#2A9C64] uppercase tracking-[0.2em] mt-0.5">
-                        {restaurant?.name || "Restaurant Details"}
-                      </p>
-                    </div>
+                  <div className="px-5 pt-6 pb-4 flex flex-col items-center border-b border-gray-100 dark:border-gray-800 relative">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Outlet Information
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {restaurant?.name || "Restaurant Details"}
+                    </p>
                     <button
                       onClick={() => setShowOutletInfoSheet(false)}
-                      className="p-2.5 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-all active:scale-95"
+                      className="absolute right-5 top-6 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
-                      <X className="h-5 w-5 text-gray-500" />
+                      <X className="h-5 w-5" />
                     </button>
                   </div>
 
                   {/* Scrollable Content */}
-                  <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 custom-scrollbar">
-                    {/* Restaurant Name & Address Section */}
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
-                          <MapPin className="h-6 w-6 text-emerald-600" />
-                        </div>
-                        <div className="space-y-1.5 flex-1">
-                          <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Store Location</h3>
-                          <p className="text-[15px] font-bold text-gray-700 dark:text-gray-200 leading-relaxed">
-                            {restaurant?.location || "Location not specified"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons: Call & Map */}
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <button
-                          onClick={() => {
-                            if (restaurant?.contactNumber) {
-                              window.location.href = `tel:${restaurant.contactNumber}`;
-                            } else {
-                              toast.error("Contact number not available");
-                            }
-                          }}
-                          className="flex items-center justify-center gap-3 py-4 px-4 bg-emerald-600 dark:bg-emerald-600 rounded-2xl hover:bg-emerald-700 dark:hover:bg-emerald-500 transition-all group active:scale-[0.98] shadow-lg shadow-emerald-600/20"
-                        >
-                          <Phone className="h-5 w-5 text-white" />
-                          <span className="text-sm font-black text-white uppercase tracking-wider">Call Now</span>
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            const lat = restaurant?.locationObject?.latitude;
-                            const lng = restaurant?.locationObject?.longitude;
-                            const mapUrl = lat && lng 
-                              ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
-                              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant?.location || "")}`;
-                            window.open(mapUrl, "_blank");
-                          }}
-                          className="flex items-center justify-center gap-3 py-4 px-4 bg-white dark:bg-[#262626] border-2 border-gray-100 dark:border-gray-800 rounded-2xl hover:border-emerald-600/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all group active:scale-[0.98]"
-                        >
-                          <ExternalLink className="h-5 w-5 text-emerald-600 transition-transform" />
-                          <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">View Map</span>
-                        </button>
+                  <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 custom-scrollbar">
+                    {/* Location */}
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Store Location</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                          {restaurant?.location || "Location not specified"}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Legal Information Section */}
-                    <div className="space-y-6 pt-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Legal Information</h3>
-                        <div className="h-[1px] flex-1 bg-gray-100 dark:bg-gray-800"></div>
-                      </div>
+                    {/* Action Buttons: Call & Map */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          if (restaurant?.contactNumber) {
+                            window.location.href = `tel:${restaurant.contactNumber}`;
+                          } else {
+                            toast.error("Contact number not available");
+                          }
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+                      >
+                        <Phone className="h-4 w-4" />
+                        <span className="text-sm font-medium">Call Now</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const lat = restaurant?.locationObject?.latitude;
+                          const lng = restaurant?.locationObject?.longitude;
+                          const mapUrl = lat && lng 
+                            ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant?.location || "")}`;
+                          window.open(mapUrl, "_blank");
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="text-sm font-medium">View Map</span>
+                      </button>
+                    </div>
 
-                      <div className="space-y-5">
+                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
+
+                    {/* Legal Information Section */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Legal Information</h3>
+                      <div className="space-y-4">
                         {/* FSSAI License */}
-                        <div className="bg-emerald-50/50 dark:bg-emerald-950/10 p-5 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-900/20 relative overflow-hidden group">
-                           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                              <ShieldCheck className="h-16 w-16 text-emerald-600" />
-                           </div>
-                           <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.15em] mb-3">FSSAI License Number</p>
-                           <div className="flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 flex items-center justify-center bg-white dark:bg-[#1a1a1a] rounded-xl overflow-hidden border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
-                                  {restaurant?.coverImages?.[0]?.url || restaurant?.coverImages?.[0] ? (
-                                    <img 
-                                      src={restaurant?.coverImages?.[0]?.url || restaurant?.coverImages?.[0]} 
-                                      alt="Restaurant" 
-                                      className="h-full w-full object-cover" 
-                                      onError={(e) => {
-                                        e.target.onerror = null;
-                                        e.target.src = fssaiLogo;
-                                      }}
-                                    />
-                                  ) : (
-                                    <img src={fssaiLogo} alt="FSSAI" className="h-full w-auto object-contain p-1" />
-                                  )}
-                                </div>
-                                <p className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
-                                  {restaurant?.fssaiNumber || "In Process"}
-                                </p>
-                              </div>
-                              {restaurant?.fssaiNumber && (
-                                <button 
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(restaurant.fssaiNumber);
-                                    toast.success("License number copied!");
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 border border-gray-100 dark:border-gray-800 rounded-lg flex items-center justify-center p-1 bg-white">
+                              {restaurant?.coverImages?.[0]?.url || restaurant?.coverImages?.[0] ? (
+                                <img 
+                                  src={restaurant?.coverImages?.[0]?.url || restaurant?.coverImages?.[0]} 
+                                  alt="Restaurant" 
+                                  className="h-full w-full object-cover rounded-md" 
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = fssaiLogo;
                                   }}
-                                  className="p-2.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-xl transition-colors"
-                                >
-                                  <Copy className="h-4 w-4 text-emerald-600" />
-                                </button>
+                                />
+                              ) : (
+                                <img src={fssaiLogo} alt="FSSAI" className="h-full w-auto object-contain" />
                               )}
-                           </div>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">FSSAI License</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {restaurant?.fssaiNumber || "In Process"}
+                              </p>
+                            </div>
+                          </div>
+                          {restaurant?.fssaiNumber && (
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(restaurant.fssaiNumber);
+                                toast.success("License number copied!");
+                              }}
+                              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
 
-                        {/* GST Registration - ONLY show if gstNumber exists and is not 'Not Registered' */}
+                        {/* GST Registration */}
                         {restaurant?.gstNumber && 
                          !String(restaurant.gstNumber).toLowerCase().includes("not register") && 
                          !String(restaurant.gstNumber).toLowerCase().includes("in process") && (
-                          <div className="bg-emerald-50/50 dark:bg-emerald-950/10 p-5 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-900/20 relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <ShieldCheck className="h-16 w-16 text-emerald-600" />
-                             </div>
-                             <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.15em] mb-3">GSTIN (Goods & Services Tax)</p>
-                             <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-start gap-4">
-                                  <div className="p-3 bg-white dark:bg-[#1a1a1a] rounded-xl border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
-                                    <Check className="h-5 w-5 text-emerald-600" />
-                                  </div>
-                                  <div>
-                                    <p className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
-                                      {restaurant.gstNumber}
-                                    </p>
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 tracking-wide italic">
-                                      * Prices include applicable taxes
-                                    </p>
-                                  </div>
-                                </div>
-                                <button 
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(restaurant.gstNumber);
-                                    toast.success("GSTIN copied!");
-                                  }}
-                                  className="p-2.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-xl transition-colors"
-                                >
-                                  <Copy className="h-4 w-4 text-emerald-600" />
-                                </button>
-                             </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 border border-gray-100 dark:border-gray-800 rounded-lg flex items-center justify-center bg-gray-50 dark:bg-gray-800/50">
+                                <Check className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">GSTIN</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {restaurant.gstNumber}
+                                </p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(restaurant.gstNumber);
+                                toast.success("GSTIN copied!");
+                              }}
+                              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Footer / Support */}
-                    <div className="pt-4 text-center">
-                       <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 leading-relaxed px-6">
-                         Legal numbers provided are for this specific outlet only. For further queries, please reach out to our support team.
+                    <div className="pt-2 text-center">
+                       <p className="text-xs text-gray-400 dark:text-gray-500 px-4">
+                         Legal numbers provided are for this specific outlet only.
                        </p>
                     </div>
                   </div>
 
-
                   {/* Close Button at bottom */}
-                  <div className="p-6 bg-white dark:bg-[#1a1a1a] border-t border-gray-100 dark:border-gray-800">
-                    <Button
+                  <div className="p-5 border-t border-gray-100 dark:border-gray-800">
+                    <button
                       onClick={() => setShowOutletInfoSheet(false)}
-                      className="w-full h-14 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-100 rounded-2xl font-black text-base transition-all active:scale-95"
+                      className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                     >
-                      DONE
-                    </Button>
+                      Done
+                    </button>
                   </div>
                 </motion.div>
               </>

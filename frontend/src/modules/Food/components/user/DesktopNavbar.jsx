@@ -31,7 +31,7 @@ export default function DesktopNavbar({ showLogo = true }) {
     const [faviconUrl, setFaviconUrl] = useState(null)
     const [companyName, setCompanyName] = useState(null)
     const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false)
-    const [under250PriceLimit, setUnder250PriceLimit] = useState(250)
+    const [under250PriceLimit, setUnder250PriceLimit] = useState(199)
     const navRef = useRef(null)
     const cartCount = getCartCount()
 
@@ -185,7 +185,7 @@ export default function DesktopNavbar({ showLogo = true }) {
                 }
             })
             .catch(() => {
-                if (!cancelled) setUnder250PriceLimit(250)
+                if (!cancelled) setUnder250PriceLimit(199)
             })
         return () => { cancelled = true }
     }, [])

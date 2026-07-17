@@ -515,7 +515,7 @@ export default function Home() {
   const [exploreMoreHeading, setExploreMoreHeading] = useState("Explore More");
   const [festBannerVideoUrl, setFestBannerVideoUrl] = useState("");
   const [recommendedRestaurantIds, setRecommendedRestaurantIds] = useState([]);
-  const [under250PriceLimit, setUnder250PriceLimit] = useState(250);
+  const [under250PriceLimit, setUnder250PriceLimit] = useState(199);
   const [
     recommendedRestaurantsFromSettings,
     setRecommendedRestaurantsFromSettings,
@@ -1039,7 +1039,7 @@ export default function Home() {
         const settings = settingsRes?.data?.data || {};
         setExploreMoreHeading(settings.exploreMoreHeading || "Explore More");
         setRecommendedRestaurantIds(settings.recommendedRestaurantIds || []);
-        setUnder250PriceLimit(Number(settings.under250PriceLimit) || 250);
+        setUnder250PriceLimit(Number(settings.under250PriceLimit) || 199);
         setRecommendedRestaurantsFromSettings(
           settings.recommendedRestaurants || [],
         );

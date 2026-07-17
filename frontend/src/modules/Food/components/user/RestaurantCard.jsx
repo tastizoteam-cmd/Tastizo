@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Star, Clock, IndianRupee, Heart } from "lucide-react";
 import OptimizedImage from "@food/components/OptimizedImage";
 
@@ -60,6 +60,7 @@ const RestaurantImageCarousel = React.memo(({ restaurant, priority = false, back
 
   const safeIndex = images.length > 0 ? (currentIndex % images.length + images.length) % images.length : 0;
   const renderSrc = images[safeIndex] || lastGoodSrc;
+  const imagesToRender = images.length > 0 ? images : (lastGoodSrc ? [lastGoodSrc] : []);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -140,28 +141,39 @@ const RestaurantImageCarousel = React.memo(({ restaurant, priority = false, back
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <OptimizedImage
-        ref={imageElementRef}
-        src={renderSrc}
-        alt={restaurant.name}
-        priority={priority}
-        className={`w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 ${
-          loadedBySrc[renderSrc] ? 'opacity-100' : 'opacity-0'
-        }`}
-        onLoad={() => {
-          setLoadedBySrc((prev) => ({ ...prev, [renderSrc]: true }));
-          setLastGoodSrc(renderSrc);
-          setShowShimmer(false);
-        }}
-      />
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={safeIndex}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="absolute inset-0 w-full h-full"
+        >
+          <OptimizedImage
+            ref={imageElementRef}
+            src={renderSrc}
+            alt={`${restaurant.name} ${safeIndex + 1}`}
+            priority={priority && safeIndex === 0}
+            className={`w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 ${
+              loadedBySrc[renderSrc] ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => {
+              setLoadedBySrc((prev) => ({ ...prev, [renderSrc]: true }));
+              setLastGoodSrc(renderSrc);
+              setShowShimmer(false);
+            }}
+          />
+        </motion.div>
+      </AnimatePresence>
       
       {showShimmer && !loadedBySrc[renderSrc] && (
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 animate-shimmer" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 animate-shimmer" />
       )}
 
       {/* Navigation Indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 px-2 pointer-events-none">
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 px-2 pointer-events-none z-20">
           {images.map((_, idx) => (
             <div
               key={idx}

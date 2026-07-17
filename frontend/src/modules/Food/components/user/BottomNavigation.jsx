@@ -8,7 +8,7 @@ export default function BottomNavigation() {
   const activeGold = "#2A9C64"
   const location = useLocation()
   const pathname = location.pathname
-  const [under250PriceLimit, setUnder250PriceLimit] = useState(250)
+  const [under250PriceLimit, setUnder250PriceLimit] = useState(199)
   const [mounted, setMounted] = useState(false)
   const [isHiddenOnScroll, setIsHiddenOnScroll] = useState(false)
 
@@ -29,7 +29,7 @@ export default function BottomNavigation() {
         }
       })
       .catch(() => {
-        if (!cancelled) setUnder250PriceLimit(250)
+        if (!cancelled) setUnder250PriceLimit(199)
       })
     return () => { cancelled = true }
   }, [])

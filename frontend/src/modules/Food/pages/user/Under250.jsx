@@ -146,7 +146,7 @@ export default function Under250() {
   const [under250Restaurants, setUnder250Restaurants] = useState([])
   const [loadingRestaurants, setLoadingRestaurants] = useState(true)
   const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false)
-  const [under250PriceLimit, setUnder250PriceLimit] = useState(250)
+  const [under250PriceLimit, setUnder250PriceLimit] = useState(199)
   const bannerShellRef = useRef(null)
   const stickyHeaderRef = useRef(null)
   const autoSlideIntervalRef = useRef(null)
@@ -338,7 +338,7 @@ export default function Under250() {
       })
       .catch(() => {
         // Default to 250 if fetch fails
-        setUnder250PriceLimit(250)
+        setUnder250PriceLimit(199)
       })
     return () => { cancelled = true }
   }, [])

@@ -586,38 +586,6 @@ export default function Dining() {
           />
         </div>
 
-        {/* Search Bar Section */}
-        <section
-          className="relative z-10 w-full px-4 pb-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Enhanced Search Bar (Matching Home Style) */}
-          <div className="relative bg-gray-50 dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-gray-800 p-2 flex items-center shadow-inner group">
-            <Search className="h-4 w-4 text-[#2A9C64] ml-2 shrink-0" strokeWidth={2.5} />
-            <div className="flex-1 px-3">
-              <Input
-                value={heroSearch}
-                onChange={(e) => setHeroSearch(e.target.value)}
-                onFocus={handleSearchFocus}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && heroSearch.trim()) {
-                    navigate(`/food/user/search?q=${encodeURIComponent(heroSearch.trim())}`)
-                    closeSearch()
-                    setHeroSearch("")
-                  }
-                }}
-                className="h-6 w-full bg-transparent border-0 text-[13px] font-bold text-gray-700 dark:text-white focus-visible:ring-0 focus-visible:ring-offset-0 p-0 leading-none placeholder:text-gray-400"
-                placeholder="Search restaurant, dish or cuisine..."
-              />
-            </div>
-            <div className="flex items-center gap-3 pr-2">
-              <div className="h-4 w-[1px] bg-gray-200 dark:bg-gray-700" />
-              <button className="flex items-center justify-center p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
-                <Mic className="h-4 w-4 text-[#2A9C64]" strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-        </section>
       </div>
 
       {/* Banner Section */}
@@ -712,6 +680,38 @@ export default function Dining() {
           )}
         </motion.div>
       </div>
+
+      {/* Search Bar Section (Moved below banner) */}
+      <section
+        className="relative z-10 w-full px-3 sm:px-4 md:px-6 lg:px-8 pb-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-gray-800 p-2 flex items-center shadow-sm group">
+          <Search className="h-4 w-4 text-[#2A9C64] ml-2 shrink-0" strokeWidth={2.5} />
+          <div className="flex-1 px-3">
+            <Input
+              value={heroSearch}
+              onChange={(e) => setHeroSearch(e.target.value)}
+              onFocus={handleSearchFocus}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && heroSearch.trim()) {
+                  navigate(`/food/user/search?q=${encodeURIComponent(heroSearch.trim())}`)
+                  closeSearch()
+                  setHeroSearch("")
+                }
+              }}
+              className="h-6 w-full bg-transparent border-0 text-[13px] font-bold text-gray-700 dark:text-white focus-visible:ring-0 focus-visible:ring-offset-0 p-0 leading-none placeholder:text-gray-400"
+              placeholder="Search restaurant, dish or cuisine..."
+            />
+          </div>
+          <div className="flex items-center gap-3 pr-2">
+            <div className="h-4 w-[1px] bg-gray-200 dark:bg-gray-700" />
+            <button className="flex items-center justify-center p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+              <Mic className="h-4 w-4 text-[#2A9C64]" strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 md:px-8 lg:px-10 xl:px-12 pt-3 sm:pt-6 md:pt-8 lg:pt-10 pb-4 md:pb-6 lg:pb-8">

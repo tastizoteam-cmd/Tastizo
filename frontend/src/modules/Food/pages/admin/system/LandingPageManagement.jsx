@@ -60,7 +60,7 @@ export default function LandingPageManagement() {
   const diningBannersFileInputRef = useRef(null)
 
   // Settings
-  const [settings, setSettings] = useState({ exploreMoreHeading: "Explore More", recommendedRestaurantIds: [], under250PriceLimit: 250, festBannerVideoUrl: "" })
+  const [settings, setSettings] = useState({ exploreMoreHeading: "Explore More", recommendedRestaurantIds: [], under250PriceLimit: 199, festBannerVideoUrl: "" })
   const [settingsLoading, setSettingsLoading] = useState(true)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [recommendedSearchQuery, setRecommendedSearchQuery] = useState("")
@@ -1040,14 +1040,14 @@ export default function LandingPageManagement() {
         setSettings({
           exploreMoreHeading: nextSettings.exploreMoreHeading || "Explore More",
           recommendedRestaurantIds: Array.isArray(nextSettings.recommendedRestaurantIds) ? nextSettings.recommendedRestaurantIds : [],
-          under250PriceLimit: Number(nextSettings.under250PriceLimit) || 250,
+          under250PriceLimit: Number(nextSettings.under250PriceLimit) || 199,
           festBannerVideoUrl: typeof nextSettings.festBannerVideoUrl === "string" ? nextSettings.festBannerVideoUrl : ""
         })
       }
     } catch (err) {
       // Silently handle 401/404 errors - endpoints may not exist yet, use default settings
       if (err.response?.status === 401 || err.response?.status === 404) {
-        setSettings({ exploreMoreHeading: "Explore More", recommendedRestaurantIds: [], under250PriceLimit: 250, festBannerVideoUrl: "" }) // Use default settings
+        setSettings({ exploreMoreHeading: "Explore More", recommendedRestaurantIds: [], under250PriceLimit: 199, festBannerVideoUrl: "" }) // Use default settings
         setError(null) // Clear any previous error
       } else {
         // Filter out token-related errors
@@ -1067,7 +1067,7 @@ export default function LandingPageManagement() {
       const response = await api.patch('/food/hero-banners/landing/settings', {
         exploreMoreHeading: settings.exploreMoreHeading,
         recommendedRestaurantIds: Array.isArray(settings.recommendedRestaurantIds) ? settings.recommendedRestaurantIds : [],
-        under250PriceLimit: Number(settings.under250PriceLimit) || 250,
+        under250PriceLimit: Number(settings.under250PriceLimit) || 199,
         festBannerVideoUrl: settings.festBannerVideoUrl || ""
       }, getAuthConfig())
       if (response.data.success) {
@@ -1740,12 +1740,12 @@ export default function LandingPageManagement() {
                       type="number"
                       min="1"
                       max="10000"
-                      value={settings.under250PriceLimit || 250}
+                      value={settings.under250PriceLimit || 199}
                       onChange={(e) => setSettings((prev) => ({ ...prev, under250PriceLimit: Math.max(1, Number(e.target.value)) }))}
                       className="mt-2"
                       placeholder="250"
                     />
-                    <p className="text-xs text-slate-500 mt-1">Button will show "Under ₹{settings.under250PriceLimit || 250}" on user home page</p>
+                    <p className="text-xs text-slate-500 mt-1">Button will show "Under ₹{settings.under250PriceLimit || 199}" on user home page</p>
                   </div>
 
                   <div>
