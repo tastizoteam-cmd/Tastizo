@@ -3314,10 +3314,10 @@ export default function Home() {
             className="md:hidden relative bg-white dark:bg-[#0a0a0a] pt-5 pb-3"
           >
             {/* Categories Horizontal Slider */}
-            <div className="px-4 py-2">
+            <div className="py-2">
               <div
                 ref={inlineSliderRef}
-                className="flex overflow-x-auto gap-3 pb-1 scrollbar-hide mask-edge-fade"
+                className="flex overflow-x-auto gap-3 px-4 pb-1 scrollbar-hide mask-edge-fade"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 {displayCategories.map((category, index) => (
@@ -3429,10 +3429,10 @@ export default function Home() {
             style={{ willChange: "transform, opacity" }}
           >
             {/* Categories Horizontal Slider */}
-            <div className="px-4 py-2">
+            <div className="py-2">
               <div
                 ref={fixedSliderRef}
-                className="flex overflow-x-auto gap-3 pb-1 scrollbar-hide mask-edge-fade"
+                className="flex overflow-x-auto gap-3 px-4 pb-1 scrollbar-hide mask-edge-fade"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 {displayCategories.map((category, index) => (

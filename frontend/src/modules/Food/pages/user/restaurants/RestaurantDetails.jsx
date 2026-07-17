@@ -2341,7 +2341,7 @@ function RestaurantDetailsContent() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-medium text-gray-900 dark:text-white truncate">
+                  <h1 className="text-2xl font-medium text-gray-900 dark:text-white truncate" style={{ fontFamily: 'Gate, sans-serif' }}>
                     {restaurant?.name || "Unknown Restaurant"}
                   </h1>
                     <button 
