@@ -509,6 +509,8 @@ export default function Home() {
     return false;
   });
   const publicBannersRef = useRef([]);
+  const [adminCoupon, setAdminCoupon] = useState(null);
+  const [feeSettings, setFeeSettings] = useState({ deliveryFee: 0, packagingFee: 0, platformFee: 0 });
   const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false);
   const [landingCategories, setLandingCategories] = useState([]);
   const [landingExploreMore, setLandingExploreMore] = useState([]);
@@ -758,6 +760,36 @@ export default function Home() {
     }, 60000);
 
     return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const fetchFeeSettings = async () => {
+      try {
+        const res = await adminAPI.getPublicFeeSettings();
+        if (res?.data?.success && res?.data?.data?.feeSettings) {
+          setFeeSettings(res.data.data.feeSettings);
+        }
+      } catch (err) {
+        console.error("Failed to fetch public fee settings", err);
+      }
+    };
+    fetchFeeSettings();
+  }, []);
+
+  useEffect(() => {
+    const fetchAdminCoupon = async () => {
+      try {
+        const res = await api.get("/food/restaurant/offers");
+        const offers = res?.data?.data?.allOffers || res?.data?.allOffers || [];
+        // Try to find a global delivery coupon first, else take any
+        const globalOffer = offers.find(o => o.restaurantScope === 'all' && o.couponType === 'delivery');
+        if (globalOffer) setAdminCoupon(globalOffer);
+        else if (offers.length > 0) setAdminCoupon(offers[0]);
+      } catch (err) {
+        console.error("Failed to fetch admin coupon", err);
+      }
+    };
+    fetchAdminCoupon();
   }, []);
 
   useEffect(() => {
@@ -3261,32 +3293,60 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
                 className="bg-transparent dark:bg-transparent"
               >
-                {/* NEW Quick Offer Section - Cleaner & Professional (On white bg now) */}
-                <div className="px-4 pt-2.5 pb-1">
-                  <div className="grid grid-cols-2 gap-3">
+                {/* NEW Quick Offer Section - Premium Scrollable Cards */}
+                <div className="pt-5 sm:pt-6 pb-0">
+                  <div className="flex overflow-x-auto gap-3 px-4 pb-2 scrollbar-hide">
+                    {/* Card 1: 50% Off & 0 Fees */}
                     <Link
                       to="/food/user/offers"
-                      className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border border-rose-100 dark:border-rose-900/30 group active:scale-[0.98] transition-all"
+                      className="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-[#E2F7F2] to-[#CCF2E8] dark:from-teal-950/40 dark:to-teal-900/40 border border-[#A6E6D6]/60 dark:border-teal-800/50 min-w-[290px] shadow-sm active:scale-[0.98] transition-all"
                     >
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-rose-400 tracking-widest uppercase mb-0.5">Min.</span>
-                        <span className="text-sm font-black text-rose-600 dark:text-rose-400">40% Off</span>
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-start leading-none relative">
+                          <span className="text-5xl font-black bg-gradient-to-b from-[#38b2ac] via-[#319795] to-[#285e61] dark:from-teal-300 dark:via-teal-400 dark:to-teal-600 text-transparent bg-clip-text drop-shadow-[0_2px_2px_rgba(20,184,166,0.3)] tracking-tighter" style={{ WebkitTextStroke: '0.5px rgba(20,184,166,0.3)' }}>
+                            {adminCoupon ? adminCoupon.discountValue : '50'}
+                          </span>
+                          <div className="flex flex-col items-start ml-0.5 leading-none mt-1">
+                            <span className="text-2xl font-black bg-gradient-to-b from-[#38b2ac] via-[#319795] to-[#285e61] dark:from-teal-300 dark:via-teal-400 dark:to-teal-600 text-transparent bg-clip-text drop-shadow-[0_2px_2px_rgba(20,184,166,0.3)]" style={{ WebkitTextStroke: '0.5px rgba(20,184,166,0.3)' }}>
+                              {adminCoupon?.discountType === 'flat-price' ? '₹' : '%'}
+                            </span>
+                            <span className="text-[13px] font-black bg-gradient-to-b from-[#38b2ac] via-[#319795] to-[#285e61] dark:from-teal-300 dark:via-teal-400 dark:to-teal-600 text-transparent bg-clip-text drop-shadow-[0_2px_2px_rgba(20,184,166,0.3)] -mt-1" style={{ WebkitTextStroke: '0.5px rgba(20,184,166,0.3)' }}>
+                              OFF
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-1 bg-[#2ba396] text-white text-[10px] font-bold px-3 py-0.5 rounded shadow-sm tracking-wide">
+                          Code: {adminCoupon ? adminCoupon.couponCode : 'FIRST3'}
+                        </div>
                       </div>
-                      <div className="w-10 h-10 p-1.5 rounded-xl bg-white dark:bg-[#1a1a1a] shadow-sm group-hover:scale-110 transition-transform">
-                        <Tag className="w-full h-full text-rose-500" />
+                      
+                      <div className="text-[#9bdcd3] font-light text-xl mx-2">+</div>
+                      
+                      <div className="flex flex-col gap-0.5 text-[11px] sm:text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                          <span className="font-bold text-slate-900 dark:text-white">Min Order:</span> ₹{adminCoupon?.minOrderValue || 0}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                          <span className="font-bold text-slate-900 dark:text-white">Max Discount:</span> {adminCoupon?.maxDiscount ? `₹${adminCoupon.maxDiscount}` : 'No limit'}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                          <span className="font-bold text-slate-900 dark:text-white">Valid for:</span> {adminCoupon?.customerScope === 'first-time' ? 'New Users' : 'All Users'}
+                        </div>
                       </div>
                     </Link>
- 
+
+                    {/* Card 2: Free Delivery / Favorites */}
                     <Link
-                      to="/food/user/under-250"
-                      className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-100 dark:border-amber-900/30 group active:scale-[0.98] transition-all"
+                      to="/food/user/favorites"
+                      className="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-[#f2f8fc] to-[#e4f1f9] dark:from-blue-950/40 dark:to-blue-900/40 border border-[#cde2f2]/60 dark:border-blue-800/50 min-w-[260px] shadow-sm active:scale-[0.98] transition-all"
                     >
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase mb-0.5">Budget</span>
-                        <span className="text-sm font-black text-amber-600 dark:text-amber-400">Under {"\u20B9"}{under250PriceLimit}</span>
+                      <div className="text-[13px] font-bold text-slate-500 dark:text-slate-400 leading-snug">
+                        All your <br/>
+                        <span className="text-slate-800 dark:text-white text-base font-black">favourite brands</span> <br/>
+                        in one place
                       </div>
-                      <div className="w-10 h-10 p-1.5 rounded-xl bg-white dark:bg-[#1a1a1a] shadow-sm group-hover:scale-110 transition-transform">
-                        <IndianRupee className="w-full h-full text-amber-500" />
+                      <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] flex items-center justify-center shadow-sm ml-4 border border-blue-50 dark:border-blue-900/30">
+                        <Heart className="w-6 h-6 text-blue-500 fill-blue-500/10" />
                       </div>
                     </Link>
                   </div>
@@ -3311,7 +3371,7 @@ export default function Home() {
           <div
             ref={inlineCategoriesRef}
             id="categories-section-inline"
-            className="md:hidden relative bg-white dark:bg-[#0a0a0a] pt-5 pb-3"
+            className="md:hidden relative bg-white dark:bg-[#0a0a0a] pt-2 pb-3"
           >
             {/* Categories Horizontal Slider */}
             <div className="py-2">

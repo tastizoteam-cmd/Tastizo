@@ -91,7 +91,7 @@ export default function FestBanner({ isVegMode, videoUrl = "", hideFoodImages = 
             {isVegMode ? 'VEGGIE DELIGHT' : 'FEAST BONANZA'}
           </h2>
         </motion.div>
-        
+
         <motion.div 
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
@@ -104,77 +104,7 @@ export default function FestBanner({ isVegMode, videoUrl = "", hideFoodImages = 
           <ArrowRightCircle className="h-5 w-5 text-[#fff200] shadow-sm" />
         </motion.div>
 
-        {hideFoodImages ? (
-          <div className="h-28 sm:h-36" />
-        ) : (
-          <div className="flex items-end justify-center gap-5 sm:gap-8 pt-10 relative w-full mb-2">
-            <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 w-56 h-12 blur-[45px] rounded-full transition-colors duration-700 ${isVegMode ? 'bg-emerald-500/40' : 'bg-yellow-400/40'}`} />
-            
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.div 
-                key={`img-left-${isVegMode}-${imgIndex}`}
-                className="w-16 h-16 sm:w-20 sm:h-20 z-10"
-                initial={{ x: -100, opacity: 0, rotate: -45, scale: 0.5 }}
-                animate={{ 
-                  x: 0, 
-                  opacity: 1, 
-                  rotate: -15,
-                  scale: 1,
-                  y: [0, -12, 0]
-                }}
-                exit={{ x: -100, opacity: 0, rotate: -45, scale: 0.5 }}
-                transition={{ 
-                  y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
-                  default: { duration: 0.8, type: "spring", damping: 15 }
-                }}
-              >
-                <img src={displayImages[0]} alt="food" className="w-full h-full object-cover rounded-2xl border-[3px] border-white shadow-2xl rotate-12" />
-              </motion.div>
-
-              <motion.div 
-                key={`img-center-${isVegMode}-${imgIndex}`}
-                className="w-24 h-24 sm:w-32 sm:h-32 z-30 -mb-2"
-                initial={{ y: 100, opacity: 0, scale: 0.5 }}
-                animate={{ 
-                  y: 0, 
-                  opacity: 1,
-                  scale: 1,
-                  rotate: [0, 5, -5, 0]
-                }}
-                exit={{ y: 50, opacity: 0, scale: 0.5 }}
-                transition={{ 
-                  rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-                  default: { duration: 0.8, type: "spring", damping: 12, stiffness: 100 }
-                }}
-              >
-                <div className="relative h-full w-full">
-                  <div className={`absolute -inset-2.5 blur-3xl rounded-full animate-pulse transition-colors duration-700 ${isVegMode ? 'bg-white/40' : 'bg-yellow-400/40'}`} />
-                  <img src={displayImages[1]} alt="food" className="relative w-full h-full object-cover rounded-[2.5rem] border-[4px] border-white shadow-[0_22px_55px_rgba(0,0,0,0.4)]" />
-                </div>
-              </motion.div>
-
-              <motion.div 
-                key={`img-right-${isVegMode}-${imgIndex}`}
-                className="w-16 h-16 sm:w-20 sm:h-20 z-10"
-                initial={{ x: 100, opacity: 0, rotate: 45, scale: 0.5 }}
-                animate={{ 
-                  x: 0, 
-                  opacity: 1, 
-                  rotate: 15,
-                  scale: 1,
-                  y: [0, -12, 0]
-                }}
-                exit={{ x: 100, opacity: 0, rotate: 45, scale: 0.5 }}
-                transition={{ 
-                  y: { duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.4 },
-                  default: { duration: 0.8, type: "spring", damping: 15 }
-                }}
-              >
-                <img src={displayImages[2]} alt="food" className="w-full h-full object-cover rounded-2xl border-[3px] border-white shadow-2xl -rotate-12 bg-white" />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        )}
+        <div className="h-28 sm:h-36" />
       </div>
     </motion.div>
   );

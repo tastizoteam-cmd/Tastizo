@@ -849,6 +849,8 @@ export const adminAPI = {
   /** Fee Settings (admin) */
   getFeeSettings: () =>
     apiClient.get("/food/admin/fee-settings", { contextModule: "admin" }),
+  getPublicFeeSettings: () =>
+    apiClient.get("/food/admin/fee-settings/public", { contextModule: "public" }),
   createOrUpdateFeeSettings: (body) =>
     apiClient.put("/food/admin/fee-settings", body ?? {}, {
       contextModule: "admin",
