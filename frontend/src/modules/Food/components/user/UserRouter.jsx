@@ -230,6 +230,7 @@ export default function UserRouter() {
               </ProtectedRoute>
             }
           />
+          <Route path="favorites" element={<Navigate to="profile/favorites" replace />} />
           <Route
             path="profile/support"
             element={

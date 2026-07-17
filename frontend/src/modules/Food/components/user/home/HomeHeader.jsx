@@ -35,8 +35,9 @@ export default function HomeHeader({
   handleVegModeChange
 }) {
   const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('food_user_notifications');
-    return saved ? JSON.parse(saved) : [];
+    // Clear out any legacy dummy notifications from localStorage
+    localStorage.removeItem('food_user_notifications');
+    return [];
   });
   const {
     items: broadcastNotifications,
@@ -72,8 +73,8 @@ export default function HomeHeader({
         })
         : "Just now",
       type: "broadcast",
-      icon: "Bell",
-      iconColor: "text-blue-600",
+      icon: item.icon || "Bell",
+      iconColor: item.iconColor || "text-blue-600",
     }));
 
     return [...broadcastItems, ...localItems].sort(
@@ -236,7 +237,7 @@ export default function HomeHeader({
                         const Icon = ICON_MAP[notif.icon] || Bell;
                         return (
                           <div key={notif.id} className="p-4 flex items-start gap-3 border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 transition-colors">
-                            <div className="mt-1 p-2 rounded-full bg-gray-100 text-[#2A9C64]">
+                            <div className={`mt-1 p-2 rounded-full bg-gray-100 ${notif.iconColor || 'text-[#2A9C64]'}`}>
                               <Icon className="h-4 w-4" />
                             </div>
                             <div className="flex-1 min-w-0">

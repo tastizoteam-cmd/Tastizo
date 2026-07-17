@@ -473,7 +473,7 @@ export default function Home() {
   const { openSearch, closeSearch, searchValue, setSearchValue } =
     useSearchOverlay();
   const { openLocationSelector } = useLocationSelector();
-  const { vegMode, setVegMode: setVegModeContext } = useProfile();
+  const { vegMode, setVegMode: setVegModeContext, favorites } = useProfile();
   const [prevVegMode, setPrevVegMode] = useState(vegMode);
   const [showVegModePopup, setShowVegModePopup] = useState(false);
   const [showSwitchOffPopup, setShowSwitchOffPopup] = useState(false);
@@ -3335,18 +3335,27 @@ export default function Home() {
                       </div>
                     </Link>
 
-                    {/* Card 2: Free Delivery / Favorites */}
+                    {/* Card 2: Favorites */}
                     <Link
-                      to="/food/user/favorites"
-                      className="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-[#f2f8fc] to-[#e4f1f9] dark:from-blue-950/40 dark:to-blue-900/40 border border-[#cde2f2]/60 dark:border-blue-800/50 min-w-[260px] shadow-sm active:scale-[0.98] transition-all"
+                      to="/food/user/profile/favorites"
+                      className="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-[#E2F7F2] to-[#CCF2E8] dark:from-teal-950/40 dark:to-teal-900/40 border border-[#A6E6D6]/60 dark:border-teal-800/50 min-w-[260px] shadow-sm active:scale-[0.98] transition-all"
                     >
                       <div className="text-[13px] font-bold text-slate-500 dark:text-slate-400 leading-snug">
-                        All your <br/>
-                        <span className="text-slate-800 dark:text-white text-base font-black">favourite brands</span> <br/>
-                        in one place
+                        {favorites?.length > 0 ? (
+                          <>
+                            Your <span className="text-slate-800 dark:text-white text-base font-black">{favorites.length} favourite</span> <br/>
+                            brands in one place
+                          </>
+                        ) : (
+                          <>
+                            All your <br/>
+                            <span className="text-slate-800 dark:text-white text-base font-black">favourite brands</span> <br/>
+                            in one place
+                          </>
+                        )}
                       </div>
-                      <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] flex items-center justify-center shadow-sm ml-4 border border-blue-50 dark:border-blue-900/30">
-                        <Heart className="w-6 h-6 text-blue-500 fill-blue-500/10" />
+                      <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] flex items-center justify-center shadow-sm ml-4 border border-teal-50 dark:border-teal-900/30">
+                        <Heart className="w-6 h-6 text-[#2ba396] fill-[#2ba396]/10" />
                       </div>
                     </Link>
                   </div>

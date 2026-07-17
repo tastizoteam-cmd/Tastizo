@@ -247,7 +247,7 @@ export default function UnifiedOTPFastLogin() {
   const primaryColor = "#2A9C64" // Rebranded Plum color
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col relative overflow-hidden font-['Poppins']">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-[#2A9C64]/10 via-[#2A9C64]/5 to-transparent pointer-events-none" />
       <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-[#2A9C64]/5 rounded-full blur-[120px] pointer-events-none animate-pulse" />
@@ -291,7 +291,7 @@ export default function UnifiedOTPFastLogin() {
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-[#2A9C64]/20 to-transparent" />
 
             <div className="mb-10 text-center sm:text-left">
-              <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 font-['Outfit'] tracking-tight">
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
                 {step === 1 ? "Welcome Back" : "Security Check"}
               </h2>
               <div className="h-1 w-10 bg-[#2A9C64] rounded-full mb-3 hidden sm:block" />

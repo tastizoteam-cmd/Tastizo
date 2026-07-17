@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { Tag, User, Truck, UtensilsCrossed } from "lucide-react"
+import { Coins, CircleUser, Bike, Utensils } from "lucide-react"
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import api from "@food/api"
@@ -104,7 +104,7 @@ export default function BottomNavigation() {
               : "text-gray-600 dark:text-gray-400"
             }`}
         >
-          <Truck
+          <Bike
             className="h-5 w-5"
             strokeWidth={2}
             style={{ color: isDelivery ? activeGold : undefined }}
@@ -131,7 +131,7 @@ export default function BottomNavigation() {
               : "text-gray-600 dark:text-gray-400"
             }`}
         >
-          <UtensilsCrossed
+          <Utensils
             className="h-5 w-5"
             strokeWidth={2}
             style={{ color: isDining ? activeGold : undefined }}
@@ -158,7 +158,7 @@ export default function BottomNavigation() {
               : "text-gray-600 dark:text-gray-400"
             }`}
         >
-          <Tag
+          <Coins
             className="h-5 w-5"
             strokeWidth={2}
             style={{ color: isUnder250 ? activeGold : undefined }}
@@ -185,8 +185,9 @@ export default function BottomNavigation() {
               : "text-gray-600 dark:text-gray-400"
             }`}
         >
-          <User
+          <CircleUser
             className="h-5 w-5"
+            strokeWidth={2}
             style={{ color: isProfile ? activeGold : undefined }}
           />
           <span

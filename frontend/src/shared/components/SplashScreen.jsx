@@ -95,7 +95,7 @@ export default function SplashScreen({ onFinish }) {
                   damping: 15
                 }}
                 style={{ transform: 'translateZ(0)', willChange: "transform, opacity" }}
-                className="text-7xl md:text-9xl font-black tracking-tighter text-white relative font-['Outfit'] select-none"
+                className="text-7xl md:text-9xl font-black tracking-tighter text-white relative select-none"
               >
                 TASTIZO
                 

@@ -162,7 +162,7 @@ export default function RestaurantLogin() {
                       },
                     },
                   }}
-                  className="text-[2.8rem] lg:text-[3.2rem] font-extrabold leading-[1.15] tracking-[-0.04em] text-black text-center flex flex-col items-center justify-center font-['Outfit']"
+                  className="text-[2.8rem] lg:text-[3.2rem] font-extrabold leading-[1.15] tracking-[-0.04em] text-black text-center flex flex-col items-center justify-center"
                 >
                   <div className="flex flex-wrap justify-center">
                     {["India's", "#1", "Restaurant", "Partner"].map((word) => (
@@ -329,7 +329,7 @@ export default function RestaurantLogin() {
                       },
                     },
                   }}
-                  className="text-[1.8rem] sm:text-[2rem] font-bold leading-[1.2] tracking-[-0.03em] text-black font-['Outfit'] text-center flex flex-col items-center justify-center"
+                  className="text-[1.8rem] sm:text-[2rem] font-bold leading-[1.2] tracking-[-0.03em] text-black text-center flex flex-col items-center justify-center"
                 >
                   <div className="flex flex-wrap justify-center">
                     {["India's", "#1", "Restaurant", "Partner"].map((word) => (

@@ -720,7 +720,7 @@ export default function Dining() {
           <div className="mb-3 sm:mb-4">
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="h-px flex-1 bg-[#ece5dc]/60" />
-              <h3 className="font-['Poppins',_'Nunito_Sans',sans-serif] text-[9px] sm:text-[11px] font-medium uppercase tracking-[0.25em] text-[#8f8478] text-center whitespace-nowrap">
+              <h3 className="text-[9px] sm:text-[11px] font-medium uppercase tracking-[0.25em] text-[#8f8478] text-center whitespace-nowrap">
                 What are you looking for?
               </h3>
               <div className="h-px flex-1 bg-[#ece5dc]/60" />
@@ -746,7 +746,7 @@ export default function Dining() {
                   whileHover={{ y: -2, boxShadow: "0 8px 20px -12px rgba(63, 38, 18, 0.2)" }}
                 >
                   <div className="h-full flex flex-col p-2.5 sm:p-3.5">
-                    <p className="font-['Poppins',_'Nunito_Sans',sans-serif] text-[12px] sm:text-[14px] md:text-[15px] font-bold leading-tight tracking-tight text-[#2d2722] mb-1">
+                    <p className="text-[12px] sm:text-[14px] md:text-[15px] font-bold leading-tight tracking-tight text-[#2d2722] mb-1">
                       {category.name}
                     </p>
 

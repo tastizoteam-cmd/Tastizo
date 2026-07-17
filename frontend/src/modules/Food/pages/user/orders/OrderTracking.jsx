@@ -1971,7 +1971,7 @@ export default function OrderTracking() {
                 value={cancellationReason}
                 onChange={(e) => setCancellationReason(e.target.value)}
                 placeholder="e.g., Changed my mind, Wrong address, etc."
-                className="w-full min-h-[100px] resize-none border-2 border-gray-300 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed disabled:border-gray-200"
+                className="w-full min-h-[120px] resize-none !border !border-gray-200 rounded-xl p-4 text-sm focus:!border-red-500 focus:!ring-2 focus:!ring-red-100 focus-visible:!ring-2 focus-visible:!ring-red-100 focus-visible:!border-red-500 !outline-none shadow-sm placeholder:text-gray-400 bg-gray-50/50 hover:bg-gray-50 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                 disabled={isCancelling}
               />
             </div>

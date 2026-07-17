@@ -52,7 +52,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col relative overflow-hidden font-['Poppins']">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col relative overflow-hidden">
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -89,7 +89,7 @@ export default function AdminLogin() {
             <div className="absolute inset-x-8 bottom-0 h-24 rounded-full bg-[#f4e3b0]/30 blur-3xl pointer-events-none" />
 
             <div className="mb-10 text-center sm:text-left">
-              <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 font-['Outfit'] tracking-tight">
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
                 Admin Entry
               </h2>
               <div className="h-1 w-10 rounded-full mb-3 hidden sm:block" style={{ backgroundColor: gold }} />
