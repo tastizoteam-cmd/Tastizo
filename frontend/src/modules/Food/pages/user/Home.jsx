@@ -1651,10 +1651,11 @@ export default function Home() {
         
         const validPublicBanners = list.filter(b => {
           if (!b || typeof b.imageUrl !== "string" || !b.imageUrl) return false;
-          if (!b.linkedRestaurants || b.linkedRestaurants.length === 0) return false;
           // Hide if any linked restaurant is offline/inactive
-          const hasOfflineRestaurant = Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
-          if (hasOfflineRestaurant) return false;
+          if (Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.length > 0) {
+            const hasOfflineRestaurant = b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
+            if (hasOfflineRestaurant) return false;
+          }
           return true;
         }).map(b => ({
           ...b,
@@ -1915,9 +1916,10 @@ export default function Home() {
         const list = publicBannersRef.current || [];
         const validPublicBanners = list.filter(b => {
           if (!b || typeof b.imageUrl !== "string" || !b.imageUrl) return false;
-          if (!b.linkedRestaurants || b.linkedRestaurants.length === 0) return false;
-          const hasOfflineRestaurant = Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
-          if (hasOfflineRestaurant) return false;
+          if (Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.length > 0) {
+            const hasOfflineRestaurant = b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
+            if (hasOfflineRestaurant) return false;
+          }
           return true;
         }).map(b => ({
           ...b,
@@ -1937,9 +1939,10 @@ export default function Home() {
         const list = publicBannersRef.current || [];
         const validPublicBanners = list.filter(b => {
           if (!b || typeof b.imageUrl !== "string" || !b.imageUrl) return false;
-          if (!b.linkedRestaurants || b.linkedRestaurants.length === 0) return false;
-          const hasOfflineRestaurant = Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
-          if (hasOfflineRestaurant) return false;
+          if (Array.isArray(b.linkedRestaurants) && b.linkedRestaurants.length > 0) {
+            const hasOfflineRestaurant = b.linkedRestaurants.some(r => r.isAcceptingOrders === false || r.isActive === false || r.status === "rejected");
+            if (hasOfflineRestaurant) return false;
+          }
           return true;
         }).map(b => ({
           ...b,
@@ -3246,39 +3249,97 @@ export default function Home() {
 
         <div className="md:hidden relative bg-white dark:bg-[#0a0a0a]">
           {/* Brand Top Section (Dark) */}
-          <div className="relative overflow-hidden bg-gradient-to-b from-[#3a142c] to-[#1a0a14] rounded-b-[2rem] shadow-lg mb-2">
-            {festVideoActive && (
-              <div className="absolute inset-0 z-0">
-                <video
-                  src={festBannerVideoUrl}
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                />
-                <div className="absolute inset-0 bg-black/40" />
+          <div 
+            className={`relative overflow-hidden ${
+              heroBannerImages.length > 0
+                ? "bg-gradient-to-b from-[#3a142c] to-[#1a0a14]"
+                : "bg-gradient-to-b from-[#2A9C64] to-[#1E7A4A]"
+            } rounded-b-[2rem] shadow-lg mb-2`}
+            style={{ transform: "translate3d(0, 0, 0)" }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            {/* Background elements (Banners / Video / Default) */}
+            {heroBannerImages.length > 0 ? (
+              <div 
+                className="absolute inset-0 z-0 cursor-pointer"
+                onClick={() => {
+                  const bannerData = heroBannersData[currentBannerIndex];
+                  if (bannerData?.link) {
+                    navigate(bannerData.link);
+                    return;
+                  }
+                  const linkedRestaurants = bannerData?.linkedRestaurants || [];
+                  if (linkedRestaurants.length > 0) {
+                    const firstRestaurant = linkedRestaurants[0];
+                    const restaurantSlug = firstRestaurant.slug || firstRestaurant.restaurantId || firstRestaurant._id;
+                    navigate(`/user/restaurants/${restaurantSlug}`);
+                  }
+                }}
+              >
+                {heroBannerImages.map((image, index) => (
+                  <div
+                    key={`bg-banner-${index}`}
+                    className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+                    style={{
+                      opacity: currentBannerIndex === index ? 1 : 0,
+                      zIndex: currentBannerIndex === index ? 1 : 0,
+                    }}
+                  >
+                    <img
+                      src={image}
+                      alt={`Header BG Banner ${index + 1}`}
+                      className="w-full h-full object-cover select-none pointer-events-none"
+                      draggable={false}
+                    />
+                  </div>
+                ))}
+                {/* Dark overlay for text readability */}
+                <div className="absolute inset-0 bg-black/45 z-10" />
               </div>
+            ) : (
+              festVideoActive && (
+                <div className="absolute inset-0 z-0">
+                  <video
+                    src={festBannerVideoUrl}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                </div>
+              )
             )}
             <div className="relative z-10">
-              <HomeHeader
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                location={effectiveLocation}
-                handleLocationClick={handleLocationClick}
-                handleSearchFocus={handleSearchFocus}
-                placeholderIndex={placeholderIndex}
-                placeholders={placeholders}
-                vegMode={vegMode}
-                handleVegModeChange={handleVegModeChange}
-              />
+              <div onClick={(e) => e.stopPropagation()}>
+                <HomeHeader
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  location={effectiveLocation}
+                  handleLocationClick={handleLocationClick}
+                  handleSearchFocus={handleSearchFocus}
+                  placeholderIndex={placeholderIndex}
+                  placeholders={placeholders}
+                  vegMode={vegMode}
+                  handleVegModeChange={handleVegModeChange}
+                />
+              </div>
 
               {activeTab === "food" && (
-                <FestBanner
-                  isVegMode={vegMode}
-                  videoUrl={festVideoActive ? "" : festBannerVideoUrl}
-                  hideFoodImages={festVideoActive}
-                />
+                <div onClick={(e) => e.stopPropagation()}>
+                  <FestBanner
+                    isVegMode={vegMode}
+                    videoUrl={festVideoActive ? "" : festBannerVideoUrl}
+                    hideFoodImages={festVideoActive || heroBannerImages.length > 0}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -3728,10 +3789,7 @@ export default function Home() {
           </motion.section>
         )}
 
-        {/* Hero Banner Section (Carousel for Ads) */}
-        <div className="md:hidden">
-          {HeroBannerSection}
-        </div>
+        {/* Hero Banner Section (Carousel for Ads) moved to top */}
 
         {/* Featured Foods - Horizontal Scroll */}
 
