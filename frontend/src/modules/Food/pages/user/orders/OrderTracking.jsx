@@ -1533,7 +1533,7 @@ export default function OrderTracking() {
             <motion.img 
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              src="/image-removebg-preview.png" 
+              src="/image-removebg-preview.webp" 
               alt="Delivered successfully" 
               className="w-64 h-64 md:w-72 md:h-72 object-contain mx-auto" 
             />

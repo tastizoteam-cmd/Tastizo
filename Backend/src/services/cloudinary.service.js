@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import sharp from 'sharp';
 import { config } from '../config/env.js';
 
 cloudinary.config({
@@ -7,17 +8,33 @@ cloudinary.config({
     api_secret: config.cloudinaryApiSecret
 });
 
+/**
+ * Converts any image buffer (PNG, JPG, JPEG, GIF, etc.) to a WebP buffer
+ * before uploading to Cloudinary.
+ */
+const convertBufferToWebP = async (buffer) => {
+    if (!buffer) return buffer;
+    try {
+        return await sharp(buffer).webp({ quality: 88 }).toBuffer();
+    } catch (error) {
+        // If buffer is not a standard image or sharp fails, return original buffer
+        return buffer;
+    }
+};
+
 export const uploadImageBuffer = async (buffer, folder = 'uploads') => {
     if (!buffer) {
         throw new Error('File buffer is required');
     }
+
+    const webpBuffer = await convertBufferToWebP(buffer);
 
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             {
                 folder,
                 resource_type: 'image',
-                fetch_format: 'auto',
+                format: 'webp',
                 quality: 'auto:good'
             },
             (error, result) => {
@@ -28,7 +45,7 @@ export const uploadImageBuffer = async (buffer, folder = 'uploads') => {
             }
         );
 
-        stream.end(buffer);
+        stream.end(webpBuffer);
     });
 };
 
@@ -37,12 +54,14 @@ export const uploadImageBufferDetailed = async (buffer, folder = 'uploads') => {
         throw new Error('File buffer is required');
     }
 
+    const webpBuffer = await convertBufferToWebP(buffer);
+
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             {
                 folder,
                 resource_type: 'image',
-                fetch_format: 'auto',
+                format: 'webp',
                 quality: 'auto:good'
             },
             (error, result) => {
@@ -53,7 +72,7 @@ export const uploadImageBufferDetailed = async (buffer, folder = 'uploads') => {
             }
         );
 
-        stream.end(buffer);
+        stream.end(webpBuffer);
     });
 };
 

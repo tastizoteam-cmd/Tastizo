@@ -8,7 +8,7 @@ import { Input } from "@food/components/ui/input"
 import { toast } from "sonner"
 import { deliveryAPI } from "@food/api"
 import { clearModuleAuth } from "@food/utils/auth"
-import deliveryImage from "@/assets/delivery.jpeg"
+import deliveryImage from "@/assets/delivery.webp"
 import SEOHead from "@/shared/components/SEOHead"
 import { getDeliveryServiceSchema, getDeliveryFAQSchema, getBreadcrumbSchema } from "@/shared/seo/schemas"
 

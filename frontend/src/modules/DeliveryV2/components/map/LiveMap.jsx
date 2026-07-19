@@ -119,7 +119,7 @@ const AnimatedRiderOverlay = React.memo(({ targetLocation, iconUrl }) => {
   return (
     <OverlayView position={animatedLoc} mapPaneName={OverlayView.MARKER_LAYER}>
       <div style={{ transform: `translate(-50%, -50%) rotate(${((animatedLoc.heading || 0) + 135) % 360}deg)`, transition: 'transform 0.1s linear' }} className="relative w-[72px] h-[72px]">
-        <img src={iconUrl} alt="Rider" className="w-full h-full object-contain" onError={(e) => { e.target.src = "/MapRider.png"; }} />
+        <img src={iconUrl} alt="Rider" className="w-full h-full object-contain" onError={(e) => { e.target.src = "/MapRider.webp"; }} />
       </div>
     </OverlayView>
   );
@@ -419,7 +419,7 @@ export const LiveMap = ({ onMapClick, onMapLoad, onPathReceived, onPolylineRecei
         {parsedRiderLocation && (
           <AnimatedRiderOverlay 
             targetLocation={parsedRiderLocation} 
-            iconUrl="/tastizo_rider.png" 
+            iconUrl="/tastizo_rider.webp" 
           />
         )}
 

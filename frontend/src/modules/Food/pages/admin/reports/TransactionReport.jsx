@@ -14,8 +14,8 @@ import restaurantEarningIcon from "@food/assets/Transaction-report-icons/store-e
 import deliverymanEarningIcon from "@food/assets/Transaction-report-icons/deliveryman-earning.svg"
 
 // Import search and export icons from Dashboard-icons
-import searchIcon from "@food/assets/Dashboard-icons/image8.png"
-import exportIcon from "@food/assets/Dashboard-icons/image9.png"
+import searchIcon from "@food/assets/Dashboard-icons/image8.webp"
+import exportIcon from "@food/assets/Dashboard-icons/image9.webp"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}

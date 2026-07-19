@@ -9,10 +9,10 @@ import {
 } from "@food/components/ui/popover";
 import { Badge } from "@food/components/ui/badge";
 import { Avatar, AvatarFallback } from "@food/components/ui/avatar";
-import foodIcon from "@food/assets/category-icons/food.png";
-import quickIcon from "@food/assets/category-icons/quick.png";
-import taxiIcon from "@food/assets/category-icons/taxi.png";
-import hotelIcon from "@food/assets/category-icons/hotel.png";
+import foodIcon from "@food/assets/category-icons/food.webp";
+import quickIcon from "@food/assets/category-icons/quick.webp";
+import taxiIcon from "@food/assets/category-icons/taxi.webp";
+import hotelIcon from "@food/assets/category-icons/hotel.webp";
 import useNotificationInbox from "@food/hooks/useNotificationInbox";
 
 const ICON_MAP = {

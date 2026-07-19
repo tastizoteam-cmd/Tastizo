@@ -138,7 +138,7 @@ export default function RestaurantLogin() {
             className="flex flex-col items-center justify-center z-10"
           >
             <img
-              src="/image.png"
+              src="/image.webp"
               alt="Tastizo"
               className="h-[26rem] lg:h-[34rem] xl:h-[38rem] w-auto object-contain transition-all duration-300"
             />
@@ -306,7 +306,7 @@ export default function RestaurantLogin() {
               style={{ backgroundColor: TASTIZO_BG }}
             >
               <motion.img
-                src="/image.png"
+                src="/image.webp"
                 alt="Tastizo"
                 initial={{ opacity: 0, y: 18, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}

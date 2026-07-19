@@ -133,7 +133,7 @@ export default function RestaurantDesktopShell({
             className="border-b border-[#eceef5] px-7 py-5 flex items-center"
           >
             <img 
-              src="/tastizo-grey-logo.png" 
+              src="/tastizo-grey-logo.webp" 
               alt={companyName || "Tastizo"} 
               className="h-12 w-auto object-contain brightness-0" 
             />

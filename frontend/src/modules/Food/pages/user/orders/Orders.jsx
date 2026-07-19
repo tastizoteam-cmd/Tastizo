@@ -1054,7 +1054,7 @@ Order again from this restaurant in the ${companyName} app.`
 
       {/* Footer Branding */}
       <div className="flex justify-center mt-8 mb-4">
-        <img src="/tastizo Grey logo (1).png" alt="Tastizo" className="h-8 object-contain" />
+        <img src="/tastizo-grey-logo.webp" alt="Tastizo" className="h-8 object-contain" />
       </div>
 
       {/* Rating & Feedback Modal */}

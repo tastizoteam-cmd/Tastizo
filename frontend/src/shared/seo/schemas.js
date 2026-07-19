@@ -12,7 +12,7 @@ export const getOrganizationSchema = () => ({
   '@type': 'Organization',
   'name': 'Tastizo',
   'url': BASE_URL,
-  'logo': `${BASE_URL}/logo.png`,
+  'logo': `${BASE_URL}/logo.webp`,
   'sameAs': [
     'https://www.facebook.com/tastizo',
     'https://twitter.com/tastizo',
@@ -42,7 +42,7 @@ export const getDeliveryServiceSchema = () => ({
   '@context': 'https://schema.org',
   '@type': 'DeliveryService',
   'name': 'Tastizo Food Delivery',
-  'image': `${BASE_URL}/tastizo_og_image.png`,
+  'image': `${BASE_URL}/tastizo_og_image.webp`,
   'description': 'Deliver food and earn with Tastizo. Join as a rider, enjoy flexible hours, weekly payouts, and great incentives.',
   'provider': {
     '@type': 'Organization',

@@ -259,7 +259,7 @@ export default function JoinUsPageSetup() {
                           <div className="flex items-center gap-2">
                             <input
                               type="checkbox"
-                              checked={field.fileFormats.jpg}
+                              checked={field.fileFormats.webp}
                               onChange={() => handleFileFormatChange(field.id, "jpg")}
                               className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                             />

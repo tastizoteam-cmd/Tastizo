@@ -6,7 +6,7 @@ import AnimatedPage from "@food/components/user/AnimatedPage"
 import { Button } from "@food/components/ui/button"
 import { Input } from "@food/components/ui/input"
 import { authAPI } from "@food/api"
-import logoNew from "@food/assets/logo.png"
+import logoNew from "@food/assets/logo.webp"
 
 const REMEMBER_LOGIN_KEY = "user_login_phone"
 const TASTIZO_BG = "#2a9c64"

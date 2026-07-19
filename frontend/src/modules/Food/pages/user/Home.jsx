@@ -86,8 +86,8 @@ import {
 } from "@food/components/ui/dropdown-menu";
 import { useLocation } from "@food/hooks/useLocation";
 import { useZone } from "@food/hooks/useZone";
-import quickSpicyLogo from "@food/assets/quicky-spicy-logo.png";
-import offerImage from "@food/assets/offerimage.png";
+import quickSpicyLogo from "@food/assets/quicky-spicy-logo.webp";
+import offerImage from "@food/assets/offerimage.webp";
 import api, { publicGetOnce, restaurantAPI, adminAPI } from "@food/api";
 import { API_BASE_URL } from "@food/api/config";
 import OptimizedImage from "@food/components/OptimizedImage";
@@ -101,10 +101,10 @@ import SEOHead from "@/shared/components/SEOHead";
 import { getWebSiteSchema, getOrganizationSchema } from "@/shared/seo/schemas";
 
 // Explore More Icons
-import exploreOffers from "@food/assets/explore more icons/offers.png";
-import exploreGourmet from "@food/assets/explore more icons/gourmet.png";
-import exploreTop10 from "@food/assets/explore more icons/top 10.png";
-import exploreCollection from "@food/assets/explore more icons/collection.png";
+import exploreOffers from "@food/assets/explore more icons/offers_v2.webp";
+import exploreGourmet from "@food/assets/explore more icons/gourmet_v2.webp";
+import exploreTop10 from "@food/assets/explore more icons/top 10.webp";
+import exploreCollection from "@food/assets/explore more icons/collection_v2.webp";
 
 // Banner images for hero carousel - will be fetched from API
 
@@ -3852,7 +3852,7 @@ export default function Home() {
                     <motion.img
                       animate={{ y: [0, -10, 0] }}
                       transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      src="/tastizo_chef_green.png"
+                      src="/tastizo_chef_green.webp"
                       alt="Coming Soon Chef"
                       className="relative z-10 w-full h-full object-contain"
                     />

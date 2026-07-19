@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 const BASE_URL = 'https://www.tastizo.com';
-const DEFAULT_OG_IMAGE = `${BASE_URL}/tastizo_og_image.png`;
+const DEFAULT_OG_IMAGE = `${BASE_URL}/tastizo_og_image.webp`;
 
 /**
  * SEOHead component to inject meta tags and schemas dynamically
