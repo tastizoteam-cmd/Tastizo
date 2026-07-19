@@ -19,7 +19,8 @@ import api from "@food/api"
 import { restaurantAPI, adminAPI } from "@food/api"
 import { isModuleAuthenticated } from "@food/utils/auth"
 import { flattenMenuItems, getMenuFromResponse } from "@food/utils/menuItems"
-import { calculateDistance, formatDistance } from "@food/utils/common"
+import { calculateDistance, formatDistance, normalizeImageUrl } from "@food/utils/common"
+import { foodImages } from "@food/constants/images"
 import { getRestaurantAvailabilityStatus } from "@food/utils/restaurantAvailability"
 import { shareContent } from "@food/utils/share"
 const debugLog = (...args) => {}
@@ -643,8 +644,9 @@ export default function Under250() {
     let cancelled = false
 
     const fetchCategories = async () => {
+      const effectiveZoneId = zoneId || readStoredZoneId()
       try {
-        const response = await adminAPI.getPublicCategories(zoneId ? { zoneId } : {})
+        const response = await adminAPI.getPublicCategories(effectiveZoneId ? { zoneId: effectiveZoneId } : {})
         const categoriesRaw = Array.isArray(response?.data?.data?.categories)
           ? response.data.data.categories
           : []
@@ -655,14 +657,14 @@ export default function Under250() {
             if (!name) return null
 
             return {
-              id: String(cat?.id || cat?._id || cat?.slug || `cat-${index}`),
+              id: String(cat?.id || cat?._id || cat?.slug || index),
               name,
-              slug: String(cat?.slug || name.toLowerCase().replace(/\s+/g, "-")),
+              slug: cat?.slug || String(cat?.name || "").toLowerCase().replace(/\s+/g, "-"),
               image:
-                cat?.imageUrl ||
-                cat?.image ||
-                cat?.icon ||
-                "",
+                normalizeImageUrl(cat?.image || cat?.imageUrl || cat?.icon) ||
+                foodImages[index % foodImages.length] ||
+                foodImages[0],
+              type: cat?.type || "",
             }
           })
           .filter(Boolean)
@@ -1088,7 +1090,7 @@ export default function Under250() {
           }`}
       >
         <div className="relative z-50 pt-2 sm:pt-3 pb-2">
-          <PageNavbar textColor="black" zIndex={20} showProfile={true} showLogo={false} />
+          <PageNavbar textColor={hasScrolledPastBanner ? "black" : "white"} zIndex={20} showProfile={true} showLogo={false} />
         </div>
       </div>
 
@@ -1145,12 +1147,12 @@ export default function Under250() {
           </div>
         )}
         {bannerImages.length === 0 && !loadingBanner && (
-          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-gradient-to-br from-[#f2faf6] to-[#e6f2eb] dark:from-[#0A2B1D] dark:to-[#1E7A4A] overflow-hidden" />
+          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-gradient-to-b from-[#2A9C64] to-[#1E7A4A] overflow-hidden" />
         )}
       </div>
 
       {/* Content Section */}
-      <div className="relative max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 space-y-0 pt-2 sm:pt-3 md:pt-4 lg:pt-6 pb-6 md:pb-8 lg:pb-10">
+      <div className="relative max-w-7xl mx-auto space-y-0 pt-2 sm:pt-3 md:pt-4 lg:pt-6 pb-6 md:pb-8 lg:pb-10">
 
         <section className="relative mt-4">
           <div className="relative group/slider">
@@ -1162,7 +1164,7 @@ export default function Under250() {
             </button>
             <div
               ref={categoriesRef}
-              className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth px-4 sm:px-6 md:px-16 py-2 sm:py-3 md:py-4"
+              className="flex overflow-x-auto gap-3 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 pb-1 scrollbar-hide mask-edge-fade scroll-smooth py-2"
               style={{
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
@@ -1170,51 +1172,62 @@ export default function Under250() {
                 overflowY: "hidden",
               }}
             >
-            {/* All Button */}
-            <div className="flex-shrink-0 cursor-pointer" onClick={() => setShowAllCategoriesModal(true)}>
-              <motion.div
-                className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28"
-                whileHover={{ scale: 1.1, y: -4 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <div className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all flex items-center justify-center bg-white ${!activeCategory ? 'ring-2 ring-[#2A9C64] ring-offset-2' : ''}`}>
-                   <div className={`w-full h-full flex items-center justify-center ${!activeCategory ? 'bg-[#2A9C64]/10 text-[#2A9C64]' : 'bg-gray-50 text-gray-400'}`}>
-                      <UtensilsCrossed className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12" />
-                   </div>
-                </div>
-                <span className={`text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center pb-1 ${!activeCategory ? 'text-[#2A9C64]' : ''}`}>
-                  All
-                </span>
-              </motion.div>
-            </div>
-            {categories.map((category, index) => {
+            {categories.slice(0, 8).map((category, index) => {
               const isActive = activeCategory === category.id
               return (
                 <div key={category.id} className="flex-shrink-0 cursor-pointer" onClick={() => setActiveCategory(isActive ? null : category.id)}>
                     <motion.div
-                      className="flex flex-col items-center gap-2 w-[62px] sm:w-24 md:w-28"
-                      whileHover={{ scale: 1.1, y: -4 }}
+                      className="flex flex-col items-center gap-2.5 group w-[92px]"
                       whileTap={{ scale: 0.95 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
-                      <div className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-md transition-all ${isActive ? 'ring-2 ring-[#2A9C64] ring-offset-2' : ''}`}>
+                      <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 transition-all duration-300 bg-white dark:bg-[#1a1a1a] ${isActive ? 'border-[#2A9C64] shadow-[0_0_12px_rgba(42,156,100,0.25)]' : 'border-gray-100 dark:border-gray-800'}`}>
+                        {/* Shining Glint Effect */}
+                        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                          <motion.div
+                            animate={{
+                              x: ['-200%', '200%'],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 3 + index * 0.5,
+                              ease: "easeInOut"
+                            }}
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] w-[150%] h-full"
+                          />
+                        </div>
+
                         <OptimizedImage
                           src={category.image}
                           alt={category.name}
-                          className="w-full h-full bg-white rounded-full"
-                          objectFit="cover"
-                          sizes="(max-width: 640px) 62px, (max-width: 768px) 96px, 112px"
-                          placeholder="blur"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
                       </div>
-                      <span className={`text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center pb-1 ${isActive ? 'text-[#2A9C64]' : ''}`}>
-                        {category.name.length > 7 ? `${category.name.slice(0, 7)}...` : category.name}
+                      <span className={`text-xs sm:text-sm md:text-base font-semibold text-center leading-tight line-clamp-1 w-full px-0.5 ${isActive ? 'text-[#2A9C64] font-bold' : 'text-gray-800 dark:text-gray-200'}`}>
+                        {category.name}
                       </span>
                     </motion.div>
                 </div>
               )
             })}
+            {/* All Button shown after 8 food categories */}
+            <div className="flex-shrink-0 cursor-pointer" onClick={() => setShowAllCategoriesModal(true)}>
+              <motion.div
+                className="flex flex-col items-center gap-2.5 group w-[92px]"
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 transition-all duration-300 flex items-center justify-center bg-white dark:bg-[#1a1a1a] ${!activeCategory ? 'border-[#2A9C64] shadow-[0_0_12px_rgba(42,156,100,0.25)]' : 'border-gray-100 dark:border-gray-800'}`}>
+                   <div className={`w-full h-full flex items-center justify-center ${!activeCategory ? 'bg-[#2A9C64]/10 text-[#2A9C64]' : 'bg-gray-50 text-gray-400'}`}>
+                      <UtensilsCrossed className="w-8 h-8 sm:w-10 sm:h-10" />
+                   </div>
+                </div>
+                <span className={`text-xs sm:text-sm md:text-base font-semibold text-center leading-tight line-clamp-1 w-full px-0.5 ${!activeCategory ? 'text-[#2A9C64] font-bold' : 'text-gray-800 dark:text-gray-200'}`}>
+                  All
+                </span>
+              </motion.div>
+            </div>
             </div>
             <button 
               onClick={() => scrollCategories("right")}
@@ -1225,7 +1238,7 @@ export default function Under250() {
           </div>
         </section>
 
-        <section className="py-2 sm:py-3 md:py-4">
+        <section className="py-2 sm:py-3 md:py-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12">
           <div className="flex items-center gap-2 md:gap-3">
             <Button
               variant="outline"
@@ -1272,7 +1285,7 @@ export default function Under250() {
             return (
               <section key={restaurant.id} className="pt-4 sm:pt-6 md:pt-8 lg:pt-10">
                 {/* Restaurant Header */}
-                <div className="flex items-start justify-between mb-3 md:mb-4 lg:mb-6">
+                <div className="flex items-start justify-between mb-3 md:mb-4 lg:mb-6 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12">
                   <div className="flex-1">
                     <h3 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">
                       {restaurant.name}
@@ -1303,7 +1316,7 @@ export default function Under250() {
                 {restaurant.menuItems && restaurant.menuItems.length > 0 && (
                   <div className="space-y-2 md:space-y-3 lg:space-y-4">
                     <div
-                      className="flex md:grid gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto md:overflow-x-visible overflow-y-visible scrollbar-hide scroll-smooth pb-2 md:pb-0 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      className="flex md:grid gap-3 sm:gap-4 md:gap-5 lg:gap-6 overflow-x-auto md:overflow-x-visible overflow-y-visible scrollbar-hide scroll-smooth pb-2 md:pb-0 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                       style={{
                         scrollbarWidth: "none",
                         msOverflowStyle: "none",
@@ -1419,7 +1432,7 @@ export default function Under250() {
                     </div>
 
                     {/* View Full Menu Button */}
-                    <Link className="flex justify-center mt-2 md:mt-3 lg:mt-4" to={`/user/restaurants/${restaurantSlug}?under250=true`}>
+                    <Link className="flex justify-center mt-2 md:mt-3 lg:mt-4 px-2 sm:px-4 md:px-6 lg:px-8 xl:px-12" to={`/user/restaurants/${restaurantSlug}?under250=true`}>
                       <Button
                         variant="outline"
                         className="w-min align-center text-center rounded-lg md:rounded-xl mx-auto bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-white text-gray-700 border-gray-200 dark:border-gray-800 h-9 md:h-10 lg:h-11 px-4 md:px-6 lg:px-8 text-sm md:text-base lg:text-lg"

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Star, Clock, MapPin, Tag, ChevronRight, Leaf, Bookmark, BadgePercent, Timer } from "lucide-react";
+import { Search, Star, Clock, MapPin, Tag, ChevronRight, Leaf, Bookmark, BadgePercent, Timer, UtensilsCrossed } from "lucide-react";
 import OptimizedImage from "@food/components/OptimizedImage";
 import { Card, CardContent } from "@food/components/ui/card";
 import { Button } from "@food/components/ui/button";
@@ -227,7 +227,8 @@ export default function DesktopHomeView({
   setShowToast,
   isOutOfService = false,
   BACKEND_ORIGIN = "",
-  HeroBannerSection = null
+  HeroBannerSection = null,
+  setShowAllCategoriesModal = null
 }) {
   const navigate = useNavigate();
 
@@ -335,34 +336,57 @@ export default function DesktopHomeView({
                 </div>
               ))
             ) : (
-              displayCategories.map((category, index) => (
+              <>
+                {displayCategories.slice(0, 8).map((category, index) => (
+                  <motion.div
+                    key={category.id || index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                    whileHover={{ y: -5 }}
+                    className="flex-shrink-0"
+                  >
+                    <Link
+                      to={`/user/category/${category.slug}`}
+                      className="flex flex-col items-center gap-4 group"
+                    >
+                      <div className="relative w-32 h-32 rounded-full overflow-hidden bg-white dark:bg-[#1a1a1a] shadow-[0_8px_20px_rgb(0,0,0,0.06)] group-hover:shadow-[0_15px_30px_rgb(0,0,0,0.12)] border border-gray-100 dark:border-gray-800 transition-all duration-300 group-hover:border-green-200 dark:group-hover:border-green-800/50">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+                        <OptimizedImage
+                          src={category.image || category.imageUrl}
+                          alt={category.name}
+                          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+                      <span className="text-base font-bold text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                        {category.name || category.label}
+                      </span>
+                    </Link>
+                  </motion.div>
+                ))}
+                {/* Show All Button after 8 categories */}
                 <motion.div
-                  key={category.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  transition={{ duration: 0.4, delay: 8 * 0.05 }}
                   whileHover={{ y: -5 }}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 cursor-pointer"
+                  onClick={() => setShowAllCategoriesModal ? setShowAllCategoriesModal(true) : navigate("/food/user/categories")}
                 >
-                  <Link
-                    to={`/user/category/${category.slug}`}
-                    className="flex flex-col items-center gap-4 group"
-                  >
-                    <div className="relative w-32 h-32 rounded-full overflow-hidden bg-white dark:bg-[#1a1a1a] shadow-[0_8px_20px_rgb(0,0,0,0.06)] group-hover:shadow-[0_15px_30px_rgb(0,0,0,0.12)] border border-gray-100 dark:border-gray-800 transition-all duration-300 group-hover:border-green-200 dark:group-hover:border-green-800/50">
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                      <OptimizedImage
-                        src={category.image || category.imageUrl}
-                        alt={category.name}
-                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                      />
+                  <div className="flex flex-col items-center gap-4 group">
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden bg-white dark:bg-[#1a1a1a] shadow-[0_8px_20px_rgb(0,0,0,0.06)] group-hover:shadow-[0_15px_30px_rgb(0,0,0,0.12)] border border-gray-100 dark:border-gray-800 transition-all duration-300 group-hover:border-[#2A9C64] flex items-center justify-center">
+                      <div className="w-full h-full flex items-center justify-center bg-[#2A9C64]/10 text-[#2A9C64]">
+                        <UtensilsCrossed className="w-12 h-12" />
+                      </div>
                     </div>
-                    <span className="text-base font-bold text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                      {category.name || category.label}
+                    <span className="text-base font-bold text-gray-700 dark:text-gray-300 group-hover:text-[#2A9C64] transition-colors">
+                      All
                     </span>
-                  </Link>
+                  </div>
                 </motion.div>
-              ))
+              </>
             )}
             </div>
 

@@ -3045,7 +3045,7 @@ export default function Home() {
           {showCategorySkeleton ? (
             <CategoryChipRowSkeleton className="py-1" />
           ) : (
-            displayCategories.slice(0, 12).map((category, index) => (
+            displayCategories.slice(0, 8).map((category, index) => (
               <Link
                 key={category.id || index}
                 to={`/food/user/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, "-")}`}
@@ -3067,15 +3067,15 @@ export default function Home() {
             ))
           )}
 
-          {displayCategories.length > 12 && !showCategorySkeleton && (
+          {!showCategorySkeleton && (
             <div
               className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group"
-              onClick={() => navigate("/food/user/categories")}
+              onClick={() => setShowAllCategoriesModal(true)}
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-orange-50 dark:bg-orange-950 flex items-center justify-center border border-orange-100 group-hover:border-[#2A9C64] transition-all">
-                <Plus className="w-6 h-6 text-[#2A9C64]" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#2A9C64]/10 dark:bg-[#2A9C64]/20 flex items-center justify-center border border-gray-100 dark:border-gray-800 group-hover:border-[#2A9C64] transition-all">
+                <UtensilsCrossed className="w-6 h-6 text-[#2A9C64]" />
               </div>
-              <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200">See All</span>
+              <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 group-hover:text-[#2A9C64]">All</span>
             </div>
           )}
         </div>
@@ -3245,6 +3245,7 @@ export default function Home() {
           isOutOfService={isOutOfService}
           BACKEND_ORIGIN={BACKEND_ORIGIN}
           HeroBannerSection={HeroBannerSection}
+          setShowAllCategoriesModal={setShowAllCategoriesModal}
         />
 
         <div className="md:hidden relative bg-white dark:bg-[#0a0a0a]">
@@ -3450,7 +3451,7 @@ export default function Home() {
                 className="flex overflow-x-auto gap-3 px-4 pb-1 scrollbar-hide mask-edge-fade"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
-                {displayCategories.map((category, index) => (
+                {displayCategories.slice(0, 8).map((category, index) => (
                   <Link
                     key={category.id || index}
                     to={`/food/user/category/${category.slug}`}
@@ -3484,6 +3485,20 @@ export default function Home() {
                     </span>
                   </Link>
                 ))}
+                {/* Show All Button after 8 categories */}
+                <div
+                  className="flex-shrink-0 flex flex-col items-center gap-2.5 group w-[92px] cursor-pointer"
+                  onClick={() => setShowAllCategoriesModal(true)}
+                >
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] group-active:scale-95 transition-all duration-300 flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center bg-[#2A9C64]/10 text-[#2A9C64]">
+                      <UtensilsCrossed className="w-8 h-8 sm:w-10 sm:h-10" />
+                    </div>
+                  </div>
+                  <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center leading-tight line-clamp-1 w-full px-0.5 group-hover:text-[#2A9C64]">
+                    All
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -3565,7 +3580,7 @@ export default function Home() {
                 className="flex overflow-x-auto gap-3 px-4 pb-1 scrollbar-hide mask-edge-fade"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
-                {displayCategories.map((category, index) => (
+                {displayCategories.slice(0, 8).map((category, index) => (
                   <Link
                     key={`sticky-${category.id || index}`}
                     to={`/food/user/category/${category.slug}`}
@@ -3599,6 +3614,20 @@ export default function Home() {
                     </span>
                   </Link>
                 ))}
+                {/* Show All Button after 8 categories */}
+                <div
+                  className="flex-shrink-0 flex flex-col items-center gap-2.5 group w-[92px] cursor-pointer"
+                  onClick={() => setShowAllCategoriesModal(true)}
+                >
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-md border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] group-active:scale-95 transition-all duration-300 flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center bg-[#2A9C64]/10 text-[#2A9C64]">
+                      <UtensilsCrossed className="w-8 h-8 sm:w-10 sm:h-10" />
+                    </div>
+                  </div>
+                  <span className="text-xs sm:text-sm md:text-base font-semibold text-gray-800 dark:text-gray-200 text-center leading-tight line-clamp-1 w-full px-0.5 group-hover:text-[#2A9C64]">
+                    All
+                  </span>
+                </div>
               </div>
             </div>
 
