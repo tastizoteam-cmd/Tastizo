@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom"
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom"
 import {
   ArrowLeft,
   Package,
@@ -125,6 +125,7 @@ const commonIssues = [
 export default function OrderHelp() {
   const { orderId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { getOrderById } = useOrders()
   const order = getOrderById(orderId)
 
@@ -179,11 +180,10 @@ export default function OrderHelp() {
         navigate(`/user/orders/${orderId}/invoice`)
         break
       case "support":
-        // Scroll to support section or open contact modal
         document.getElementById("contact-support")?.scrollIntoView({ behavior: "smooth" })
         break
       case "refund":
-        alert("Refund request would be processed here. Contact support for assistance.")
+        navigate("/user/profile/support", { state: { from: location.pathname, backTo: location.pathname } })
         break
       default:
         break
@@ -217,69 +217,72 @@ export default function OrderHelp() {
   }
 
   return (
-    <AnimatedPage className="min-h-screen bg-gradient-to-b from-yellow-50/30 via-white to-orange-50/20 dark:from-[#0a0a0a] dark:via-[#0a0a0a] dark:to-[#0a0a0a] p-4 md:p-6 lg:p-8">
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto space-y-4 md:space-y-5 lg:space-y-6">
+    <AnimatedPage className="min-h-screen bg-[#f8fafc] dark:bg-[#0a0a0a] pb-20 p-4 sm:p-6 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <ScrollReveal>
-          <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-            <Link to="/user/help">
-              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 md:h-10 md:w-10">
-                <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">Order Help</h1>
-              <p className="text-sm md:text-base text-muted-foreground">Order {order.id}</p>
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200/80 dark:border-gray-800 pb-5">
+            <div className="flex items-center gap-3">
+              <Link to="/user/help">
+                <Button variant="outline" size="icon" className="rounded-xl h-10 w-10 border-slate-200 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] shadow-2xs hover:bg-slate-50 dark:hover:bg-gray-800">
+                  <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Order Help</h1>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Assistance for Order #{order.id}</p>
+              </div>
             </div>
+            <Badge className={`${getStatusColor(order.status)} text-white px-3 py-1 text-xs sm:text-sm font-semibold rounded-full shadow-2xs`}>
+              {getStatusLabel(order.status)}
+            </Badge>
           </div>
         </ScrollReveal>
 
         {/* Order Summary */}
         <ScrollReveal delay={0.1}>
-          <Card className="shadow-lg">
-            <CardHeader className="p-4 md:p-5 lg:p-6">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl lg:text-2xl">
-                  <Package className="h-4 w-4 md:h-5 md:w-5 text-[#2A9C64]" />
-                  Order Summary
-                </CardTitle>
-                <Badge className={`${getStatusColor(order.status)} text-white text-xs md:text-sm`}>
-                  {getStatusLabel(order.status)}
-                </Badge>
-              </div>
+          <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm overflow-hidden">
+            <CardHeader className="p-5 bg-slate-50/60 dark:bg-gray-900/40 border-b border-slate-100 dark:border-gray-800/60">
+              <CardTitle className="flex items-center gap-2.5 text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                <div className="p-2 bg-[#2A9C64]/10 text-[#2A9C64] rounded-lg">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                </div>
+                <span>Order Summary</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 md:space-y-5 p-4 md:p-5 lg:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Order ID</p>
-                  <p className="font-semibold">{order.id}</p>
+            <CardContent className="p-5 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-900/30 border border-slate-100 dark:border-gray-800/60">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Order ID</p>
+                  <p className="font-bold text-slate-900 dark:text-white text-sm truncate">#{order.id}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Placed On</p>
-                  <p className="font-semibold">{formatDate(order.createdAt)}</p>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-900/30 border border-slate-100 dark:border-gray-800/60">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Placed On</p>
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">{formatDate(order.createdAt)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
-                  <p className="font-semibold text-[#2A9C64] text-xl">${order.total.toFixed(2)}</p>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-900/30 border border-slate-100 dark:border-gray-800/60">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Total Amount</p>
+                  <p className="font-extrabold text-[#2A9C64] text-base">${order.total.toFixed(2)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Items</p>
-                  <p className="font-semibold">{order.items?.length || 0} items</p>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-900/30 border border-slate-100 dark:border-gray-800/60">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Items Count</p>
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">{order.items?.length || 0} items</p>
                 </div>
               </div>
+
               {order.address && (
-                <div className="pt-4 border-t">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Delivery Address</p>
-                      <p className="text-sm">
-                        {order.address.street}
-                        {order.address.additionalDetails && `, ${order.address.additionalDetails}`}
-                        <br />
-                        {order.address.city}, {order.address.state} {order.address.zipCode}
-                      </p>
-                    </div>
+                <div className="pt-3 border-t border-slate-100 dark:border-gray-800/60 flex items-start gap-3">
+                  <div className="p-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-600 dark:text-slate-400 mt-0.5">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">Delivery Address</p>
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
+                      {order.address.street}
+                      {order.address.additionalDetails && `, ${order.address.additionalDetails}`}
+                      <br />
+                      {order.address.city}, {order.address.state} {order.address.zipCode}
+                    </p>
                   </div>
                 </div>
               )}
@@ -287,54 +290,107 @@ export default function OrderHelp() {
           </Card>
         </ScrollReveal>
 
+        {/* Quick Actions */}
+        <ScrollReveal delay={0.15}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <Link to={`/user/orders/${orderId}`} className="block">
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-2xs hover:shadow-sm hover:border-[#2A9C64]/40 transition-all group h-full">
+                <CardContent className="p-4 flex items-center gap-3.5">
+                  <div className="p-3 bg-[#2A9C64]/10 text-[#2A9C64] rounded-xl group-hover:bg-[#2A9C64] group-hover:text-white transition-colors">
+                    <Truck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Track Order</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Live delivery map</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to={`/user/orders/${orderId}/invoice`} className="block">
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-2xs hover:shadow-sm hover:border-[#2A9C64]/40 transition-all group h-full">
+                <CardContent className="p-4 flex items-center gap-3.5">
+                  <div className="p-3 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">View Invoice</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Download receipt</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <div
+              onClick={() => document.getElementById("contact-support")?.scrollIntoView({ behavior: "smooth" })}
+              className="block cursor-pointer"
+            >
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-2xs hover:shadow-sm hover:border-[#2A9C64]/40 transition-all group h-full">
+                <CardContent className="p-4 flex items-center gap-3.5">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <MessageCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Contact Support</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Get assistance now</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </ScrollReveal>
+
         {/* Common Issues */}
         <ScrollReveal delay={0.2}>
-          <div className="space-y-4 md:space-y-5 lg:space-y-6">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">What can we help you with?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
-              {commonIssues.map((issue, index) => {
+          <div className="space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">What can we help you with?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {commonIssues.map((issue) => {
                 const Icon = issue.icon
                 return (
                   <Card
                     key={issue.id}
+                    className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm overflow-hidden flex flex-col justify-between"
                   >
-                    <CardHeader className="p-4 md:p-5 lg:p-6">
-                      <div className="flex items-start gap-3 md:gap-4">
-                        <div className="p-2 md:p-3 bg-yellow-100 rounded-lg">
-                          <Icon className="h-4 w-4 md:h-5 md:w-5 text-[#2A9C64]" />
+                    <div>
+                      <CardHeader className="p-5 pb-3">
+                        <div className="flex items-start gap-3.5">
+                          <div className="p-3 bg-slate-100 dark:bg-gray-800 text-[#2A9C64] rounded-xl flex-shrink-0">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{issue.title}</CardTitle>
+                            <CardDescription className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{issue.description}</CardDescription>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-base md:text-lg lg:text-xl">{issue.title}</CardTitle>
-                          <CardDescription className="mt-1 text-sm md:text-base">{issue.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-5 pt-2 space-y-3">
+                        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-900/30 border border-slate-100 dark:border-gray-800/60 space-y-2">
+                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">What to do:</p>
+                          <ul className="space-y-1.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                            {issue.solutions.map((solution, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <CheckCircle className="h-4 w-4 text-[#2A9C64] mt-0.5 flex-shrink-0" />
+                                <span>{solution}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 md:space-y-4 p-4 md:p-5 lg:p-6">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold">What to do:</p>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
-                          {issue.solutions.map((solution, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <span>{solution}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div className="flex gap-2 pt-2 border-t">
-                        {issue.actions.map((action, idx) => (
-                          <Button
-                            key={idx}
-                            variant={idx === 0 ? "default" : "outline"}
-                            size="sm"
-                            className={idx === 0 ? "bg-[#2A9C64] hover:opacity-90" : ""}
-                            onClick={() => handleAction(action.path)}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </CardContent>
+                      </CardContent>
+                    </div>
+                    <div className="p-5 pt-3 border-t border-slate-100 dark:border-gray-800/60 bg-slate-50/40 dark:bg-gray-900/20 flex flex-wrap gap-2">
+                      {issue.actions.map((action, idx) => (
+                        <Button
+                          key={idx}
+                          variant={idx === 0 ? "default" : "outline"}
+                          size="sm"
+                          className={idx === 0 ? "bg-[#2A9C64] hover:opacity-90 text-white rounded-xl font-semibold text-xs shadow-2xs" : "border-slate-200 dark:border-gray-800 rounded-xl font-semibold text-xs"}
+                          onClick={() => handleAction(action.path)}
+                        >
+                          {action.label}
+                        </Button>
+                      ))}
+                    </div>
                   </Card>
                 )
               })}
@@ -342,130 +398,92 @@ export default function OrderHelp() {
           </div>
         </ScrollReveal>
 
-        {/* Quick Actions */}
-        <ScrollReveal delay={0.3}>
-          <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 shadow-lg">
-            <CardHeader className="p-4 md:p-5 lg:p-6">
-              <CardTitle className="flex items-center gap-2 text-lg md:text-xl lg:text-2xl">
-                <HelpCircle className="h-4 w-4 md:h-5 md:w-5 text-[#2A9C64]" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-5 lg:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
-                <Link to={`/user/orders/${orderId}`}>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 h-auto py-3"
-                  >
-                    <Truck className="h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-semibold">Track Order</div>
-                      <div className="text-xs text-muted-foreground">View real-time status</div>
-                    </div>
-                  </Button>
-                </Link>
-                <Link to={`/user/orders/${orderId}/invoice`}>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 h-auto py-3"
-                  >
-                    <FileText className="h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-semibold">View Invoice</div>
-                      <div className="text-xs text-muted-foreground">Download receipt</div>
-                    </div>
-                  </Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 h-auto py-3"
-                  onClick={() => document.getElementById("contact-support")?.scrollIntoView({ behavior: "smooth" })}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <div className="text-left">
-                    <div className="font-semibold">Contact Support</div>
-                    <div className="text-xs text-muted-foreground">Get help now</div>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </ScrollReveal>
-
         {/* Contact Support Section */}
-        <ScrollReveal delay={0.4}>
-          <Card id="contact-support" className="shadow-lg">
-            <CardHeader className="p-4 md:p-5 lg:p-6">
-              <CardTitle className="text-xl md:text-2xl lg:text-3xl flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-[#2A9C64]" />
-                Contact Support for This Order
+        <ScrollReveal delay={0.3}>
+          <Card id="contact-support" className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm overflow-hidden scroll-mt-24">
+            <div className="bg-gradient-to-r from-[#2A9C64]/10 via-[#2A9C64]/5 to-transparent p-5 sm:p-6 border-b border-slate-200/60 dark:border-gray-800">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#2A9C64] text-white">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <span>Contact Support for This Order</span>
               </CardTitle>
-              <CardDescription className="text-sm md:text-base">
-                Our support team is ready to help you with order {order.id}
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Our support team is on standby to help resolve any queries for order #{order.id}.
               </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 md:space-y-5 lg:space-y-6 p-4 md:p-5 lg:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
-                <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Phone className="h-5 w-5 text-[#2A9C64]" />
+            </div>
+
+            <CardContent className="p-5 sm:p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3.5 p-4 bg-slate-50/50 dark:bg-gray-900/30 rounded-xl border border-slate-200/80 dark:border-gray-800">
+                  <div className="p-2.5 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-lg">
+                    <Mail className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Phone Support</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Mention order {order.id}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base mb-1">Email Support</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                      Automated subject header for order #{order.id}
                     </p>
                     <a
-                      href="tel:+1-800-123-4567"
-                      className="text-sm text-primary hover:underline font-medium"
+                      href={`mailto:support@tastizo.com?subject=Help with Order ${order.id}`}
+                      className="text-sm font-semibold text-[#2A9C64] hover:underline block truncate"
                     >
-                      +1 (800) 123-4567
+                      support@tastizo.com
                     </a>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Mail className="h-5 w-5 text-[#2A9C64]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Email Support</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Include order {order.id} in subject
-                    </p>
                     <a
                       href={`mailto:tastizoteam@gmail.com?subject=Help with Order ${order.id}`}
-                      className="text-sm text-primary hover:underline font-medium"
+                      className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline block mt-0.5 truncate transition-colors"
                     >
                       tastizoteam@gmail.com
                     </a>
                   </div>
                 </div>
+
+                <div className="flex items-start gap-3.5 p-4 bg-slate-50/50 dark:bg-gray-900/30 rounded-xl border border-slate-200/80 dark:border-gray-800">
+                  <div className="p-2.5 bg-[#2A9C64]/10 dark:bg-[#2A9C64]/20 text-[#2A9C64] rounded-lg">
+                    <MessageCircle className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base mb-1">In-App Support Ticket</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
+                      Raise & track tickets inside your account
+                    </p>
+                    <Link to="/user/profile/support" state={{ from: location.pathname, backTo: location.pathname }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full font-semibold border-[#2A9C64] text-[#2A9C64] hover:bg-[#2A9C64] hover:text-white rounded-lg transition-all"
+                      >
+                        Raise Ticket Now
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
-              <div className="pt-4 border-t">
-                <Button
-                  className="w-full bg-[#2A9C64] hover:opacity-90"
-                  onClick={() => alert("Live chat would open here with order context")}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Start Live Chat
-                </Button>
+
+              <div className="pt-4 border-t border-slate-200/60 dark:border-gray-800">
+                <Link to="/user/profile/support" state={{ from: location.pathname, backTo: location.pathname }}>
+                  <Button className="w-full bg-[#2A9C64] hover:opacity-90 text-white rounded-xl py-6 font-bold shadow-sm">
+                    <MessageCircle className="h-5 w-5 mr-2" />
+                    Open Support Center & Tickets
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
         </ScrollReveal>
 
-        {/* Back to Orders */}
-        <ScrollReveal delay={0.5}>
-          <div className="flex gap-4">
+        {/* Back Navigation Footer */}
+        <ScrollReveal delay={0.4}>
+          <div className="flex gap-3 pt-2">
             <Link to="/user/orders" className="flex-1">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full rounded-xl py-5 border-slate-200 dark:border-gray-800 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-800">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to All Orders
               </Button>
             </Link>
             <Link to="/user/help" className="flex-1">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full rounded-xl py-5 border-slate-200 dark:border-gray-800 font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-800">
                 <HelpCircle className="h-4 w-4 mr-2" />
                 Help Center
               </Button>
@@ -476,4 +494,3 @@ export default function OrderHelp() {
     </AnimatedPage>
   )
 }
-

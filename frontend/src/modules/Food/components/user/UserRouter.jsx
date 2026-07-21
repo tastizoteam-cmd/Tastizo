@@ -297,13 +297,19 @@ export default function UserRouter() {
             }
           />
 
-          {/* Public Legal Policies (stay public) */}
+          {/* Public Legal Policies & Support (stay public for Apple/Google App Store submission) */}
           <Route path="profile/terms" element={<Terms />} />
+          <Route path="terms" element={<Terms />} />
           <Route path="profile/privacy" element={<Privacy />} />
+          <Route path="privacy" element={<Privacy />} />
           <Route path="data-deletion" element={<DataDeletion />} />
+          <Route path="support" element={<Help />} />
           <Route path="profile/refund" element={<Refund />} />
+          <Route path="refund" element={<Refund />} />
           <Route path="profile/shipping" element={<Shipping />} />
+          <Route path="shipping" element={<Shipping />} />
           <Route path="profile/cancellation" element={<Cancellation />} />
+          <Route path="cancellation" element={<Cancellation />} />
 
           {/* Auth - User login is centralized at /user/auth/login */}
           <Route path="auth/login" element={<Navigate to="/user/auth/login" replace />} />

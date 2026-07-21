@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import {
   Search,
   HelpCircle,
@@ -185,6 +185,7 @@ const helpCategories = [
 ]
 
 export default function Help() {
+  const location = useLocation()
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [expandedQuestion, setExpandedQuestion] = useState(null)
@@ -207,237 +208,383 @@ export default function Help() {
   }
 
   return (
-    <AnimatedPage className="min-h-screen bg-gradient-to-b from-yellow-50/30 via-white to-orange-50/20 dark:from-[#0a0a0a] dark:via-[#0a0a0a] dark:to-[#0a0a0a] p-4 md:p-6 lg:p-8">
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-6xl mx-auto space-y-4 md:space-y-5 lg:space-y-6">
-        <ScrollReveal>
-          <div className="text-center space-y-3 md:space-y-4 mb-6 md:mb-8">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">Help Center</h1>
-            <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
-              Find answers to common questions or contact our support team
+    <AnimatedPage className="min-h-screen bg-[#f8fafc] dark:bg-[#0a0a0a] pb-20">
+      {/* Premium Hero Section */}
+      <div className="bg-gradient-to-b from-white via-slate-50 to-[#f8fafc] dark:from-[#121212] dark:via-[#0e0e0e] dark:to-[#0a0a0a] border-b border-slate-200/60 dark:border-gray-800/80 pt-6 pb-10 px-4 sm:px-6 md:px-8">
+        <div className="max-w-4xl mx-auto text-center space-y-3">
+          <ScrollReveal>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2A9C64]/10 text-[#2A9C64] text-xs font-semibold mb-1">
+              <Shield className="h-3.5 w-3.5" />
+              <span>24/7 Support Center</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Help & Support Center
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto pt-1">
+              Find instant answers to common questions or connect with our support team directly.
             </p>
-          </div>
-        </ScrollReveal>
+          </ScrollReveal>
 
-        {/* Search Bar */}
-        <ScrollReveal delay={0.1}>
-          <Card className="shadow-lg">
-            <CardContent className="p-4 md:p-5 lg:p-6">
+          {/* Search Bar */}
+          <ScrollReveal delay={0.1}>
+            <div className="pt-3 max-w-2xl mx-auto">
               <div className="relative">
-                <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
                 <Input
                   type="text"
-                  placeholder="Search for help topics, questions, or keywords..."
+                  placeholder="Search questions, topics, or keywords..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 md:pl-12 h-12 md:h-14 text-base md:text-lg"
+                  className="pl-12 pr-4 h-13 sm:h-14 bg-white dark:bg-[#1a1a1a] border-slate-200 dark:border-gray-800 rounded-2xl shadow-sm text-base sm:text-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#2A9C64] focus-visible:border-transparent transition-all"
                 />
               </div>
-            </CardContent>
-          </Card>
-        </ScrollReveal>
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
 
-        {/* Quick Actions */}
-        <ScrollReveal delay={0.2}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
-            <Link to="/user/orders">
-              <CardContent className="p-4 md:p-5 lg:p-6">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div className="p-2 md:p-3 bg-yellow-100 rounded-lg">
-                    <Package className="h-5 w-5 md:h-6 md:w-6 text-[#2A9C64]" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 mt-8 space-y-8">
+        {/* Quick Actions Grid */}
+        <ScrollReveal delay={0.15}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link to="/user/orders" state={{ from: location.pathname, backTo: location.pathname }} className="block">
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-[#2A9C64]/50 transition-all duration-200 group h-full">
+                <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-[#2A9C64]/10 dark:bg-[#2A9C64]/20 text-[#2A9C64] rounded-xl group-hover:bg-[#2A9C64] group-hover:text-white transition-colors duration-200">
+                      <Package className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Track Your Order</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Check real-time delivery status</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm md:text-base font-semibold">Track Your Order</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground">View order status</p>
-                  </div>
-                </div>
-              </CardContent>
+                  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#2A9C64] group-hover:translate-x-1 transition-all" />
+                </CardContent>
+              </Card>
             </Link>
-            <Link to="/user/profile">
-              <CardContent className="p-4 md:p-5 lg:p-6">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div className="p-2 md:p-3 bg-orange-100 rounded-lg">
-                    <User className="h-5 w-5 md:h-6 md:w-6 text-[#2A9C64]" />
+
+            <Link to="/user/profile" state={{ from: location.pathname, backTo: location.pathname }} className="block">
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-[#2A9C64]/50 transition-all duration-200 group h-full">
+                <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors duration-200">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Manage Account</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Profile, settings & security</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm md:text-base font-semibold">Manage Account</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground">Update profile & settings</p>
-                  </div>
-                </div>
-              </CardContent>
+                  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+                </CardContent>
+              </Card>
             </Link>
-            <CardContent className="p-4 md:p-5 lg:p-6">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 bg-orange-100 rounded-lg">
-                  <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-[#2A9C64]" />
-                </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold">Contact Support</h3>
-                  <p className="text-xs md:text-sm text-muted-foreground">Get help from our team</p>
-                </div>
-              </div>
-            </CardContent>
+
+            <div
+              onClick={() => document.getElementById("contact-support")?.scrollIntoView({ behavior: "smooth" })}
+              className="block cursor-pointer"
+            >
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-[#2A9C64]/50 transition-all duration-200 group h-full">
+                <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-200">
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Contact Support</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Reach our dedicated team</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </ScrollReveal>
 
-        {/* Help Categories */}
-        <ScrollReveal delay={0.3}>
-          <div className="space-y-4 md:space-y-5 lg:space-y-6">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">Browse by Category</h2>
+        {/* Browse by Category */}
+        <ScrollReveal delay={0.25}>
+          <div className="space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Browse by Category</h2>
             {filteredCategories.length === 0 ? (
-              <Card>
+              <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200 dark:border-gray-800 shadow-sm">
                 <CardContent className="py-12 text-center">
-                  <HelpCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-semibold mb-2">No results found</p>
-                  <p className="text-muted-foreground mb-4">
-                    Try searching with different keywords
+                  <HelpCircle className="h-14 w-14 mx-auto text-slate-400 mb-3" />
+                  <p className="text-lg font-semibold text-slate-900 dark:text-white mb-1">No results found</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                    Try searching with different keywords or check all categories below.
                   </p>
                   <Button
                     variant="outline"
                     onClick={() => setSearchQuery("")}
+                    className="border-slate-300 dark:border-gray-700"
                   >
                     Clear Search
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              filteredCategories.map((category, categoryIndex) => {
-                const Icon = category.icon
-                const isExpanded = expandedCategory === category.id
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredCategories.map((category) => {
+                  const Icon = category.icon
+                  const isExpanded = expandedCategory === category.id
 
-                return (
-                  <Card key={category.id} className="shadow-lg">
-                    <CardHeader
-                      onClick={() => toggleCategory(category.id)}
-                      className="p-4 md:p-5 lg:p-6"
+                  return (
+                    <Card
+                      key={category.id}
+                      className={`bg-white dark:bg-[#1a1a1a] rounded-2xl border transition-all duration-200 overflow-hidden ${
+                        isExpanded
+                          ? "border-[#2A9C64] shadow-md md:col-span-2"
+                          : "border-slate-200/80 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-gray-700"
+                      }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 md:gap-4">
-                          <div className={`p-2 md:p-3 ${category.bgColor} rounded-lg`}>
-                            <Icon className={`h-5 w-5 md:h-6 md:w-6 ${category.color}`} />
+                      <CardHeader
+                        onClick={() => toggleCategory(category.id)}
+                        className="p-4 sm:p-5 cursor-pointer hover:bg-slate-50/60 dark:hover:bg-gray-900/30 transition-colors select-none"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3.5">
+                            <div className={`p-3 rounded-xl ${category.bgColor} dark:bg-slate-800/80`}>
+                              <Icon className={`h-5 w-5 ${category.color}`} />
+                            </div>
+                            <div>
+                              <CardTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                                {category.title}
+                              </CardTitle>
+                              <CardDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                                {category.description}
+                              </CardDescription>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle className="text-lg md:text-xl lg:text-2xl">{category.title}</CardTitle>
-                            <CardDescription className="text-sm md:text-base">{category.description}</CardDescription>
+                          <div className="p-1.5 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-slate-400 flex-shrink-0">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
                           </div>
                         </div>
-                        {isExpanded ? (
-                          <ChevronDown className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground flex-shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground flex-shrink-0" />
-                        )}
-                      </div>
-                    </CardHeader>
-                    {isExpanded && (
-                      <CardContent className="space-y-3 md:space-y-4 pt-0 p-4 md:p-5 lg:p-6">
-                        {category.topics.map((topic, topicIndex) => {
-                          const questionIndex = `${category.id}-${topicIndex}`
-                          const isQuestionExpanded = expandedQuestion === questionIndex
+                      </CardHeader>
 
-                          return (
-                            <div
-                              key={topicIndex}
-                              className="border rounded-lg overflow-hidden"
-                            >
-                              <button
-                                onClick={() => toggleQuestion(questionIndex)}
-                              >
-                                <span className="font-semibold pr-4">{topic.question}</span>
-                                {isQuestionExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                )}
-                              </button>
-                              {isQuestionExpanded && (
-                                <div className="p-4 text-muted-foreground border-t bg-muted/30">
-                                  <p>{topic.answer}</p>
+                      {isExpanded && (
+                        <CardContent className="p-4 sm:p-5 pt-0 space-y-2.5 border-t border-slate-100 dark:border-gray-800/60 bg-slate-50/50 dark:bg-gray-900/20">
+                          <div className="pt-3 space-y-2.5">
+                            {category.topics.map((topic, topicIndex) => {
+                              const questionIndex = `${category.id}-${topicIndex}`
+                              const isQuestionExpanded = expandedQuestion === questionIndex
+
+                              return (
+                                <div
+                                  key={topicIndex}
+                                  className="border border-slate-200/80 dark:border-gray-800 rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a] shadow-2xs transition-all"
+                                >
+                                  <button
+                                    onClick={() => toggleQuestion(questionIndex)}
+                                    className="w-full text-left p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-gray-900/40 transition-colors"
+                                  >
+                                    <span className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white">
+                                      {topic.question}
+                                    </span>
+                                    {isQuestionExpanded ? (
+                                      <ChevronDown className="h-4 w-4 text-[#2A9C64] flex-shrink-0" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                    )}
+                                  </button>
+                                  {isQuestionExpanded && (
+                                    <div className="p-4 pt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-gray-800/60 bg-slate-50/60 dark:bg-gray-900/40 leading-relaxed">
+                                      {topic.answer}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </CardContent>
-                    )}
-                  </Card>
-                )
-              })
+                              )
+                            })}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  )
+                })}
+              </div>
             )}
           </div>
         </ScrollReveal>
 
         {/* Contact Support Section */}
-        <ScrollReveal delay={0.4}>
-          <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 shadow-lg">
-            <CardHeader className="p-4 md:p-5 lg:p-6">
-              <CardTitle className="text-xl md:text-2xl lg:text-3xl flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-[#2A9C64]" />
-                Still Need Help?
-              </CardTitle>
-              <CardDescription className="text-sm md:text-base">
-                Our support team is here to assist you 24/7
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 md:space-y-5 lg:space-y-6 p-4 md:p-5 lg:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
-                <div className="flex items-start gap-3 p-4 bg-white rounded-lg">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Phone className="h-5 w-5 text-[#2A9C64]" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Phone Support</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Call us anytime
-                    </p>
-                    <a
-                      href="tel:+1-800-123-4567"
-                      className="text-sm text-primary hover:underline font-medium"
-                    >
-                      +1 (800) 123-4567
-                    </a>
-                  </div>
+        <ScrollReveal delay={0.35}>
+          <Card id="contact-support" className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm overflow-hidden scroll-mt-24">
+            <div className="bg-gradient-to-r from-[#2A9C64]/10 via-[#2A9C64]/5 to-transparent p-5 sm:p-6 border-b border-slate-200/60 dark:border-gray-800">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#2A9C64] text-white">
+                  <MessageCircle className="h-5 w-5" />
                 </div>
-                <div className="flex items-start gap-3 p-4 bg-white rounded-lg">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Mail className="h-5 w-5 text-[#2A9C64]" />
-                  </div>
+                <span>Still Need Help?</span>
+              </CardTitle>
+              <CardDescription className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Our customer support team is available 24/7 to resolve any order or account queries.
+              </CardDescription>
+            </div>
+
+            <CardContent className="p-5 sm:p-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Email Support Card */}
+                <div className="p-4 rounded-xl border border-slate-200/80 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-semibold mb-1">Email Support</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      We'll respond within 24 hours
+                    <div className="flex items-center gap-3 mb-2.5">
+                      <div className="p-2.5 bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-lg">
+                        <Mail className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base">Email Support</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                      Official support & inquiries
                     </p>
+                  </div>
+                  <div className="space-y-1">
+                    <a
+                      href="mailto:support@tastizo.com"
+                      className="text-sm font-semibold text-[#2A9C64] hover:underline block truncate"
+                    >
+                      support@tastizo.com
+                    </a>
                     <a
                       href="mailto:tastizoteam@gmail.com"
-                      className="text-sm text-primary hover:underline font-medium"
+                      className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:underline block truncate transition-colors"
                     >
                       tastizoteam@gmail.com
                     </a>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-4 bg-white rounded-lg">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <MessageCircle className="h-5 w-5 text-[#2A9C64]" />
-                  </div>
+
+                {/* In-App Tickets Card */}
+                <div className="p-4 rounded-xl border border-slate-200/80 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-semibold mb-1">Live Chat</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Available 24/7
+                    <div className="flex items-center gap-3 mb-2.5">
+                      <div className="p-2.5 bg-[#2A9C64]/10 dark:bg-[#2A9C64]/20 text-[#2A9C64] rounded-lg">
+                        <MessageCircle className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base">In-App Tickets</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                      Raise & track issues in-app
                     </p>
+                  </div>
+                  <Link to="/user/profile/support" state={{ from: location.pathname, backTo: location.pathname }}>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="mt-1"
-                      onClick={() => alert("Live chat would open here")}
+                      className="w-full font-semibold border-[#2A9C64] text-[#2A9C64] hover:bg-[#2A9C64] hover:text-white transition-all rounded-lg"
                     >
-                      Start Chat
+                      Raise Support Ticket
                     </Button>
+                  </Link>
+                </div>
+
+                {/* Order Assistance Card */}
+                <div className="p-4 rounded-xl border border-slate-200/80 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2.5">
+                      <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
+                        <Package className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base">Order Status</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                      Need help with an order?
+                    </p>
                   </div>
+                  <Link to="/user/orders" state={{ from: location.pathname, backTo: location.pathname }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full font-semibold border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-800 transition-all rounded-lg"
+                    >
+                      View All Orders
+                    </Button>
+                  </Link>
                 </div>
               </div>
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-3">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Average response time: Less than 5 minutes
-                </p>
+
+              <div className="pt-4 border-t border-slate-200/60 dark:border-gray-800 flex items-center justify-between flex-wrap gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-[#2A9C64]" />
+                  <span>Average response time: <strong>Under 5 minutes</strong></span>
+                </div>
+                <span>Available 24 hours a day, 7 days a week</span>
+              </div>
+            </CardContent>
+          </Card>
+        </ScrollReveal>
+
+        {/* Legal & Privacy Policies */}
+        <ScrollReveal delay={0.45}>
+          <Card className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-slate-200/80 dark:border-gray-800 shadow-sm overflow-hidden">
+            <CardHeader className="p-5 pb-3">
+              <CardTitle className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileText className="h-5 w-5 text-[#2A9C64]" />
+                <span>Legal & Privacy Policies</span>
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Important policies, terms of service, and user rights for the Tastizo platform.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-5 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link
+                  to="/privacy"
+                  state={{ from: location.pathname, backTo: location.pathname }}
+                  className="p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-200/60 dark:border-gray-800 hover:bg-[#2A9C64]/10 hover:border-[#2A9C64]/40 transition-all text-center group"
+                >
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#2A9C64] transition-colors">
+                    Privacy Policy
+                  </p>
+                </Link>
+                <Link
+                  to="/terms"
+                  state={{ from: location.pathname, backTo: location.pathname }}
+                  className="p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-200/60 dark:border-gray-800 hover:bg-[#2A9C64]/10 hover:border-[#2A9C64]/40 transition-all text-center group"
+                >
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#2A9C64] transition-colors">
+                    Terms of Service
+                  </p>
+                </Link>
+                <Link
+                  to="/data-deletion"
+                  state={{ from: location.pathname, backTo: location.pathname }}
+                  className="p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-200/60 dark:border-gray-800 hover:bg-[#2A9C64]/10 hover:border-[#2A9C64]/40 transition-all text-center group"
+                >
+                  <p className="text-xs sm:text-sm font-semibold text-[#2A9C64] group-hover:underline transition-all">
+                    Data Deletion
+                  </p>
+                </Link>
+                <Link
+                  to="/refund"
+                  state={{ from: location.pathname, backTo: location.pathname }}
+                  className="p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-200/60 dark:border-gray-800 hover:bg-[#2A9C64]/10 hover:border-[#2A9C64]/40 transition-all text-center group"
+                >
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#2A9C64] transition-colors">
+                    Refund Policy
+                  </p>
+                </Link>
+                <Link
+                  to="/shipping"
+                  state={{ from: location.pathname, backTo: location.pathname }}
+                  className="p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-200/60 dark:border-gray-800 hover:bg-[#2A9C64]/10 hover:border-[#2A9C64]/40 transition-all text-center group"
+                >
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#2A9C64] transition-colors">
+                    Shipping Policy
+                  </p>
+                </Link>
+                <Link
+                  to="/cancellation"
+                  state={{ from: location.pathname, backTo: location.pathname }}
+                  className="p-3 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-slate-200/60 dark:border-gray-800 hover:bg-[#2A9C64]/10 hover:border-[#2A9C64]/40 transition-all text-center group"
+                >
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#2A9C64] transition-colors">
+                    Cancellation
+                  </p>
+                </Link>
               </div>
             </CardContent>
           </Card>

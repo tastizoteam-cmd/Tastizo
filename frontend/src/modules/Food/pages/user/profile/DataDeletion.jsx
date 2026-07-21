@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { ArrowLeft, Trash2, ShieldAlert, CheckCircle2, User, Mail, Phone, FileText } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import AnimatedPage from "@food/components/user/AnimatedPage"
@@ -8,6 +8,7 @@ import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 
 export default function DataDeletion() {
   const navigate = useNavigate()
+  const location = useLocation()
   const goBack = useAppBackNavigation()
   const [formData, setFormData] = useState({
     name: "",
@@ -50,7 +51,9 @@ export default function DataDeletion() {
   }
 
   const handleBack = () => {
-    if (window.history.length > 2) {
+    if (location.state?.from || location.state?.backTo) {
+      navigate(location.state.from || location.state.backTo)
+    } else if (window.history.length > 2) {
       goBack()
     } else {
       navigate('/food/user')

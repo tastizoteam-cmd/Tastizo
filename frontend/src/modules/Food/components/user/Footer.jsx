@@ -51,10 +51,10 @@ export default function Footer() {
       { name: "Press", href: "/user/help" },
     ],
     support: [
-      { name: "Help Center", href: "/user/help" },
-      { name: "Contact Us", href: "/user/help" },
-      { name: "Privacy Policy", href: "/profile/privacy" },
-      { name: "Terms of Service", href: "/profile/terms" },
+      { name: "Help Center", href: "/support" },
+      { name: "Contact Us", href: "/support" },
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
     ],
     user: [
       { name: "My Account", href: "/user/profile" },
@@ -106,16 +106,12 @@ export default function Footer() {
               className="space-y-2"
             >
               <div className="flex items-center gap-2 text-slate-300 text-sm">
-                <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
+                <Mail className="h-4 w-4" />
+                <span>support@tastizo.com</span>
               </div>
               <div className="flex items-center gap-2 text-slate-300 text-sm">
                 <Mail className="h-4 w-4" />
-                <span>support@{companyName.toLowerCase().replace(/\s+/g, '')}.com</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300 text-sm">
-                <MapPin className="h-4 w-4" />
-                <span>New York, NY</span>
+                <span>tastizoteam@gmail.com</span>
               </div>
             </div>
 
