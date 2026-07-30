@@ -1,7 +1,7 @@
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { publicAPI } from "@food/api"
+import api, { API_ENDPOINTS } from "@food/api"
 import useDeliveryBackNavigation from "../hooks/useDeliveryBackNavigation"
 
 export default function PrivacyPolicyV2() {
@@ -13,10 +13,11 @@ export default function PrivacyPolicyV2() {
   useEffect(() => {
     const fetchPrivacy = async () => {
       try {
-        const response = await publicAPI.getPrivacy()
-        if (response.data.success) {
-          setContent(response.data.data.content)
-          setLastUpdated(response.data.data.updatedAt)
+        const response = await api.get(API_ENDPOINTS.ADMIN.PRIVACY_PUBLIC)
+        if (response?.data?.success) {
+          const payload = response?.data?.data || {}
+          setContent(payload?.content || "")
+          setLastUpdated(payload?.updatedAt || "")
         }
       } catch (error) {
         console.error("Error fetching privacy:", error)
