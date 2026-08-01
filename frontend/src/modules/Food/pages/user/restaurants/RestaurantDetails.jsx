@@ -664,7 +664,7 @@ function RestaurantDetailsContent() {
               "Unknown Restaurant",
             cuisine: resolvedTopCategory,
             topCategory: resolvedTopCategory,
-            rating: actualRestaurant?.rating || apiRestaurant?.rating || actualRestaurant?.averageRating || apiRestaurant?.averageRating || 4.5,
+            rating: actualRestaurant?.rating || apiRestaurant?.rating || actualRestaurant?.averageRating || apiRestaurant?.averageRating || 0,
             reviews: actualRestaurant?.totalRatings || apiRestaurant?.totalRatings || actualRestaurant?.reviewCount || apiRestaurant?.reviewCount || actualRestaurant?.reviews?.length || apiRestaurant?.reviews?.length || 0,
             deliveryTime: actualRestaurant?.estimatedDeliveryTime || apiRestaurant?.estimatedDeliveryTime || actualRestaurant?.deliveryTime || apiRestaurant?.deliveryTime || actualRestaurant?.avgDeliveryTime || apiRestaurant?.avgDeliveryTime || "25-30 mins",
             distance: calculatedDistance || actualRestaurant?.distance || apiRestaurant?.distance || actualRestaurant?.distanceFromUser || apiRestaurant?.distanceFromUser || "1.2 km",
@@ -2359,10 +2359,10 @@ function RestaurantDetailsContent() {
               <div className="flex flex-col items-end">
                 <div className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
                   <Star className="h-3 w-3 fill-white" />
-                  {Number(restaurant?.rating || 4.5).toFixed(1)}
+                  {restaurant?.rating ? Number(restaurant.rating).toFixed(1) : "New"}
                 </div>
                 <span className="mt-1 text-xs text-gray-500">
-                  {(restaurant.reviews || 0).toLocaleString()}+ ratings
+                  {restaurant?.reviews > 0 ? `${restaurant.reviews.toLocaleString()} ratings` : "No ratings yet"}
                 </span>
               </div>
             </div>
@@ -2431,10 +2431,10 @@ function RestaurantDetailsContent() {
               <div className="flex flex-col items-end gap-1">
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                   <Star className="h-3 w-3 fill-emerald-700 dark:fill-emerald-400 text-emerald-700 dark:text-emerald-400" />
-                  {Number(restaurant?.rating || 4.5).toFixed(1)}
+                  {restaurant?.rating ? Number(restaurant.rating).toFixed(1) : "New"}
                 </span>
                 <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                  {(restaurant.reviews || 0).toLocaleString()}+ ratings
+                  {restaurant?.reviews > 0 ? `${restaurant.reviews.toLocaleString()} ratings` : "No ratings yet"}
                 </span>
               </div>
             </div>

@@ -1614,6 +1614,7 @@ export const listPublicOffers = async () => {
             restaurantRating: typeof restaurant?.rating === 'number' ? restaurant.rating : 0,
             endDate: o.endDate || null,
             showInCart: o.showInCart !== false,
+            isPinned: Boolean(o.isPinned),
             minOrderValue: o.minOrderValue ?? 0
         };
     });

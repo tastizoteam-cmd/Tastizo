@@ -98,13 +98,24 @@ const RestaurantImageCarousel = React.memo(({ restaurant, priority = false, back
   useEffect(() => {
     if (images.length <= 1) return undefined;
 
-    const autoSlideInterval = window.setInterval(() => {
+    let timeoutId;
+
+    const slide = () => {
       if (!isSwiping.current) {
         setCurrentIndex((prev) => (prev + 1) % images.length);
       }
-    }, 3000);
+      // Randomize next slide between 2.5s and 4.5s
+      const nextDelay = 2500 + Math.random() * 2000;
+      timeoutId = window.setTimeout(slide, nextDelay);
+    };
 
-    return () => window.clearInterval(autoSlideInterval);
+    // Randomize initial delay between 1s and 4s
+    const initialDelay = 1000 + Math.random() * 3000;
+    timeoutId = window.setTimeout(slide, initialDelay);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [images.length]);
 
   const handleTouchStart = (e) => {
@@ -134,6 +145,8 @@ const RestaurantImageCarousel = React.memo(({ restaurant, priority = false, back
     }
   };
 
+  const imagesToRender = images.length > 0 ? images : (lastGoodSrc ? [lastGoodSrc] : []);
+
   return (
     <div 
       className="relative w-full h-[180px] sm:h-[190px] overflow-hidden bg-gray-100 dark:bg-gray-800"
@@ -141,34 +154,34 @@ const RestaurantImageCarousel = React.memo(({ restaurant, priority = false, back
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={safeIndex}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="absolute inset-0 w-full h-full"
-        >
-          <OptimizedImage
-            ref={imageElementRef}
-            src={renderSrc}
-            alt={`${restaurant.name} ${safeIndex + 1}`}
-            priority={priority && safeIndex === 0}
-            className={`w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 ${
-              loadedBySrc[renderSrc] ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={() => {
-              setLoadedBySrc((prev) => ({ ...prev, [renderSrc]: true }));
-              setLastGoodSrc(renderSrc);
-              setShowShimmer(false);
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
+      <div 
+        className="flex w-full h-full transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateX(-${safeIndex * 100}%)` }}
+      >
+        {imagesToRender.map((src, idx) => (
+          <div key={idx} className="w-full h-full flex-shrink-0 relative">
+            <OptimizedImage
+              ref={idx === safeIndex ? imageElementRef : null}
+              src={src}
+              alt={`${restaurant.name} ${idx + 1}`}
+              priority={priority && idx === 0}
+              className={`w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 ${
+                loadedBySrc[src] ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => {
+                setLoadedBySrc((prev) => ({ ...prev, [src]: true }));
+                if (idx === safeIndex) {
+                  setLastGoodSrc(src);
+                  setShowShimmer(false);
+                }
+              }}
+            />
+          </div>
+        ))}
+      </div>
       
-      {showShimmer && !loadedBySrc[renderSrc] && (
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 animate-shimmer" />
+      {showShimmer && (!imagesToRender[safeIndex] || !loadedBySrc[imagesToRender[safeIndex]]) && (
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 animate-shimmer pointer-events-none" />
       )}
 
       {/* Navigation Indicators */}
@@ -231,7 +244,7 @@ const RestaurantCard = ({
             {restaurant.name}
           </h3>
           <div className="flex items-center gap-1 bg-[#8CC63F] text-white px-1.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold shadow-sm flex-shrink-0">
-            <span>{restaurant.rating || "4.2"}</span>
+            <span>{restaurant.rating ? Number(restaurant.rating).toFixed(1) : "New"}</span>
             <Star className="w-2.5 h-2.5 fill-current" />
           </div>
         </div>

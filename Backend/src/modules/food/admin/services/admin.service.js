@@ -3644,6 +3644,7 @@ export async function getAllOffers(_query = {}) {
             discountedPrice,
             status: isExpired ? 'inactive' : (o.status || 'active'),
             showInCart: o.showInCart !== false,
+            isPinned: Boolean(o.isPinned),
             endDate: o.endDate || null,
             // Additional info for admin UI (backward compatible)
             minOrderValue: o.minOrderValue ?? 0,
@@ -3712,6 +3713,16 @@ export async function updateAdminOfferCartVisibility(offerId, itemId, showInCart
     const updated = await FoodOffer.findByIdAndUpdate(
         offerId,
         { $set: { showInCart: Boolean(showInCart) } },
+        { new: true }
+    ).lean();
+    return updated;
+}
+
+export async function updateAdminOfferPinStatus(offerId, isPinned) {
+    if (!offerId || !mongoose.Types.ObjectId.isValid(offerId)) return null;
+    const updated = await FoodOffer.findByIdAndUpdate(
+        offerId,
+        { $set: { isPinned: Boolean(isPinned) } },
         { new: true }
     ).lean();
     return updated;

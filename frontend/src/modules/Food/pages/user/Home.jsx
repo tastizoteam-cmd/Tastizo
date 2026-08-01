@@ -308,13 +308,24 @@ const RestaurantImageCarousel = React.memo(
     useEffect(() => {
       if (images.length <= 1) return undefined;
 
-      const autoSlideInterval = window.setInterval(() => {
+      let timeoutId;
+
+      const slide = () => {
         if (!isSwiping.current) {
           setCurrentIndex((prev) => (prev + 1) % images.length);
         }
-      }, 3000);
+        // Randomize next slide between 2.5s and 4.5s
+        const nextDelay = 2500 + Math.random() * 2000;
+        timeoutId = window.setTimeout(slide, nextDelay);
+      };
 
-      return () => window.clearInterval(autoSlideInterval);
+      // Randomize initial delay between 1s and 4s
+      const initialDelay = 1000 + Math.random() * 3000;
+      timeoutId = window.setTimeout(slide, initialDelay);
+
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
     }, [images.length]);
 
     // Handle touch events for swipe
@@ -358,61 +369,70 @@ const RestaurantImageCarousel = React.memo(
 
     const showMultipleImages = images.length > 1;
 
+    const imagesToRender = images.length > 0 ? images : (lastGoodSrc ? [lastGoodSrc] : []);
+
     return (
       <div
         className={`relative ${className} w-full overflow-hidden ${roundedClass} flex-shrink-0 group`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}>
-        {showShimmer && !isImageUnavailable && Boolean(renderSrc) && (
-          <div className="absolute inset-0 z-[1] overflow-hidden bg-gray-200">
+        
+        <div 
+          className="flex w-full h-full transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${safeIndex * 100}%)` }}
+        >
+          {imagesToRender.map((src, idx) => {
+            const actualSrc = (idx === safeIndex && activeCandidate) ? activeCandidate : src;
+            return (
+              <div key={idx} className="w-full h-full flex-shrink-0 relative">
+                <img
+                  ref={idx === safeIndex ? imageElementRef : null}
+                  src={actualSrc}
+                  alt={`${restaurant.name} - Image ${idx + 1}`}
+                  className={`w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700 ${
+                    loadedBySrc[actualSrc] ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  loading={priority && idx === 0 ? "eager" : "lazy"}
+                  fetchPriority={priority && idx === 0 ? "high" : "auto"}
+                  decoding="async"
+                  onLoad={() => {
+                    setLoadedBySrc((prev) => ({ ...prev, [actualSrc]: true }));
+                    if (idx === safeIndex) {
+                      setLastGoodSrc(actualSrc);
+                      setShowShimmer(false);
+                    }
+                  }}
+                  onError={() => {
+                    if (idx === safeIndex) {
+                      if (candidateIndex + 1 < candidates.length) {
+                        setCandidateIndex((prev) => prev + 1);
+                      } else {
+                        setAttemptedSrcs((prev) => {
+                          const next = { ...prev, [primarySrc]: true };
+                          const attemptedCount = Object.keys(next).length;
+                          if (attemptedCount >= images.length) {
+                            setIsImageUnavailable(true);
+                          } else if (images.length > 1) {
+                            setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+                          }
+                          return next;
+                        });
+                        if (images.length === 1) setIsImageUnavailable(true);
+                      }
+                    }
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {showShimmer && !isImageUnavailable && (!imagesToRender[safeIndex] || !loadedBySrc[imagesToRender[safeIndex]]) && (
+          <div className="absolute inset-0 z-[1] overflow-hidden bg-gray-200 pointer-events-none">
             <div className="h-full w-full animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200" />
           </div>
         )}
-
-        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110">
-          {renderSrc && (
-            <img
-              ref={imageElementRef}
-              src={renderSrc}
-              alt={`${restaurant.name} - Image ${safeIndex + 1}`}
-              className="w-full h-full object-cover"
-              loading={priority ? "eager" : "lazy"}
-              fetchPriority={priority ? "high" : "auto"}
-              decoding="async"
-              onLoad={() => {
-                setLoadedBySrc((prev) => ({ ...prev, [renderSrc]: true }));
-                setLastGoodSrc(renderSrc);
-                setShowShimmer(false);
-              }}
-              onError={() => {
-                if (candidateIndex + 1 < candidates.length) {
-                  // Try the next Cloudinary fallback candidate for the current slide
-                  setCandidateIndex((prev) => prev + 1);
-                } else {
-                  // All candidates for this slide failed. Proceed to next slide or mark unavailable
-                  setAttemptedSrcs((prev) => {
-                    const next = { ...prev, [primarySrc]: true };
-                    const attemptedCount = Object.keys(next).length;
-
-                    if (attemptedCount >= images.length) {
-                      setIsImageUnavailable(true);
-                    } else if (images.length > 1) {
-                      setCurrentIndex(
-                        (prevIndex) => (prevIndex + 1) % images.length,
-                      );
-                    }
-
-                    return next;
-                  });
-                  if (images.length === 1) {
-                    setIsImageUnavailable(true);
-                  }
-                }
-              }}
-            />
-          )}
-        </div>
 
         {isImageUnavailable && (
           <div className="absolute inset-0 z-[2] flex items-center justify-center bg-gray-100">
@@ -781,9 +801,12 @@ export default function Home() {
       try {
         const res = await api.get("/food/restaurant/offers");
         const offers = res?.data?.data?.allOffers || res?.data?.allOffers || [];
-        // Try to find a global delivery coupon first, else take any
+        // Try to find a pinned coupon first, then global delivery coupon, else take any
+        const pinnedOffer = offers.find(o => o.isPinned);
         const globalOffer = offers.find(o => o.restaurantScope === 'all' && o.couponType === 'delivery');
-        if (globalOffer) setAdminCoupon(globalOffer);
+        
+        if (pinnedOffer) setAdminCoupon(pinnedOffer);
+        else if (globalOffer) setAdminCoupon(globalOffer);
         else if (offers.length > 0) setAdminCoupon(offers[0]);
       } catch (err) {
         console.error("Failed to fetch admin coupon", err);

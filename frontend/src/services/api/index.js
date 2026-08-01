@@ -674,6 +674,12 @@ export const adminAPI = {
       { itemId: String(itemId), showInCart: Boolean(showInCart) },
       { contextModule: "admin" },
     ),
+  updateAdminOfferPinStatus: (offerId, isPinned) =>
+    apiClient.patch(
+      `/food/admin/offers/${String(offerId)}/pin-status`,
+      { isPinned: Boolean(isPinned) },
+      { contextModule: "admin" },
+    ),
   deleteAdminOffer: (offerId) =>
     apiClient.delete(`/food/admin/offers/${String(offerId)}`, {
       contextModule: "admin",

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { Search } from "lucide-react"
+import { Search, Pin } from "lucide-react"
 import { adminAPI } from "@food/api"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -17,6 +17,7 @@ export default function Coupons() {
   const [submitError, setSubmitError] = useState("")
   const [submitSuccess, setSubmitSuccess] = useState("")
   const [updatingCartVisibility, setUpdatingCartVisibility] = useState({})
+  const [updatingPinStatus, setUpdatingPinStatus] = useState({})
   const [deletingOffer, setDeletingOffer] = useState({})
   const [errors, setErrors] = useState({})
   const [formData, setFormData] = useState({
@@ -254,6 +255,25 @@ export default function Coupons() {
       debugError("Error updating cart visibility:", err)
     } finally {
       setUpdatingCartVisibility((prev) => ({ ...prev, [key]: false }))
+    }
+  }
+
+  const handleTogglePinStatus = async (offerId, currentValue) => {
+    try {
+      setUpdatingPinStatus((prev) => ({ ...prev, [offerId]: true }))
+      const nextValue = !currentValue
+      await adminAPI.updateAdminOfferPinStatus(offerId, nextValue)
+      setOffers((prev) =>
+        prev.map((offer) =>
+          offer.offerId === offerId
+            ? { ...offer, isPinned: nextValue }
+            : offer,
+        ),
+      )
+    } catch (err) {
+      debugError("Error updating pin status:", err)
+    } finally {
+      setUpdatingPinStatus((prev) => ({ ...prev, [offerId]: false }))
     }
   }
 
@@ -596,9 +616,16 @@ export default function Coupons() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-mono font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded whitespace-nowrap">
-                          {offer.couponCode}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded whitespace-nowrap">
+                            {offer.couponCode}
+                          </span>
+                          {offer.isPinned && (
+                            <span title="Pinned Coupon" className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-600">
+                              <Pin className="w-3 h-3 fill-amber-600" />
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -696,14 +723,29 @@ export default function Coupons() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteOffer(offer.offerId)}
-                          disabled={!!deletingOffer[offer.offerId]}
-                          className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {deletingOffer[offer.offerId] ? "Deleting..." : "Delete"}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title={offer.isPinned ? "Unpin coupon" : "Pin coupon"}
+                            onClick={() => handleTogglePinStatus(offer.offerId, offer.isPinned)}
+                            disabled={!!updatingPinStatus[offer.offerId]}
+                            className={`p-1.5 rounded-lg transition-colors disabled:opacity-60 ${
+                              offer.isPinned 
+                                ? "bg-amber-100 text-amber-600 hover:bg-amber-200" 
+                                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            }`}
+                          >
+                            <Pin className={`w-4 h-4 ${offer.isPinned ? "fill-amber-600" : ""}`} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOffer(offer.offerId)}
+                            disabled={!!deletingOffer[offer.offerId]}
+                            className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-60"
+                          >
+                            {deletingOffer[offer.offerId] ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

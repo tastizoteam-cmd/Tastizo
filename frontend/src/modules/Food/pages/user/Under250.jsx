@@ -1084,13 +1084,10 @@ export default function Under250() {
       />
       <div
         ref={stickyHeaderRef}
-        className={`fixed top-0 left-0 right-0 z-40 w-full md:hidden transition-all duration-300 ${hasScrolledPastBanner
-          ? "bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200"
-          : "bg-transparent"
-          }`}
+        className="sticky top-0 z-[100] w-full bg-white dark:bg-[#0a0a0a] supports-[backdrop-filter]:bg-white/90 backdrop-blur-xl shadow-sm md:hidden border-b border-gray-100 dark:border-gray-800 transition-all duration-300"
       >
-        <div className="relative z-50 pt-2 sm:pt-3 pb-2">
-          <PageNavbar textColor={hasScrolledPastBanner ? "black" : "white"} zIndex={20} showProfile={true} showLogo={false} />
+        <div className="relative z-50 py-2 px-2">
+          <PageNavbar textColor="black" zIndex={20} showProfile={true} showLogo={false} />
         </div>
       </div>
 
@@ -1098,12 +1095,12 @@ export default function Under250() {
       <div
         ref={bannerShellRef}
         data-banner-shell="true"
-        className="relative w-full overflow-hidden h-[clamp(240px,42vw,520px)] md:-mt-40"
+        className="relative w-full px-4 pt-4 pb-2"
       >
         {/* Banner Image */}
         {bannerImages.length > 0 && (
           <div
-            className="absolute inset-0 z-0 overflow-hidden"
+            className="relative w-full overflow-hidden aspect-[1.7/1] sm:aspect-[1.9/1] lg:aspect-[2.1/1] min-h-[180px] sm:min-h-[220px] lg:min-h-[260px] rounded-2xl shadow-sm group cursor-pointer bg-white"
             onTouchStart={handleBannerTouchStart}
             onTouchMove={handleBannerTouchMove}
             onTouchEnd={handleBannerTouchEnd}
@@ -1133,8 +1130,7 @@ export default function Under250() {
                   <OptimizedImage
                     src={bannerImage}
                     alt={`Under 250 Banner ${index + 1}`}
-                    className="w-full h-full"
-                    objectFit="cover"
+                    className="w-full h-full object-cover"
                     priority={index === 0}
                     sizes="100vw"
                   />
@@ -1147,7 +1143,7 @@ export default function Under250() {
           </div>
         )}
         {bannerImages.length === 0 && !loadingBanner && (
-          <div className="absolute top-0 left-0 right-0 bottom-0 z-0 bg-gradient-to-b from-[#2A9C64] to-[#1E7A4A] overflow-hidden" />
+          <div className="relative w-full overflow-hidden aspect-[1.7/1] sm:aspect-[1.9/1] lg:aspect-[2.1/1] min-h-[180px] sm:min-h-[220px] lg:min-h-[260px] rounded-2xl shadow-sm bg-gradient-to-b from-[#2A9C64] to-[#1E7A4A]" />
         )}
       </div>
 

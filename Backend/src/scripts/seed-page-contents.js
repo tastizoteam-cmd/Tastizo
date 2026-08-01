@@ -31,7 +31,7 @@ const DEFAULT_PRIVACY = `
 <ul>
   <li><strong>Personal Information:</strong> Name, email address, phone number, delivery address, date of birth, and gender when you create an account or place an order.</li>
   <li><strong>Payment Information:</strong> Payment method details are processed securely through our payment gateway partners (e.g., Razorpay). We do not store your full card details on our servers.</li>
-  <li><strong>Location Data:</strong> Real-time location data to provide accurate delivery services and show nearby restaurants.</li>
+  <li><strong>Location Data (Including Background Location for Delivery Partners):</strong> We collect real-time location data to provide accurate delivery services and show nearby restaurants. For the Tastizo Delivery Partner App, we collect location data to enable delivery tracking, assign nearby orders, and calculate distance traveled <strong>even when the app is closed or not in use</strong>. This is essential for the core functionality of our delivery service.</li>
   <li><strong>Device Information:</strong> Device type, operating system, unique device identifiers, and mobile network information.</li>
   <li><strong>Usage Data:</strong> Pages visited, features used, search queries, order history, and interaction patterns.</li>
 </ul>

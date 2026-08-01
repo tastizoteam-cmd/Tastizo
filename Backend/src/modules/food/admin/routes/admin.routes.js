@@ -118,6 +118,7 @@ router.patch('/foods/:id/reject', foodApprovalController.rejectFoodItemControlle
 router.get('/offers', adminController.getAllOffers);
 router.post('/offers', adminController.createAdminOffer);
 router.patch('/offers/:id/cart-visibility', adminController.updateAdminOfferCartVisibility);
+router.patch('/offers/:id/pin-status', adminController.updateAdminOfferPinStatus);
 router.delete('/offers/:id', adminController.deleteAdminOffer);
 
 // ----- Feedback Experience (Admin) -----
@@ -201,6 +202,7 @@ router.patch('/foods/:id/reject', foodApprovalController.rejectFoodItemControlle
 router.get('/offers', adminController.getAllOffers);
 router.post('/offers', adminController.createAdminOffer);
 router.patch('/offers/:id/cart-visibility', adminController.updateAdminOfferCartVisibility);
+router.patch('/offers/:id/pin-status', adminController.updateAdminOfferPinStatus);
 router.delete('/offers/:id', adminController.deleteAdminOffer);
 
 // ----- Feedback Experience (Admin) -----
