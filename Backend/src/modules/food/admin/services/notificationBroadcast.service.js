@@ -13,6 +13,7 @@ const TARGET_TYPE_MAP = {
     ALL: 'ALL',
     USER: 'USER',
     RESTAURANT: 'RESTAURANT',
+    SELLER: 'SELLER',
     DELIVERY: 'DELIVERY',
     CUSTOM: 'CUSTOM'
 };
@@ -20,6 +21,7 @@ const TARGET_TYPE_MAP = {
 const OWNER_LABEL_MAP = {
     USER: 'Users',
     RESTAURANT: 'Restaurants',
+    SELLER: 'Sellers',
     DELIVERY_PARTNER: 'Delivery Partners'
 };
 
@@ -63,6 +65,11 @@ const buildRestaurantLabel = (doc) => ({
     subLabel: [doc?.ownerPhone, doc?.ownerEmail].filter(Boolean).join(' • ')
 });
 
+const buildSellerLabel = (doc) => ({
+    label: String(doc?.restaurantName || doc?.ownerName || 'Seller').trim(),
+    subLabel: [doc?.ownerPhone, doc?.ownerEmail].filter(Boolean).join(' • ')
+});
+
 const buildDeliveryLabel = (doc) => ({
     label: String(doc?.name || doc?.phone || 'Delivery Partner').trim(),
     subLabel: [doc?.phone, doc?.email].filter(Boolean).join(' • ')
@@ -77,9 +84,15 @@ const modelConfigMap = {
     },
     RESTAURANT: {
         model: FoodRestaurant,
-        query: { status: 'approved' },
+        query: { status: 'approved', businessModel: { $ne: 'seller' } },
         select: '_id restaurantName ownerName ownerPhone ownerEmail',
         buildLabel: buildRestaurantLabel
+    },
+    SELLER: {
+        model: FoodRestaurant,
+        query: { status: 'approved', businessModel: 'seller' },
+        select: '_id restaurantName ownerName ownerPhone ownerEmail',
+        buildLabel: buildSellerLabel
     },
     DELIVERY_PARTNER: {
         model: FoodDeliveryPartner,
@@ -136,16 +149,18 @@ const resolveCustomTargets = async ({ targets = [], targetIds = [] } = {}) => {
 
 const resolveTargets = async ({ targetType, targetIds = [], targets = [] } = {}) => {
     if (targetType === 'ALL') {
-        const [users, restaurants, deliveryPartners] = await Promise.all([
+        const [users, restaurants, sellers, deliveryPartners] = await Promise.all([
             loadTargetsByOwnerType('USER'),
             loadTargetsByOwnerType('RESTAURANT'),
+            loadTargetsByOwnerType('SELLER'),
             loadTargetsByOwnerType('DELIVERY_PARTNER')
         ]);
-        return [...users, ...restaurants, ...deliveryPartners];
+        return [...users, ...restaurants, ...sellers, ...deliveryPartners];
     }
 
     if (targetType === 'USER') return loadTargetsByOwnerType('USER');
     if (targetType === 'RESTAURANT') return loadTargetsByOwnerType('RESTAURANT');
+    if (targetType === 'SELLER') return loadTargetsByOwnerType('SELLER');
     if (targetType === 'DELIVERY') return loadTargetsByOwnerType('DELIVERY_PARTNER');
     if (targetType === 'CUSTOM') return resolveCustomTargets({ targets, targetIds });
 
@@ -187,7 +202,7 @@ const emitRealtimeNotifications = (targets = [], broadcast) => {
         if (target.ownerType === 'USER') {
             io.to(rooms.user(ownerId)).emit('admin_notification', payload);
         }
-        if (target.ownerType === 'RESTAURANT') {
+        if (target.ownerType === 'RESTAURANT' || target.ownerType === 'SELLER') {
             io.to(rooms.restaurant(ownerId)).emit('admin_notification', payload);
         }
         if (target.ownerType === 'DELIVERY_PARTNER') {

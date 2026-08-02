@@ -15,6 +15,7 @@ const FCM_SEND_URL = (projectId) =>
 const OWNER_MODELS = {
     USER: FoodUser,
     RESTAURANT: FoodRestaurant,
+    SELLER: FoodRestaurant,
     DELIVERY_PARTNER: FoodDeliveryPartner,
     ADMIN: FoodAdmin
 };
@@ -25,6 +26,7 @@ const OWNER_TOKEN_FIELDS = {
 const OWNER_APP_PREFIXES = {
     USER: '👤 [User]',
     RESTAURANT: '🏪 [Shop]',
+    SELLER: '🏬 [Seller]',
     DELIVERY_PARTNER: '🛵 [Rider]',
     ADMIN: '🛡️ [Admin]'
 };
@@ -430,6 +432,8 @@ export const sendNotificationToOwner = async ({ ownerType, ownerId, payload, pla
                 prefix = prefix.replace('[User]', ownerName);
             } else if (typeKey === 'RESTAURANT') {
                 prefix = prefix.replace('[Shop]', ownerName);
+            } else if (typeKey === 'SELLER') {
+                prefix = prefix.replace('[Seller]', ownerName);
             } else if (typeKey === 'ADMIN') {
                 prefix = prefix.replace('[Admin]', ownerName);
             }
