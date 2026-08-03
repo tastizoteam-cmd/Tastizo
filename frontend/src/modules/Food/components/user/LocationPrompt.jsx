@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { MapPin, X } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@food/components/ui/card"
 import { Button } from "@food/components/ui/button"
 import { useLocation } from "@food/hooks/useLocation"
@@ -95,14 +95,6 @@ export default function LocationPrompt() {
         className="w-full max-w-md border-2 border-gray-200 shadow-2xl mx-auto my-auto"
       >
         <CardHeader className="relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-2"
-            onClick={handleDismiss}
-          >
-            <X className="h-4 w-4" />
-          </Button>
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
               <MapPin className="h-6 w-6 text-[#2A9C64]" />
@@ -123,18 +115,11 @@ export default function LocationPrompt() {
           </p>
           <div className="flex gap-2">
             <Button
-              onClick={handleDismiss}
-              variant="outline"
-              className="flex-1"
-            >
-              Not Now
-            </Button>
-            <Button
               onClick={handleAllow}
               className="flex-1 bg-[#2A9C64] hover:opacity-90 text-white"
               disabled={loading}
             >
-              {loading ? "Getting location..." : "Allow Location"}
+              {loading ? "Getting location..." : "Continue"}
             </Button>
           </div>
         </CardContent>
