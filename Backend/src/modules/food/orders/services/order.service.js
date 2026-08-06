@@ -1253,7 +1253,7 @@ export async function listOrdersRestaurant(restaurantId, query) {
   const filter = {
     restaurantId: new mongoose.Types.ObjectId(restaurantId),
     $or: [
-      { "payment.method": { $in: ["cash", "wallet"] } },
+      { "payment.method": { $in: ["cash", "wallet", "razorpay_qr"] } },
       { "payment.status": { $in: ["paid", "authorized", "captured", "settled", "refunded"] } },
     ],
   };
@@ -1643,7 +1643,7 @@ export async function listOrdersAdmin(query) {
   const filter = {
     orderStatus: { $ne: "pending_payment" },
     $or: [
-      { "payment.method": { $in: ["cash", "wallet"] } },
+      { "payment.method": { $in: ["cash", "wallet", "razorpay_qr"] } },
       { "payment.status": { $in: ["paid", "authorized", "captured", "settled", "refunded"] } },
     ],
   };

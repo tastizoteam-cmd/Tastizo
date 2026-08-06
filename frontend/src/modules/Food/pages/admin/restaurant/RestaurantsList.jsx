@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { Search, Download, ChevronDown, Eye, Settings, ArrowUpDown, Loader2, X, MapPin, Phone, Mail, Clock, Star, Building2, User, FileText, CreditCard, Calendar, Image as ImageIcon, ExternalLink, ShieldX, AlertTriangle, Trash2, Plus } from "lucide-react"
+import { Search, Download, ChevronDown, Eye, Settings, ArrowUpDown, Loader2, X, MapPin, Phone, Mail, Clock, Star, Building2, User, FileText, CreditCard, Calendar, Image as ImageIcon, ExternalLink, ShieldX, CheckCircle, AlertTriangle, Trash2, Plus } from "lucide-react"
 import { adminAPI, restaurantAPI, uploadAPI, zoneAPI } from "@food/api"
 import { clearModuleAuth } from "@food/utils/auth"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@food/components/ui/dropdown-menu"
@@ -39,13 +39,15 @@ const normalizeApprovalStatus = (restaurant) => {
   return "pending"
 }
 
-const approvalStatusLabel = (status) => {
+const approvalStatusLabel = (status, isActive = true) => {
+  if (isActive === false) return "Blocked"
   if (status === "approved") return "Approved"
-  if (status === "rejected") return "Rejected"
+  if (status === "rejected") return "Blocked"
   return "Pending"
 }
 
-const approvalStatusBadgeClass = (status) => {
+const approvalStatusBadgeClass = (status, isActive = true) => {
+  if (isActive === false) return "bg-red-100 text-red-700"
   if (status === "approved") return "bg-emerald-100 text-emerald-700"
   if (status === "rejected") return "bg-rose-100 text-rose-700"
   return "bg-amber-100 text-amber-700"
@@ -225,7 +227,7 @@ export default function RestaurantsList() {
 
         // Fetch restaurants and zones in parallel so we can resolve zone names
         const [response, zonesRes] = await Promise.allSettled([
-          adminAPI.getApprovedRestaurants({}),
+          adminAPI.getRestaurants({}),
           adminAPI.getZones({ limit: 1000 }),
         ])
 
@@ -1069,6 +1071,25 @@ export default function RestaurantsList() {
     setBanConfirmDialog(null)
   }
 
+  const handleUnblockRejectedRestaurant = async (restaurant) => {
+    if (!window.confirm("Are you sure you want to unblock (approve) this restaurant?")) return;
+    try {
+      const restaurantId = restaurant._id || restaurant.id;
+      await adminAPI.approveRestaurant(restaurantId);
+      
+      setRestaurants(prevRestaurants =>
+        prevRestaurants.map(r =>
+          r.id === restaurantId || r._id === restaurantId
+            ? { ...r, approvalStatus: "approved" }
+            : r
+        )
+      );
+    } catch (err) {
+      debugError("Error unblocking restaurant:", err);
+      alert(err?.response?.data?.message || "Failed to unblock restaurant.");
+    }
+  }
+
   // Handle delete restaurant
   const handleDeleteRestaurant = (restaurant) => {
     setDeleteConfirmDialog({ restaurant })
@@ -1371,8 +1392,8 @@ export default function RestaurantsList() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-1">
-                            <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold ${approvalStatusBadgeClass(restaurant.approvalStatus)}`}>
-                              {approvalStatusLabel(restaurant.approvalStatus)}
+                            <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold ${approvalStatusBadgeClass(restaurant.approvalStatus, restaurant.isActive)}`}>
+                              {approvalStatusLabel(restaurant.approvalStatus, restaurant.isActive)}
                             </span>
                             <span className="text-[11px] text-slate-500">
                               Outlet: {restaurant.isActive ? "Active" : "Inactive"}
@@ -1405,10 +1426,19 @@ export default function RestaurantsList() {
                                 ? "text-green-600 hover:bg-green-50"
                                 : "text-red-600 hover:bg-red-50"
                                 }`}
-                              title={!restaurant.isActive ? "Unban Restaurant" : "Ban Restaurant"}
+                              title={!restaurant.isActive ? "Unblock Restaurant" : "Block Restaurant"}
                             >
                               <ShieldX className="w-4 h-4" />
                             </button>
+                            {restaurant.approvalStatus === "rejected" && (
+                              <button
+                                onClick={() => handleUnblockRejectedRestaurant(restaurant)}
+                                className="p-1.5 rounded text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                title="Unblock / Approve Restaurant"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDeleteRestaurant(restaurant)}
                               className="p-1.5 rounded text-red-600 hover:bg-red-50 transition-colors"
@@ -1829,8 +1859,8 @@ export default function RestaurantsList() {
                         )}
                         <div>
                           <p className="text-xs text-slate-500 mb-1">Status</p>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${approvalStatusBadgeClass(detailsApprovalStatus)}`}>
-                            {approvalStatusLabel(detailsApprovalStatus)}
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${approvalStatusBadgeClass(detailsApprovalStatus, r?.isActive)}`}>
+                            {approvalStatusLabel(detailsApprovalStatus, r?.isActive)}
                           </span>
                           <p className="mt-2 text-xs text-slate-500">
                             Outlet: {(r?.isActive !== false) ? "Active" : "Inactive"}
