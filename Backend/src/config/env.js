@@ -64,6 +64,10 @@ export const config = {
         process.env.SMSINDIAHUB_OTP_TEMPLATE ||
         'Welcome to the Tastizo powered by SMSINDIAHUB. Your OTP for registration is {{OTP}}',
 
+    // StartMessaging Config
+    startMessagingApiKey: process.env.START_MESSAGING_API_KEY,
+    startMessagingTemplateId: process.env.START_MESSAGING_TEMPLATE_ID || '0afbdeb0-785d-4dd0-bd48-365a182df276',
+
     // Rate limiting
     rateLimitWindowMinutes: Number(process.env.RATE_LIMIT_WINDOW || 15),
     rateLimitMaxRequests: Number(process.env.RATE_LIMIT_MAX || 100),

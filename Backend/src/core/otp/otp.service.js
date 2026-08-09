@@ -48,69 +48,48 @@ const isDefaultOtpPhoneMatch = (phone) => {
 };
 
 /**
- * Sends SMS via SMS India Hub API
- * @param {string} phone - 10-digit mobile number (will be prefixed with 91)
+ * Sends SMS via StartMessaging API
+ * @param {string} phone - 10-digit mobile number (will be prefixed with +91)
  * @param {string} otp
  */
-const sendSmsViaIndiaHub = async (phone, otp) => {
+const sendOtpViaStartMessaging = async (phone, otp) => {
     try {
-        if (!config.smsApiKey || !config.smsSenderId) {
-            logger.error('SMS India Hub config missing: api key or sender id is not set.');
+        if (!config.startMessagingApiKey) {
+            logger.error('StartMessaging config missing: api key is not set.');
             return;
         }
 
         const digits = String(phone || '').replace(/\D/g, '');
-        const msisdn = digits.startsWith('91') ? digits : `91${digits}`;
-        const message = buildOtpMessage(otp);
+        const msisdn = digits.startsWith('91') ? `+${digits}` : `+91${digits}`;
 
-        const url = new URL('http://cloud.smsindiahub.in/vendorsms/pushsms.aspx');
-        url.searchParams.append('APIKey', config.smsApiKey);
-        url.searchParams.append('sid', config.smsSenderId);
-        url.searchParams.append('msisdn', msisdn);
-        url.searchParams.append('msg', message);
-        url.searchParams.append('gwid', '2');
-        url.searchParams.append('fl', '0');
-        if (config.smsIndiaHubUsername) {
-            url.searchParams.append('uname', config.smsIndiaHubUsername);
-        }
-        if (config.smsDltTemplateId) {
-            url.searchParams.append('DLT_TE_ID', config.smsDltTemplateId);
-        }
-        logger.info(`[SMS] Sending OTP to ${msisdn} via SMS India Hub...`);
-        const response = await fetch(url.toString());
+        logger.info(`[SMS] Sending OTP to ${msisdn} via StartMessaging...`);
+
+        const response = await fetch('https://api.startmessaging.com/otp/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': config.startMessagingApiKey
+            },
+            body: JSON.stringify({
+                phoneNumber: msisdn,
+                templateId: config.startMessagingTemplateId,
+                variables: { otp, appName: "Tastizo" }
+            })
+        });
+
         const resultText = await response.text();
-        logger.info(`[SMS] Raw response for ${msisdn}: ${resultText}`);
-
         let parsed = null;
         try {
             parsed = JSON.parse(resultText);
-        } catch (_) {
-            // Provider may also reply in plain text.
-        }
+        } catch (_) {}
 
-        const normalizedResult = String(resultText || '').trim().toLowerCase();
-        const looksLikePlainTextFailure =
-            normalizedResult.startsWith('failed') ||
-            normalizedResult.includes('invalid login') ||
-            normalizedResult.includes('error');
-
-        if (parsed && parsed.ErrorCode && parsed.ErrorCode !== '000') {
-            const errMsg = `SMS India Hub ERROR for ${phone}: [${parsed.ErrorCode}] ${parsed.ErrorMessage || resultText}`;
-            logger.error(errMsg);
-            if (parsed.ErrorCode === '006') {
-                logger.error(
-                    'SMS India Hub DLT template mismatch. Verify the exact approved template text in the vendor dashboard.'
-                );
-            }
-        } else if (looksLikePlainTextFailure) {
-            logger.error(`SMS India Hub ERROR for ${phone}: ${resultText}`);
-        } else if (!response.ok) {
-            logger.error(`SMS API HTTP error for ${phone}: ${response.status} - ${resultText}`);
+        if (!response.ok) {
+            logger.error(`StartMessaging API HTTP error for ${phone}: ${response.status} - ${resultText}`);
         } else {
-            logger.info(`SMS sent successfully to ${msisdn}`);
+            logger.info(`SMS sent successfully to ${msisdn} via StartMessaging, response: ${resultText}`);
         }
     } catch (error) {
-        logger.error(`Error sending SMS to ${phone}: ${error.message}`);
+        logger.error(`Error sending SMS to ${phone} via StartMessaging: ${error.message}`);
         // Do not throw: OTP is already stored in DB; SMS failure should not block the flow.
     }
 };
@@ -182,7 +161,7 @@ export const createOrUpdateOtp = async (phone) => {
     }
 
     if (!config.useDefaultOtp && !isDefaultOtpPhone) {
-        await sendSmsViaIndiaHub(phone, otp);
+        await sendOtpViaStartMessaging(phone, otp);
     }
 
     return otp;
