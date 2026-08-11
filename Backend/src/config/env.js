@@ -66,7 +66,7 @@ export const config = {
 
     // StartMessaging Config
     startMessagingApiKey: process.env.START_MESSAGING_API_KEY,
-    startMessagingTemplateId: process.env.START_MESSAGING_TEMPLATE_ID || '0afbdeb0-785d-4dd0-bd48-365a182df276',
+    startMessagingTemplateId: process.env.START_MESSAGING_TEMPLATE_ID || '39beb731-de09-4a1d-bbbf-3cc9a12936f9',
 
     // Rate limiting
     rateLimitWindowMinutes: Number(process.env.RATE_LIMIT_WINDOW || 15),
