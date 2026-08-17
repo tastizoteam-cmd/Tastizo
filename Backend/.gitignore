@@ -33,3 +33,6 @@ pids
 # OS files
 .DS_Store
 Thumbs.db
+
+# Scratch directory (Agent artifacts)
+scratch/
