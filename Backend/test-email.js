@@ -2,9 +2,9 @@ import { sendApprovalEmail } from './src/utils/email.js';
 
 async function testEmail() {
     console.log('Testing approval email for Restaurant...');
-    const result = await sendApprovalEmail('notshailu@gmail.com', 'Shailu', 'Restaurant');
+    const result = await sendApprovalEmail('tastizoteam@gmail.com', 'Tastizo Admin', 'Restaurant');
     if (result) {
-        console.log('Test email sent successfully to notshailu@gmail.com for Restaurant!');
+        console.log('Test email sent successfully to tastizoteam@gmail.com for Restaurant!');
     } else {
         console.log('Failed to send test email.');
     }

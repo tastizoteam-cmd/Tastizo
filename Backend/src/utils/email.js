@@ -42,6 +42,9 @@ export async function sendAdminResetOtpEmail(to, otp) {
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 480px; margin: 0 auto; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 20px;">
+      <img src="https://res.cloudinary.com/dciu4uawr/image/upload/v1786958933/tastizo-email-logo.png" alt="Tastizo" style="max-height: 110px; font-size: 24px; font-weight: bold; color: #2b9d58;" />
+  </div>
   <h2 style="color: #111;">Password reset code</h2>
   <p>Use the code below to reset your admin password. It is valid for 10 minutes.</p>
   <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; background: #f5f5f5; padding: 12px 16px; border-radius: 8px;">${otp}</p>
@@ -89,6 +92,9 @@ export async function sendApprovalEmail(to, name, role) {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 30px; font-size: 18px;">
   <div style="background-color: #f9f9f9; padding: 30px; border-radius: 12px; border: 1px solid #eaeaea;">
+      <div style="text-align: center; margin-bottom: 25px;">
+          <img src="https://res.cloudinary.com/dciu4uawr/image/upload/v1786958933/tastizo-email-logo.png" alt="Tastizo" style="max-height: 145px; font-size: 32px; font-weight: bold; color: #2b9d58;" />
+      </div>
       <h1 style="color: #2b2b2b; font-size: 28px; text-align: center; margin-bottom: 20px;">Congratulations! 🎉</h1>
       <p style="font-size: 20px;">Hello <strong>${name}</strong>,</p>
       <p>We are thrilled to inform you that your application to join Tastizo as a <strong style="color: #ff5722;">${role}</strong> has been <strong>successfully approved</strong>.</p>
