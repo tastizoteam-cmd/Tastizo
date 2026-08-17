@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-await mongoose.connect('mongodb+srv://appzeto:1234567890@ac-vcacra4-shard-00-00.izmf76z.mongodb.net:27017/appzeto?retryWrites=true&w=majority');
+await mongoose.connect('mongodb+srv://tastizo:1234567890@ac-vcacra4-shard-00-00.izmf76z.mongodb.net:27017/tastizo?retryWrites=true&w=majority');
 
 const db = mongoose.connection.db;
 const restaurants = await db.collection('foodrestaurants').find({}, { projection: { restaurantName: 1, menuPdf: 1 } }).limit(15).toArray();

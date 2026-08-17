@@ -96,7 +96,7 @@ describe('Orders API', () => {
       expect(res.body.data.pricing.subtotal).toBe(400);
     });
 
-    it('should successfully apply coupon and calculate discount using the 20% default platform commission fallback', async () => {
+    it('should successfully apply coupon and calculate discount using the 10% default platform commission fallback', async () => {
       await FoodOffer.create({
         couponCode: 'NEWUSER500',
         couponType: 'delivery',
@@ -136,10 +136,11 @@ describe('Orders API', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.pricing).toBeDefined();
-      expect(res.body.data.pricing.discount).toBe(50);
+      expect(res.body.data.pricing.discount).toBe(40);
       expect(res.body.data.pricing.appliedCoupon).toBeDefined();
       expect(res.body.data.pricing.appliedCoupon.code).toBe('NEWUSER500');
-      expect(res.body.data.pricing.appliedCoupon.discount).toBe(50);
+      expect(res.body.data.pricing.appliedCoupon.discount).toBe(40);
     });
   });
 });
+

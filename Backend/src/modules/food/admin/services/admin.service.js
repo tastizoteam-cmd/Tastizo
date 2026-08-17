@@ -3529,6 +3529,15 @@ export async function approveRestaurant(id) {
     ).lean();
 
     if (updated) {
+        if (updated.ownerEmail) {
+            try {
+                const { sendApprovalEmail } = await import('../../../../utils/email.js');
+                await sendApprovalEmail(updated.ownerEmail, updated.ownerName || updated.restaurantName, 'Restaurant');
+            } catch (err) {
+                console.error('Failed to send approval email:', err);
+            }
+        }
+
         try {
             await FoodRestaurantCommission.findOneAndUpdate(
                 { restaurantId: updated._id },
@@ -4746,6 +4755,15 @@ export async function approveDeliveryPartner(id) {
     partner.rejectedAt = undefined;
     partner.rejectionReason = undefined;
     await partner.save();
+
+    if (partner.email) {
+        try {
+            const { sendApprovalEmail } = await import('../../../../utils/email.js');
+            await sendApprovalEmail(partner.email, partner.name, 'Delivery Partner');
+        } catch (err) {
+            console.error('Failed to send approval email:', err);
+        }
+    }
 
     try {
         const { notifyOwnerSafely } = await import('../../../../core/notifications/firebase.service.js');
