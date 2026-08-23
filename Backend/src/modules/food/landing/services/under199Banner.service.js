@@ -1,12 +1,12 @@
-import { FoodUnder250Banner } from '../models/under250Banner.model.js';
+import { FoodUnder199Banner } from '../models/under199Banner.model.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { uploadImageBufferDetailed } from '../../../../services/cloudinary.service.js';
 
-export const listUnder250Banners = async () => {
-    return FoodUnder250Banner.find().sort({ sortOrder: 1, createdAt: -1 }).lean();
+export const listUnder199Banners = async () => {
+    return FoodUnder199Banner.find().sort({ sortOrder: 1, createdAt: -1 }).lean();
 };
 
-export const createUnder250BannersFromFiles = async (files, meta = {}) => {
+export const createUnder199BannersFromFiles = async (files, meta = {}) => {
     if (!files || !files.length) {
         return [];
     }
@@ -15,9 +15,9 @@ export const createUnder250BannersFromFiles = async (files, meta = {}) => {
 
     for (const file of files) {
         try {
-            const uploadResult = await uploadImageBufferDetailed(file.buffer, 'food/under-250-banners');
+            const uploadResult = await uploadImageBufferDetailed(file.buffer, 'food/under-199-banners');
 
-            const banner = await FoodUnder250Banner.create({
+            const banner = await FoodUnder199Banner.create({
                 imageUrl: uploadResult.secure_url,
                 publicId: uploadResult.public_id,
                 title: meta.title,
@@ -37,8 +37,8 @@ export const createUnder250BannersFromFiles = async (files, meta = {}) => {
     return results;
 };
 
-export const deleteUnder250Banner = async (id) => {
-    const doc = await FoodUnder250Banner.findById(id);
+export const deleteUnder199Banner = async (id) => {
+    const doc = await FoodUnder199Banner.findById(id);
     if (!doc) {
         return { deleted: false };
     }
@@ -55,8 +55,8 @@ export const deleteUnder250Banner = async (id) => {
     return { deleted: true };
 };
 
-export const updateUnder250BannerOrder = async (id, sortOrder) => {
-    const updated = await FoodUnder250Banner.findByIdAndUpdate(
+export const updateUnder199BannerOrder = async (id, sortOrder) => {
+    const updated = await FoodUnder199Banner.findByIdAndUpdate(
         id,
         { sortOrder },
         { new: true }
@@ -64,8 +64,8 @@ export const updateUnder250BannerOrder = async (id, sortOrder) => {
     return updated;
 };
 
-export const toggleUnder250BannerStatus = async (id, isActive) => {
-    const updated = await FoodUnder250Banner.findByIdAndUpdate(
+export const toggleUnder199BannerStatus = async (id, isActive) => {
+    const updated = await FoodUnder199Banner.findByIdAndUpdate(
         id,
         { isActive },
         { new: true }

@@ -54,7 +54,7 @@ import { toast } from "sonner";
 const debugLog = (...args) => { };
 const debugWarn = (...args) => { };
 const debugError = (...args) => { };
-const USER_SESSION_PREFERENCE_KEYS = ["userVegMode", "food-under-250-filters"];
+const USER_SESSION_PREFERENCE_KEYS = ["userVegMode", "food-under-199-filters"];
 
 import { registerWebPushForCurrentModule } from "@food/utils/firebaseMessaging";
 

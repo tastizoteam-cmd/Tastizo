@@ -31,7 +31,7 @@ export default function DesktopNavbar({ showLogo = true }) {
     const [faviconUrl, setFaviconUrl] = useState(null)
     const [companyName, setCompanyName] = useState(null)
     const [hasScrolledPastBanner, setHasScrolledPastBanner] = useState(false)
-    const [under250PriceLimit, setUnder250PriceLimit] = useState(199)
+    const [under199PriceLimit, setUnder199PriceLimit] = useState(199)
     const navRef = useRef(null)
     const cartCount = getCartCount()
 
@@ -75,14 +75,14 @@ export default function DesktopNavbar({ showLogo = true }) {
 
     // Check active routes - support both /user/* and /* paths
     const isDining = location.pathname === "/food/user/dining" || location.pathname === "/food/dining"
-    const isUnder250 = location.pathname === "/food/user/under-250" || location.pathname === "/food/under-250"
+    const isUnder199 = location.pathname === "/food/user/under-199" || location.pathname === "/food/under-199"
     const isProfile = location.pathname.startsWith("/food/user/profile") || location.pathname.startsWith("/food/profile")
-    const isDelivery = !isDining && !isUnder250 && !isProfile && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/dining") && !location.pathname.includes("/under-250") && !location.pathname.includes("/profile")))
+    const isDelivery = !isDining && !isUnder199 && !isProfile && (location.pathname === "/food/user" || location.pathname === "/food" || (location.pathname.startsWith("/food/user") && !location.pathname.includes("/dining") && !location.pathname.includes("/under-199") && !location.pathname.includes("/profile")))
     const isBannerRoute =
         location.pathname === "/food/user" ||
         location.pathname === "/food" ||
-        location.pathname === "/food/user/under-250" ||
-        location.pathname === "/food/under-250"
+        location.pathname === "/food/user/under-199" ||
+        location.pathname === "/food/under-199"
 
     // Load business settings logo
     useEffect(() => {
@@ -180,12 +180,12 @@ export default function DesktopNavbar({ showLogo = true }) {
             .then((res) => {
                 if (cancelled) return
                 const settings = res?.data?.data
-                if (settings && typeof settings.under250PriceLimit === 'number') {
-                    setUnder250PriceLimit(settings.under250PriceLimit)
+                if (settings && typeof settings.under199PriceLimit === 'number') {
+                    setUnder199PriceLimit(settings.under199PriceLimit)
                 }
             })
             .catch(() => {
-                if (!cancelled) setUnder250PriceLimit(199)
+                if (!cancelled) setUnder199PriceLimit(199)
             })
         return () => { cancelled = true }
     }, [])
@@ -371,16 +371,16 @@ export default function DesktopNavbar({ showLogo = true }) {
                                 )}
                             </Link>
 
-                            {/* Under 250 Tab */}
+                            {/* Under 199 Tab */}
                             <Link
-                                to="/food/user/under-250"
-                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isUnder250
+                                to="/food/user/under-199"
+                                className={`flex flex-col items-center gap-1 px-2 py-1 transition-colors relative group ${isUnder199
                                     ? "text-[#2A9C64]"
                                     : "text-gray-600 dark:text-gray-400 hover:text-[#2A9C64]"
                                     }`}
                             >
-                                <span className="text-sm font-bold tracking-wide uppercase">Under ₹{under250PriceLimit}</span>
-                                {isUnder250 && (
+                                <span className="text-sm font-bold tracking-wide uppercase">Under ₹{under199PriceLimit}</span>
+                                {isUnder199 && (
                                     <motion.div
                                         layoutId="navIndicator"
                                         className="absolute -bottom-3 left-0 right-0 h-0.5 bg-[#2A9C64]"

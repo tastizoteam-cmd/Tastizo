@@ -16,7 +16,7 @@ const debugError = (...args) => {}
 
 
 const ProfileContext = createContext(null)
-const USER_SESSION_PREFERENCE_KEYS = ["userVegMode", "food-under-250-filters"]
+const USER_SESSION_PREFERENCE_KEYS = ["userVegMode", "food-under-199-filters"]
 const ACTIVE_USER_SESSION_KEY = "activeUserSessionId"
 
 export function ProfileProvider({ children }) {

@@ -154,7 +154,7 @@ function RestaurantDetailsContent() {
   const routerLocation = useRouterLocation()
   const goBack = useAppBackNavigation()
   const [searchParams] = useSearchParams()
-  const showOnlyUnder250 = searchParams.get('under250') === 'true'
+  const showOnlyUnder199 = searchParams.get('under199') === 'true'
   const targetDishId = useMemo(() => String(searchParams.get('dish') || '').trim(), [searchParams])
   const routeRestaurant = routerLocation.state?.restaurant || null
   const { addToCart, updateQuantity, removeFromCart, getCartItem, cart, replaceCart } = useCart()
@@ -1889,8 +1889,8 @@ function RestaurantDetailsContent() {
     if (!items) return items
 
     return items.filter((item) => {
-      // Under 250 filter (when coming from Under 250 page)
-      if (showOnlyUnder250) {
+      // Under 199 filter (when coming from Under 199 page)
+      if (showOnlyUnder199) {
         const finalPrice = getFinalPrice(item);
         if (finalPrice > 250) return false;
       }
@@ -1965,29 +1965,29 @@ function RestaurantDetailsContent() {
   }
 
   // Helper function to check if a section has any items under ₹250
-  const sectionHasItemsUnder250 = (section) => {
-    if (!showOnlyUnder250) return true; // If not filtering, show all sections
+  const sectionHasItemsUnder199 = (section) => {
+    if (!showOnlyUnder199) return true; // If not filtering, show all sections
 
     // Check direct items
     if (section.items && section.items.length > 0) {
-      const hasUnder250Items = section.items.some(item => {
+      const hasUnder199Items = section.items.some(item => {
         if (item.isAvailable === false) return false;
         const finalPrice = getFinalPrice(item);
         return finalPrice <= 250;
       });
-      if (hasUnder250Items) return true;
+      if (hasUnder199Items) return true;
     }
 
     // Check subsection items
     if (section.subsections && section.subsections.length > 0) {
       for (const subsection of section.subsections) {
         if (subsection.items && subsection.items.length > 0) {
-          const hasUnder250Items = subsection.items.some(item => {
+          const hasUnder199Items = subsection.items.some(item => {
             if (item.isAvailable === false) return false;
             const finalPrice = getFinalPrice(item);
             return finalPrice <= 250;
           });
-          if (hasUnder250Items) return true;
+          if (hasUnder199Items) return true;
         }
       }
     }
@@ -2061,7 +2061,7 @@ function RestaurantDetailsContent() {
   }
 
   const hasActiveMenuFilters = Boolean(
-    showOnlyUnder250 ||
+    showOnlyUnder199 ||
     searchQuery.trim() ||
     vegMode === true ||
     filters.sortBy ||
@@ -2072,7 +2072,7 @@ function RestaurantDetailsContent() {
 
   const filteredSections = useMemo(
     () => getFilteredSections(),
-    [restaurant?.menuSections, showOnlyUnder250, searchQuery, vegMode, filters, selectedMenuCategory]
+    [restaurant?.menuSections, showOnlyUnder199, searchQuery, vegMode, filters, selectedMenuCategory]
   )
 
   useEffect(() => {

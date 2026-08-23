@@ -28,7 +28,7 @@ const filterOptions = [
   { id: 'under-30-mins', label: 'Under 30 mins' },
   { id: 'price-match', label: 'Price Match', hasIcon: true },
   { id: 'flat-50-off', label: 'Flat 50% OFF', hasIcon: true },
-  { id: 'under-250', label: 'Under ₹250' },
+  { id: 'under-199', label: 'Under ₹199' },
   { id: 'rating-4-plus', label: 'Rating 4.0+' },
 ]
 
@@ -498,10 +498,10 @@ export default function CategoryPage() {
       })
     }
 
-    if (activeFilters.has('under-250')) {
+    if (activeFilters.has('under-199')) {
       nextRows = nextRows.filter((row) => {
         const price = getComparablePrice(row)
-        return price != null && price <= 250
+        return price != null && price <= 199
       })
     }
 
@@ -1416,7 +1416,7 @@ export default function CategoryPage() {
                 { id: 'distance-under-1km', label: 'Under 1km', icon: MapPin },
                 { id: 'distance-under-2km', label: 'Under 2km', icon: MapPin },
                 { id: 'flat-50-off', label: 'Flat 50% OFF' },
-                { id: 'under-250', label: 'Under ₹250' },
+                { id: 'under-199', label: 'Under ₹199' },
               ].map((filter) => {
                 const Icon = filter.icon
                 const isActive = activeFilters.has(filter.id)
@@ -1943,13 +1943,13 @@ export default function CategoryPage() {
                             <span className={`text-sm md:text-base font-medium ${activeFilters.has('price-under-200') ? 'text-[#2A9C64]' : 'text-gray-700 dark:text-gray-300'}`}>Under ₹200</span>
                           </button>
                           <button
-                            onClick={() => toggleFilter('under-250')}
-                            className={`px-4 md:px-5 py-3 md:py-4 rounded-xl border text-left transition-colors ${activeFilters.has('under-250')
+                            onClick={() => toggleFilter('under-199')}
+                            className={`px-4 md:px-5 py-3 md:py-4 rounded-xl border text-left transition-colors ${activeFilters.has('under-199')
                               ? 'border-green-600 bg-green-50 dark:bg-green-900/20'
                               : 'border-gray-200 dark:border-gray-700 hover:border-green-600'
                               }`}
                           >
-                            <span className={`text-sm md:text-base font-medium ${activeFilters.has('under-250') ? 'text-[#2A9C64]' : 'text-gray-700 dark:text-gray-300'}`}>Under ₹250</span>
+                            <span className={`text-sm md:text-base font-medium ${activeFilters.has('under-199') ? 'text-[#2A9C64]' : 'text-gray-700 dark:text-gray-300'}`}>Under ₹199</span>
                           </button>
                           <button
                             onClick={() => toggleFilter('price-under-500')}

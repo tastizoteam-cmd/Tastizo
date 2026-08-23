@@ -1,7 +1,7 @@
 import { getPublicGourmetRestaurants } from '../services/gourmet.service.js';
 import { getLandingSettings } from '../services/landingSettings.service.js';
 import { FoodHeroBanner } from '../models/heroBanner.model.js';
-import { FoodUnder250Banner } from '../models/under250Banner.model.js';
+import { FoodUnder199Banner } from '../models/under199Banner.model.js';
 import { FoodDiningBanner } from '../models/diningBanner.model.js';
 import { FoodExploreIcon } from '../models/exploreIcon.model.js';
 import { FoodRestaurant, buildApprovedRestaurantFilter } from '../../restaurant/models/restaurant.model.js';
@@ -32,10 +32,10 @@ export const getPublicHeroBannersController = async (req, res, next) => {
     }
 };
 
-export const getPublicUnder250BannersController = async (req, res, next) => {
+export const getPublicUnder199BannersController = async (req, res, next) => {
     try {
-        const docs = await FoodUnder250Banner.find({ isActive: true }).sort({ sortOrder: 1, createdAt: -1 }).lean();
-        return sendResponse(res, 200, 'Under 250 banners fetched', { banners: docs });
+        const docs = await FoodUnder199Banner.find({ isActive: true }).sort({ sortOrder: 1, createdAt: -1 }).lean();
+        return sendResponse(res, 200, 'Under 199 banners fetched', { banners: docs });
     } catch (error) {
         next(error);
     }

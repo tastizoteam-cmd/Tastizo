@@ -8,7 +8,7 @@ export default function BottomNavigation() {
   const activeGold = "#2A9C64"
   const location = useLocation()
   const pathname = location.pathname
-  const [under250PriceLimit, setUnder250PriceLimit] = useState(199)
+  const [under199PriceLimit, setUnder199PriceLimit] = useState(199)
   const [mounted, setMounted] = useState(false)
   const [isHiddenOnScroll, setIsHiddenOnScroll] = useState(false)
 
@@ -24,12 +24,12 @@ export default function BottomNavigation() {
       .then((res) => {
         if (cancelled) return
         const settings = res?.data?.data
-        if (settings && typeof settings.under250PriceLimit === 'number') {
-          setUnder250PriceLimit(settings.under250PriceLimit)
+        if (settings && typeof settings.under199PriceLimit === 'number') {
+          setUnder199PriceLimit(settings.under199PriceLimit)
         }
       })
       .catch(() => {
-        if (!cancelled) setUnder250PriceLimit(199)
+        if (!cancelled) setUnder199PriceLimit(199)
       })
     return () => { cancelled = true }
   }, [])
@@ -75,9 +75,9 @@ export default function BottomNavigation() {
   const cleanPath = normalizedPath.replace(/\/+$/, "") || "/"
 
   const isDining = cleanPath === "/dining" || cleanPath === "/user/dining" || cleanPath.startsWith("/user/dining/")
-  const isUnder250 = cleanPath === "/under-250" || cleanPath === "/user/under-250" || cleanPath.startsWith("/user/under-250/")
+  const isUnder199 = cleanPath === "/under-199" || cleanPath === "/user/under-199" || cleanPath.startsWith("/user/under-199/")
   const isProfile = cleanPath === "/profile" || cleanPath === "/user/profile" || cleanPath.startsWith("/profile/") || cleanPath.startsWith("/user/profile/")
-  const isDelivery = !isDining && !isUnder250 && !isProfile && (
+  const isDelivery = !isDining && !isUnder199 && !isProfile && (
     cleanPath === "/" ||
     cleanPath === "" ||
     cleanPath === "/user" ||
@@ -150,10 +150,10 @@ export default function BottomNavigation() {
         {/* Divider */}
         <div className="h-8 w-px bg-gray-300 dark:bg-gray-700" />
 
-        {/* Under 250 Tab */}
+        {/* Under 199 Tab */}
         <Link
-          to="/food/user/under-250"
-          className={`flex flex-1 flex-col items-center gap-1.5 px-2 sm:px-3 py-2 transition-all duration-200 relative ${isUnder250
+          to="/food/user/under-199"
+          className={`flex flex-1 flex-col items-center gap-1.5 px-2 sm:px-3 py-2 transition-all duration-200 relative ${isUnder199
               ? "text-[#2A9C64]"
               : "text-gray-600 dark:text-gray-400"
             }`}
@@ -161,15 +161,15 @@ export default function BottomNavigation() {
           <Coins
             className="h-5 w-5"
             strokeWidth={2}
-            style={{ color: isUnder250 ? activeGold : undefined }}
+            style={{ color: isUnder199 ? activeGold : undefined }}
           />
           <span
-            className={`text-xs sm:text-sm font-medium ${isUnder250 ? "font-bold" : "text-gray-600 dark:text-gray-400"}`}
-            style={isUnder250 ? { color: activeGold } : undefined}
+            className={`text-xs sm:text-sm font-medium ${isUnder199 ? "font-bold" : "text-gray-600 dark:text-gray-400"}`}
+            style={isUnder199 ? { color: activeGold } : undefined}
           >
-            Under ₹{under250PriceLimit}
+            Under ₹{under199PriceLimit}
           </span>
-          {isUnder250 && (
+          {isUnder199 && (
             <div className="absolute top-0 left-0 right-0 h-0.5 rounded-b-full" style={{ backgroundColor: activeGold }} />
           )}
         </Link>

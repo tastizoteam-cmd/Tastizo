@@ -15,7 +15,7 @@ const foodLandingSettingsSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
-        showUnder250: {
+        showUnder199: {
             type: Boolean,
             default: true
         },
@@ -35,9 +35,9 @@ const foodLandingSettingsSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
-        under250PriceLimit: {
+        under199PriceLimit: {
             type: Number,
-            default: 250,
+            default: 199,
             min: 1,
             max: 10000
         },

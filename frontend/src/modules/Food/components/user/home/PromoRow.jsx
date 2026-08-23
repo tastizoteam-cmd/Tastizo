@@ -26,7 +26,7 @@ export default function PromoRow({ handleVegModeChange, navigate, isVegMode, tog
       iconContainerColor: "bg-emerald-500/10 dark:bg-emerald-400/10",
     },
     {
-      id: 'under-250',
+      id: 'under-199',
       title: "UNDER",
       value: "₹250",
       icon: pricePromoIcon,
@@ -49,7 +49,7 @@ export default function PromoRow({ handleVegModeChange, navigate, isVegMode, tog
           onClick={() => {
             if (promo.id === 'pure-veg') handleVegModeChange(!isVegMode);
             else if (promo.id === 'offers') navigate('/food/user/offers');
-            else if (promo.id === 'under-250') navigate('/food/user/under-250');
+            else if (promo.id === 'under-199') navigate('/food/user/under-199');
           }}
         >
           {/* Subtle Glow Effect */}
