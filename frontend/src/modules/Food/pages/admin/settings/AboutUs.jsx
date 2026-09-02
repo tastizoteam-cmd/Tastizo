@@ -63,12 +63,14 @@ export default function AboutUs() {
     try {
       setLoading(true)
       const response = await api.get(API_ENDPOINTS.ADMIN.ABOUT, { contextModule: "admin" })
-      if (response.data.success) {
+      if (response?.data?.success) {
         const data = response.data.data
         if (data && typeof data === "object") {
           setAboutData((prev) => ({
             ...prev,
             ...data,
+            appName: data.appName || prev.appName || 'Tastizo',
+            version: data.version || prev.version || '1.0.0',
             features: Array.isArray(data.features) ? data.features : [],
           }))
         }
@@ -85,7 +87,7 @@ export default function AboutUs() {
     try {
       setSaving(true)
       const response = await api.put(API_ENDPOINTS.ADMIN.ABOUT, aboutData, { contextModule: "admin" })
-      if (response.data.success) {
+      if (response?.data?.success) {
         toast.success('About page updated successfully')
         const data = response.data.data
         if (data && typeof data === "object") {

@@ -26,12 +26,13 @@ export default function TermsAndCondition() {
     try {
       setLoading(true)
       const response = await api.get(API_ENDPOINTS.ADMIN.TERMS, { contextModule: "admin" })
-      if (response.data.success) {
-        // Convert HTML to plain text for textarea
-        const content = response.data.data.content || ''
+      if (response?.data?.success) {
+        const payload = response.data.data || {}
+        const content = payload.content || ''
         const textContent = legalHtmlToPlainText(content)
         setTermsData({
-          ...response.data.data,
+          title: payload.title || 'Terms and Conditions',
+          ...payload,
           content: textContent
         })
       }
@@ -52,16 +53,18 @@ export default function TermsAndCondition() {
       
       const response = await api.put(
         API_ENDPOINTS.ADMIN.TERMS,
-        { title: termsData.title, content: htmlContent },
+        { title: termsData.title || 'Terms and Conditions', content: htmlContent },
         { contextModule: "admin" }
       )
-      if (response.data.success) {
+      if (response?.data?.success) {
         toast.success('Terms and conditions updated successfully')
         // Convert HTML to plain text for display in textarea
-        const content = response.data.data.content || ''
+        const payload = response.data.data || {}
+        const content = payload.content || ''
         const textContent = legalHtmlToPlainText(content)
         setTermsData({
-          ...response.data.data,
+          title: payload.title || 'Terms and Conditions',
+          ...payload,
           content: textContent
         })
       }

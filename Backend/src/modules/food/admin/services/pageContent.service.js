@@ -35,10 +35,41 @@ const normalizeAboutForResponse = (about) => {
     };
 };
 
+const DEFAULT_LEGAL_TITLES = {
+    terms: 'Terms and Conditions',
+    privacy: 'Privacy Policy',
+    refund: 'Refund Policy',
+    shipping: 'Shipping Policy',
+    cancellation: 'Cancellation Policy'
+};
+
 export const getPublicPageByKey = async (key) => {
     const k = normalizeKey(key);
     const doc = await FoodPageContent.findOne({ key: k }).lean();
-    if (!doc) return { key: k, data: null };
+    if (!doc) {
+        if (k === 'about') {
+            return {
+                key: k,
+                data: {
+                    appName: 'Tastizo',
+                    version: '1.0.0',
+                    description: '',
+                    logo: '',
+                    features: []
+                }
+            };
+        }
+        if (DEFAULT_LEGAL_TITLES[k]) {
+            return {
+                key: k,
+                data: {
+                    title: DEFAULT_LEGAL_TITLES[k],
+                    content: ''
+                }
+            };
+        }
+        return { key: k, data: null };
+    }
     if (k === 'about') return { key: k, data: normalizeAboutForResponse(doc.about || null) };
     return { key: k, data: normalizeLegalForResponse(doc.legal || null) };
 };
