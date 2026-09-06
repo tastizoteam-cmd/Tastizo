@@ -70,6 +70,7 @@ export default function LandingPageManagement() {
   const [allRestaurants, setAllRestaurants] = useState([])
   const [restaurantsLoading, setRestaurantsLoading] = useState(false)
 
+
   // Gourmet Restaurants
   const [gourmetRestaurants, setGourmetRestaurants] = useState([])
   const [gourmetLoading, setGourmetLoading] = useState(true)
@@ -112,7 +113,7 @@ export default function LandingPageManagement() {
 
   // Helper function to get admin token and add to request config
   const getAuthConfig = (additionalConfig = {}) => {
-    const adminToken = getModuleToken('admin')
+    const adminToken = getModuleToken('admin') || localStorage.getItem('admin_accessToken') || localStorage.getItem('accessToken')
 
     // Debug logging in development
     if (import.meta.env.DEV) {
@@ -176,16 +177,12 @@ export default function LandingPageManagement() {
     } catch (err) {
       // Handle 401/404 errors gracefully - don't show error messages
       if (err.response?.status === 401) {
-        // Token expired or invalid - will be handled by axios interceptor
-        // Don't show error message or set banners
         setBanners([])
         setError(null)
       } else if (err.response?.status === 404) {
-        // Endpoint doesn't exist, set empty array
         setBanners([])
         setError(null)
       } else {
-        // Filter out token-related errors
         const errorMessage = err.response?.data?.message || 'Failed to load hero banners'
         setErrorSafely(errorMessage)
       }
@@ -206,8 +203,7 @@ export default function LandingPageManagement() {
 
   const uploadBanners = async (files) => {
     try {
-      // Check token first before proceeding
-      const adminToken = getModuleToken('admin')
+      const adminToken = getModuleToken('admin') || localStorage.getItem('admin_accessToken') || localStorage.getItem('accessToken')
       if (!adminToken || adminToken.trim() === '' || adminToken === 'null' || adminToken === 'undefined') {
         setErrorSafely('Authentication required. Please login again.')
         return
@@ -218,27 +214,14 @@ export default function LandingPageManagement() {
       setSuccess(null)
       setBannersUploadProgress({ current: 0, total: files.length })
 
-      // Use batch upload endpoint for multiple files
       const formData = new FormData()
       files.forEach((file) => {
-        // Backend expects field name "files" (upload.array('files'))
         formData.append('files', file)
       })
 
-      // Use getAuthConfig to ensure proper Authorization header
-      // Don't set Content-Type - axios will set it automatically with boundary for FormData
-      const config = getAuthConfig()
-
-      // Debug: Log the config to verify Authorization header is set
-      if (import.meta.env.DEV) {
-        debugLog('[uploadBanners] Request config:', {
-          hasAuthHeader: !!config.headers?.Authorization,
-          authHeaderPrefix: config.headers?.Authorization?.substring(0, 20),
-          hasFormData: formData instanceof FormData
-        })
-      }
-
-      const response = await api.post('/food/hero-banners/multiple', formData, config)
+      const response = await api.post('/food/hero-banners/multiple', formData, getAuthConfig({
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }))
 
       if (response.data.success) {
         const uploadedBanners = response.data.data?.banners || []
@@ -249,7 +232,7 @@ export default function LandingPageManagement() {
         await fetchBanners()
         if (bannersFileInputRef.current) bannersFileInputRef.current.value = ''
 
-        if (failCount === 0) {
+        if (failCount === 0 && successCount > 0) {
           setSuccess(`${successCount} hero banner${successCount > 1 ? 's' : ''} uploaded successfully!`)
           setTimeout(() => setSuccess(null), 5000)
         } else if (successCount > 0) {
@@ -257,7 +240,7 @@ export default function LandingPageManagement() {
           setErrorSafely(errors.join(', '))
           setTimeout(() => { setSuccess(null); setError(null) }, 5000)
         } else {
-          setErrorSafely(`Failed to upload banners. ${errors.join(', ')}`)
+          setErrorSafely(errors.length > 0 ? errors.join(', ') : 'Failed to upload banners')
         }
       } else {
         setErrorSafely(response.data.message || 'Failed to upload banners')
@@ -265,18 +248,8 @@ export default function LandingPageManagement() {
 
       setBannersUploadProgress({ current: 0, total: 0 })
     } catch (err) {
-      debugError('Error uploading banners:', err)
-
-      // Handle 401 unauthorized errors - don't show token-related errors
-      if (err.response?.status === 401 || err.message === 'Authentication token not found') {
-        // Don't show error - let axios interceptor handle logout
-        setError(null)
-      } else {
-        // Filter out token-related errors
-        const errorMessage = err.response?.data?.message || 'Failed to upload banners'
-        setErrorSafely(errorMessage)
-      }
-
+      const errorMessage = err.response?.data?.message || 'Failed to upload banners'
+      setErrorSafely(errorMessage)
       setBannersUploadProgress({ current: 0, total: 0 })
     } finally {
       setBannersUploading(false)
@@ -840,8 +813,22 @@ export default function LandingPageManagement() {
       }))
 
       if (response.data.success) {
-        setSuccess(`${response.data.data.banners?.length || files.length} under 199 banner(s) uploaded successfully!`)
-        await fetchUnder199Banners()
+        const uploadedBanners = response.data.data?.banners || []
+        const errors = response.data.data?.errors || []
+        const successCount = uploadedBanners.length
+        const failCount = errors.length
+
+        if (successCount > 0 && failCount === 0) {
+          setSuccess(`${successCount} under 199 banner(s) uploaded successfully!`)
+        } else if (successCount > 0 && failCount > 0) {
+          setSuccess(`${successCount} under 199 banner(s) uploaded, ${failCount} failed.`)
+        } else if (successCount === 0 && failCount > 0) {
+          setErrorSafely(`Failed to upload ${failCount} under 199 banner(s).`)
+        }
+
+        if (successCount > 0) {
+          await fetchUnder199Banners()
+        }
         setTimeout(() => setSuccess(null), 3000)
       }
     } catch (err) {
@@ -956,7 +943,7 @@ export default function LandingPageManagement() {
 
       const formData = new FormData()
       files.forEach((file) => {
-        formData.append('images', file)
+        formData.append('files', file)
       })
 
       const response = await api.post('/food/hero-banners/dining/multiple', formData, getAuthConfig({
@@ -964,8 +951,22 @@ export default function LandingPageManagement() {
       }))
 
       if (response.data.success) {
-        setSuccess(`${response.data.data.banners?.length || files.length} dining banner(s) uploaded successfully!`)
-        await fetchDiningBanners()
+        const uploadedBanners = response.data.data?.banners || []
+        const errors = response.data.data?.errors || []
+        const successCount = uploadedBanners.length
+        const failCount = errors.length
+
+        if (successCount > 0 && failCount === 0) {
+          setSuccess(`${successCount} dining banner(s) uploaded successfully!`)
+        } else if (successCount > 0 && failCount > 0) {
+          setSuccess(`${successCount} dining banner(s) uploaded, ${failCount} failed.`)
+        } else if (successCount === 0 && failCount > 0) {
+          setErrorSafely(`Failed to upload ${failCount} dining banner(s).`)
+        }
+
+        if (successCount > 0) {
+          await fetchDiningBanners()
+        }
         setTimeout(() => setSuccess(null), 3000)
       }
     } catch (err) {

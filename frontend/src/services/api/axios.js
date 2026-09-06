@@ -31,7 +31,8 @@ function getModuleFromUrl(url = "") {
     normalized.includes("/food/admin/") || 
     normalized.includes("/food/auth/admin") || 
     normalized.includes("/auth/admin") || 
-    normalized.includes("admin/login")
+    normalized.includes("admin/login") ||
+    ((normalized.includes("/food/hero-banners") || normalized.includes("/hero-banners")) && !normalized.includes("/public"))
   ) return "admin";
   
   // Delivery detection - Catch all delivery-specific functional and auth routes
@@ -70,9 +71,10 @@ function getAccessToken(config) {
     const moduleToken = localStorage.getItem(key);
     if (moduleToken) return moduleToken;
 
-    // 2. Fallback to legacy generic token only for user module.
-    // Using generic token for delivery/restaurant can send wrong role token
-    // and trigger 403 on protected role-based endpoints.
+    if (module === "admin") {
+      return localStorage.getItem("admin_accessToken") || localStorage.getItem("accessToken") || null;
+    }
+
     if (module === "user") {
       return localStorage.getItem("accessToken") || null;
     }
@@ -142,7 +144,7 @@ apiClient.interceptors.request.use(
     }
 
     const token = getAccessToken(config);
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
