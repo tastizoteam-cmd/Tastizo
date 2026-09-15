@@ -39,6 +39,23 @@ export async function createSupportTicketController(req, res, next) {
             doc.restaurantId = new mongoose.Types.ObjectId(body.restaurantId);
         }
         const created = await FoodSupportTicket.create(doc);
+
+        try {
+            const { notifyAdminsSafely } = await import('../../../../core/notifications/firebase.service.js');
+            void notifyAdminsSafely({
+                title: '🎫 New Support Ticket (User)',
+                body: `A user has created a new support ticket regarding ${issueType}.`,
+                data: {
+                    type: 'support_ticket',
+                    subType: 'user',
+                    id: String(created._id)
+                }
+            });
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to notify admins of user support ticket:', err);
+        }
+
         return sendResponse(res, 201, 'Ticket created', { ticket: created.toObject() });
     } catch (e) {
         next(e);

@@ -172,6 +172,28 @@ export const notificationAPI = {
 export const adminAPI = {
   getSidebarBadges: () =>
     apiClient.get("/food/admin/sidebar-badges", { contextModule: "admin" }),
+  saveFcmToken: (token, options = {}) => {
+    if (!token) return Promise.reject(new Error("FCM token is required"));
+    const platform = typeof options?.platform === "string" ? options.platform.toLowerCase() : "web";
+    const path =
+      platform === "mobile" ? "/fcm-tokens/mobile/save" : "/fcm-tokens/save";
+    return apiClient.post(
+      path,
+      { token: String(token), platform },
+      { contextModule: "admin" },
+    );
+  },
+  removeFcmToken: (token, options = {}) => {
+    if (!token) return Promise.reject(new Error("FCM token is required"));
+    const platform = typeof options?.platform === "string" ? options.platform.toLowerCase() : "web";
+    return apiClient.delete(
+      `/fcm-tokens/remove/${encodeURIComponent(String(token))}`,
+      {
+        data: { token: String(token), platform },
+        contextModule: "admin",
+      },
+    );
+  },
   login: (email, password) => authService.adminLogin(email, password),
   /** POST /auth/admin/forgot-password/request-otp – only accepts registered admin email */
   requestForgotPasswordOtp: (email) =>

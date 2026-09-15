@@ -29,6 +29,22 @@ export const createWithdrawalRequestController = async (req, res, next) => {
 
         await withdrawal.save();
 
+        try {
+            const { notifyAdminsSafely } = await import('../../../../core/notifications/firebase.service.js');
+            void notifyAdminsSafely({
+                title: '💸 New Withdrawal Request',
+                body: `A restaurant has requested a withdrawal of ₹${amount}.`,
+                data: {
+                    type: 'withdrawal_request',
+                    subType: 'restaurant',
+                    id: String(withdrawal._id)
+                }
+            });
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to notify admins of withdrawal request:', err);
+        }
+
         return sendResponse(res, 201, 'Withdrawal request submitted successfully', withdrawal);
     } catch (error) {
         next(error);

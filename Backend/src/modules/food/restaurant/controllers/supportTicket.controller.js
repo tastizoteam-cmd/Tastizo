@@ -41,6 +41,22 @@ export const createRestaurantSupportTicketController = async (req, res, next) =>
             priority
         });
 
+        try {
+            const { notifyAdminsSafely } = await import('../../../../core/notifications/firebase.service.js');
+            void notifyAdminsSafely({
+                title: '🎫 New Support Ticket (Restaurant)',
+                body: `A restaurant has created a new support ticket regarding ${issueType}.`,
+                data: {
+                    type: 'support_ticket',
+                    subType: 'restaurant',
+                    id: String(created._id)
+                }
+            });
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to notify admins of restaurant support ticket:', err);
+        }
+
         return sendResponse(res, 201, 'Support ticket created successfully', {
             ticket: created.toObject()
         });

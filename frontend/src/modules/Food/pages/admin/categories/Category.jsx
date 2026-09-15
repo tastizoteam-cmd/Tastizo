@@ -56,6 +56,8 @@ export default function Category() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [showPendingOnly, setShowPendingOnly] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [zones, setZones] = useState([])
@@ -121,6 +123,18 @@ export default function Category() {
       )
     })
   }, [categories, searchQuery])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, showPendingOnly, categories.length])
+
+  const paginatedCategories = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredCategories.slice(start, end)
+  }, [filteredCategories, currentPage])
+
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage)
 
   const fetchCategories = async () => {
     try {
@@ -458,7 +472,7 @@ export default function Category() {
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((category) => {
+                paginatedCategories.map((category) => {
                   const creatorName = category?.createdByRestaurant?.name || category?.restaurant?.name || "Admin"
                   const approvalStatus = category?.approvalStatus || "pending"
                   const isRestaurantCategory = Boolean(category?.createdByRestaurantId || category?.restaurantId)
@@ -587,6 +601,61 @@ export default function Category() {
           </table>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div className="text-sm text-slate-600">
+              Showing <span className="font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+              <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredCategories.length)}</span> of{" "}
+              <span className="font-semibold">{filteredCategories.length}</span> categories
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white shadow-md border-blue-600"
+                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {typeof window !== "undefined" &&
         createPortal(

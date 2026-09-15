@@ -23,6 +23,21 @@ export const createSafetyEmergencyReport = async (userId, message) => {
         priority: 'medium'
     });
 
+    try {
+        const { notifyAdminsSafely } = await import('../../../../core/notifications/firebase.service.js');
+        void notifyAdminsSafely({
+            title: '🚨 Safety Emergency Report',
+            body: `${user.name || 'A user'} has submitted a new safety emergency report.`,
+            data: {
+                type: 'safety_emergency',
+                id: String(created._id)
+            }
+        });
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to notify admins of safety emergency:', e);
+    }
+
     return { report: created.toObject() };
 };
 
