@@ -52,6 +52,7 @@ export default function RestaurantCommission() {
     return commissions.filter(commission =>
       commission.restaurantName?.toLowerCase().includes(query) ||
       commission.restaurantId?.toLowerCase().includes(query) ||
+      commission.restaurant?.displayId?.toLowerCase().includes(query) ||
       commission.restaurant?.name?.toLowerCase().includes(query)
     )
   }, [commissions, searchQuery])
@@ -64,6 +65,7 @@ export default function RestaurantCommission() {
     const query = searchQuery.toLowerCase().trim()
     return approvedRestaurants.filter(restaurant =>
       restaurant.name?.toLowerCase().includes(query) ||
+      restaurant.displayId?.toLowerCase().includes(query) ||
       restaurant.restaurantId?.toLowerCase().includes(query) ||
       restaurant.ownerName?.toLowerCase().includes(query)
     )
@@ -442,7 +444,10 @@ export default function RestaurantCommission() {
                         )}
                         {visibleColumns.restaurantId && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-slate-700">{commission.restaurantId || '-'}</span>
+                            <span className="text-sm text-slate-700">
+                              {commission.restaurant?.displayId || 
+                               (commission.restaurantId ? String(commission.restaurantId).slice(-6).toUpperCase() : '-')}
+                            </span>
                           </td>
                         )}
                         {visibleColumns.defaultCommission && (
@@ -531,7 +536,9 @@ export default function RestaurantCommission() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm text-slate-900">{restaurant.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{restaurant.restaurantId}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {restaurant.displayId || (restaurant._id ? String(restaurant._id).slice(-6).toUpperCase() : '')}
+                        </p>
                       </div>
                       <Building2 className="w-4 h-4 text-slate-400" />
                     </div>
@@ -558,7 +565,9 @@ export default function RestaurantCommission() {
             {selectedRestaurant && (
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <p className="font-semibold text-sm text-slate-900">{selectedRestaurant.name}</p>
-                <p className="text-xs text-slate-600 mt-0.5">{selectedRestaurant.restaurantId}</p>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  {selectedRestaurant.displayId || (selectedRestaurant._id ? String(selectedRestaurant._id).slice(-6).toUpperCase() : '')}
+                </p>
               </div>
             )}
 

@@ -3323,8 +3323,7 @@ export default function Home() {
                     />
                   </div>
                 ))}
-                {/* Dark overlay for text readability */}
-                <div className="absolute inset-0 bg-black/45 z-10" />
+                {/* Dark overlay removed as requested */}
               </div>
             ) : (
               festVideoActive && (

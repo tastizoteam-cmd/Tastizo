@@ -400,6 +400,12 @@ const restaurantSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    displayId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
   },
   {
     collection: "food_restaurants",
@@ -582,6 +588,34 @@ restaurantSchema.pre("findOneAndUpdate", approvalUpdateMiddleware);
 restaurantSchema.pre("updateOne", approvalUpdateMiddleware);
 restaurantSchema.pre("updateMany", approvalUpdateMiddleware);
 restaurantSchema.pre("update", approvalUpdateMiddleware);
+
+restaurantSchema.pre("save", async function generateDisplayId(next) {
+  if (this.isNew && !this.displayId) {
+    try {
+      let Counter;
+      try {
+        Counter = mongoose.model('Counter');
+      } catch (e) {
+        // Fallback if Counter model isn't registered yet
+        const counterSchema = new mongoose.Schema({
+            _id: { type: String, required: true },
+            seq: { type: Number, default: 0 }
+        }, { collection: 'counters' });
+        Counter = mongoose.model('Counter', counterSchema);
+      }
+      
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: 'restaurantId' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.displayId = `RES-${1000 + counter.seq}`;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
 
 restaurantSchema.index({ ownerPhone: 1 });
 restaurantSchema.index({ restaurantName: 1 });

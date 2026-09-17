@@ -35,9 +35,9 @@ export default function FeeSettings() {
           deliveryFeeRanges: response.data.data.feeSettings.deliveryFeeRanges || [],
           freeDeliveryUpTo: response.data.data.feeSettings.freeDeliveryUpTo ?? "",
           freeDeliveryThreshold: response.data.data.feeSettings.freeDeliveryThreshold ?? "",
-          platformFee: 0,
-          packagingFee: 0,
-          gstRate: 0,
+          platformFee: response.data.data.feeSettings.platformFee ?? 0,
+          packagingFee: response.data.data.feeSettings.packagingFee ?? 0,
+          gstRate: response.data.data.feeSettings.gstRate ?? 0,
         })
       } else if (response.data.success && response.data.data.feeSettings === null) {
         // Not configured yet - keep empty fields (no defaults).
@@ -73,9 +73,9 @@ export default function FeeSettings() {
         deliveryFeeRanges: feeSettings.deliveryFeeRanges,
         freeDeliveryUpTo: feeSettings.freeDeliveryUpTo === "" ? undefined : Number(feeSettings.freeDeliveryUpTo),
         freeDeliveryThreshold: feeSettings.freeDeliveryThreshold === "" ? undefined : Number(feeSettings.freeDeliveryThreshold),
-        platformFee: 0,
-        packagingFee: 0,
-        gstRate: 0,
+        platformFee: feeSettings.platformFee === "" ? 0 : Number(feeSettings.platformFee),
+        packagingFee: feeSettings.packagingFee === "" ? 0 : Number(feeSettings.packagingFee),
+        gstRate: feeSettings.gstRate === "" ? 0 : Number(feeSettings.gstRate),
         isActive: true,
       })
 
@@ -89,9 +89,9 @@ export default function FeeSettings() {
             deliveryFeeRanges: saved.deliveryFeeRanges ?? [],
             freeDeliveryUpTo: saved.freeDeliveryUpTo ?? "",
             freeDeliveryThreshold: saved.freeDeliveryThreshold ?? "",
-            platformFee: 0,
-            packagingFee: 0,
-            gstRate: 0,
+            platformFee: saved.platformFee ?? 0,
+            packagingFee: saved.packagingFee ?? 0,
+            gstRate: saved.gstRate ?? 0,
           })
         }
       } else {
@@ -487,9 +487,11 @@ export default function FeeSettings() {
                   </label>
                   <input
                     type="number"
-                    value={0}
-                    disabled
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 cursor-not-allowed text-slate-500"
+                    value={feeSettings.platformFee}
+                    onChange={(e) => setFeeSettings({ ...feeSettings, platformFee: e.target.value })}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                   />
                   <p className="text-xs text-slate-500">
                     Platform service fee per order
@@ -502,9 +504,11 @@ export default function FeeSettings() {
                   </label>
                   <input
                     type="number"
-                    value={0}
-                    disabled
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 cursor-not-allowed text-slate-500"
+                    value={feeSettings.packagingFee}
+                    onChange={(e) => setFeeSettings({ ...feeSettings, packagingFee: e.target.value })}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                   />
                   <p className="text-xs text-slate-500">
                     Packaging charges fee per order
@@ -518,9 +522,11 @@ export default function FeeSettings() {
                   </label>
                   <input
                     type="number"
-                    value={0}
-                    disabled
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-100 cursor-not-allowed text-slate-500"
+                    value={feeSettings.gstRate}
+                    onChange={(e) => setFeeSettings({ ...feeSettings, gstRate: e.target.value })}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                   />
                   <p className="text-xs text-slate-500">
                     GST percentage applied on order subtotal
