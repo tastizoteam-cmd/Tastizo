@@ -48,7 +48,9 @@ export function computeRestaurantCommissionAmount(baseAmount, rule) {
 }
 
 export async function getRestaurantCommissionSnapshot(orderDoc) {
-  const baseAmount = Number(orderDoc?.pricing?.subtotal ?? 0) || 0;
+  const subtotal = Number(orderDoc?.pricing?.subtotal ?? 0) || 0;
+  const adminSubsidyAmount = Number(orderDoc?.adminSubsidyAmount ?? orderDoc?.pricing?.adminSubsidyAmount ?? 0) || 0;
+  const baseAmount = subtotal + adminSubsidyAmount;
   const restaurantIdRaw =
     orderDoc?.restaurantId?._id ?? orderDoc?.restaurantId ?? null;
 
@@ -104,7 +106,7 @@ export async function createInitialTransaction(order) {
         restaurantDiscountShare = Number(order.pricing?.discount || 0);
     }
     
-    const adminSubsidyAmount = Number(order.adminSubsidyAmount || 0);
+    const adminSubsidyAmount = Number(order.adminSubsidyAmount || order.pricing?.adminSubsidyAmount || 0);
     const restaurantNet = (order.pricing?.subtotal || 0) - restaurantCommission - restaurantDiscountShare + adminSubsidyAmount;
     
     // Platform profit = platformFee + packagingFee + deliveryFee + commission - riderShare - adminDiscountShare
@@ -121,7 +123,8 @@ export async function createInitialTransaction(order) {
         (order.pricing?.deliveryFee || 0) +
         restaurantCommission -
         riderShare -
-        adminDiscountShare;
+        adminDiscountShare -
+        adminSubsidyAmount;
         
     const platformNetProfit = Math.max(0, platformNetProfitRaw);
 

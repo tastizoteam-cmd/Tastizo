@@ -283,13 +283,15 @@ export async function calculateOrderPricing(userId, dto) {
             discount = calculatedDiscount;
             const commissionSnapshot = await getRestaurantCommissionSnapshot({
                 restaurantId: dto.restaurantId,
-                pricing: { subtotal: Math.max(0, subtotal - discount) }
+                pricing: { subtotal: Math.max(0, subtotal - discount) },
+                adminSubsidyAmount
             });
             platformCommission = commissionSnapshot?.commissionAmount || 0;
         } else {
             const commissionSnapshot = await getRestaurantCommissionSnapshot({
                 restaurantId: dto.restaurantId,
-                pricing: { subtotal }
+                pricing: { subtotal },
+                adminSubsidyAmount
             });
             platformCommission = commissionSnapshot?.commissionAmount || 0;
             
