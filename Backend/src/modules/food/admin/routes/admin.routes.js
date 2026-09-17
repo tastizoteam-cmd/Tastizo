@@ -1,6 +1,7 @@
 import express from 'express';
 import { AuthError } from '../../../../core/auth/errors.js';
 import * as adminController from '../controllers/admin.controller.js';
+import * as bogoController from '../controllers/bogo.controller.js';
 import * as foodApprovalController from '../controllers/foodApproval.controller.js';
 import * as addonsApprovalController from '../controllers/addonsApproval.controller.js';
 import * as businessSettingsController from '../controllers/businessSettings.controller.js';
@@ -117,9 +118,17 @@ router.patch('/foods/:id/reject', foodApprovalController.rejectFoodItemControlle
 // ----- Offers & Coupons -----
 router.get('/offers', adminController.getAllOffers);
 router.post('/offers', adminController.createAdminOffer);
+router.patch('/offers/:id', adminController.updateAdminOffer);
 router.patch('/offers/:id/cart-visibility', adminController.updateAdminOfferCartVisibility);
 router.patch('/offers/:id/pin-status', adminController.updateAdminOfferPinStatus);
 router.delete('/offers/:id', adminController.deleteAdminOffer);
+
+// ----- BOGO Offers -----
+router.get('/bogo-offers', bogoController.getBogoOffers);
+router.post('/bogo-offers', bogoController.createBogoOffer);
+router.get('/bogo-offers/:id', bogoController.getBogoOfferById);
+router.patch('/bogo-offers/:id', bogoController.updateBogoOffer);
+router.delete('/bogo-offers/:id', bogoController.deleteBogoOffer);
 
 // ----- Feedback Experience (Admin) -----
 router.get('/feedback-experiences', feedbackExperienceController.getFeedbackExperiences);
@@ -201,6 +210,7 @@ router.patch('/foods/:id/reject', foodApprovalController.rejectFoodItemControlle
 // ----- Offers & Coupons -----
 router.get('/offers', adminController.getAllOffers);
 router.post('/offers', adminController.createAdminOffer);
+router.patch('/offers/:id', adminController.updateAdminOffer);
 router.patch('/offers/:id/cart-visibility', adminController.updateAdminOfferCartVisibility);
 router.patch('/offers/:id/pin-status', adminController.updateAdminOfferPinStatus);
 router.delete('/offers/:id', adminController.deleteAdminOffer);

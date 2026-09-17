@@ -99,13 +99,13 @@ export async function createInitialTransaction(order) {
     // Restaurant payout must be based only on food base price (subtotal).
     // Platform fee, packaging fee, GST, and delivery fee should never increase restaurant share.
     
-    // If the restaurant created the coupon, they bear the cost, so it's deducted from their net
     let restaurantDiscountShare = 0;
     if (order.pricing?.appliedCoupon?.createdBy === 'restaurant') {
         restaurantDiscountShare = Number(order.pricing?.discount || 0);
     }
     
-    const restaurantNet = (order.pricing?.subtotal || 0) - restaurantCommission - restaurantDiscountShare;
+    const adminSubsidyAmount = Number(order.adminSubsidyAmount || 0);
+    const restaurantNet = (order.pricing?.subtotal || 0) - restaurantCommission - restaurantDiscountShare + adminSubsidyAmount;
     
     // Platform profit = platformFee + packagingFee + deliveryFee + commission - riderShare - adminDiscountShare
     // Wait, if restaurant bears the discount, admin doesn't. 
@@ -168,7 +168,8 @@ export async function createInitialTransaction(order) {
             restaurantCommission,
             riderShare,
             platformNetProfit,
-            taxAmount: order.pricing?.tax || 0
+            taxAmount: order.pricing?.tax || 0,
+            adminSubsidyAmount
         },
         gateway: {
             razorpayOrderId: order.payment?.razorpay?.orderId,

@@ -65,7 +65,8 @@ const foodTransactionSchema = new mongoose.Schema({
         restaurantCommission: { type: Number, required: true, min: 0 },
         riderShare: { type: Number, required: true, min: 0 },
         platformNetProfit: { type: Number, required: true, min: 0 },
-        taxAmount: { type: Number, default: 0, min: 0 }
+        taxAmount: { type: Number, default: 0, min: 0 },
+        adminSubsidyAmount: { type: Number, default: 0, min: 0 }
     },
 
     // Gateway / Provider Metadata

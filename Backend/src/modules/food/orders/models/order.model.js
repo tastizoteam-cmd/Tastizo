@@ -11,7 +11,10 @@ const orderItemSchema = new mongoose.Schema(
         quantity: { type: Number, required: true, min: 1 },
         isVeg: { type: Boolean, default: true },
         image: { type: String, default: '' },
-        notes: { type: String, default: '' }
+        notes: { type: String, default: '' },
+        isBogoFreeItem: { type: Boolean, default: false },
+        bogoOfferId: { type: mongoose.Schema.Types.ObjectId, ref: 'FoodBogoOffer' },
+        bogoReimbursementAmount: { type: Number, default: 0, min: 0 }
     },
     { _id: false }
 );

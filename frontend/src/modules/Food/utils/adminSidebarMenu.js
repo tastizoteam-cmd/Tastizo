@@ -104,6 +104,12 @@ export const adminSidebarMenu = [
         icon: "Gift",
       },
       {
+        type: "link",
+        label: "Sponsored BOGO Offers",
+        path: "/admin/food/bogo-offers",
+        icon: "Tag",
+      },
+      {
         type: "expandable",
         label: "Advertisements",
         icon: "Megaphone",

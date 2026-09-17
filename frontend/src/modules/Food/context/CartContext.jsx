@@ -1,6 +1,7 @@
 // src/context/cart-context.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 import { buildCartLineId } from "@food/utils/foodVariants"
+import { customerAPI } from "@food/api"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
@@ -137,6 +138,50 @@ const normalizeCartData = (rawCart) => {
 
 const normalizeCartItem = (item) => normalizeCartData([item])[0] || null
 
+const applyBogoRules = (cartItems, offers) => {
+  if (!offers || offers.length === 0) return cartItems;
+  
+  let cleanCart = cartItems.filter(item => !item.isBogoFreeItem);
+  let freeItemsToAdd = [];
+  
+  for (const offer of offers) {
+      const eligibleItemsInCart = cleanCart.filter(item => {
+          return offer.eligibleItems.length === 0 || offer.eligibleItems.includes(item.itemId);
+      });
+      
+      const totalEligibleQty = eligibleItemsInCart.reduce((sum, it) => sum + it.quantity, 0);
+      
+      const earnedBundles = Math.floor(totalEligibleQty / offer.buyQuantity);
+      let totalFreeItems = earnedBundles * offer.freeQuantity;
+      
+      if (offer.maxFreeItemsPerOrder) {
+          totalFreeItems = Math.min(totalFreeItems, offer.maxFreeItemsPerOrder);
+      }
+      
+      if (totalFreeItems > 0) {
+          const freeItemSource = eligibleItemsInCart.find(it => 
+             offer.freeItems?.length === 0 ? true : (offer.freeItems || []).includes(it.itemId)
+          ) || eligibleItemsInCart[0];
+          
+          if (freeItemSource) {
+              freeItemsToAdd.push({
+                  ...freeItemSource,
+                  id: `bogo-free-${offer._id}-${freeItemSource.itemId}`,
+                  lineItemId: `bogo-free-${offer._id}-${freeItemSource.itemId}`,
+                  quantity: totalFreeItems,
+                  price: 0,
+                  variantPrice: 0,
+                  isBogoFreeItem: true,
+                  bogoOfferId: offer._id,
+                  name: freeItemSource.name
+              });
+          }
+      }
+  }
+  
+  return [...cleanCart, ...freeItemsToAdd];
+}
+
 const resolveCartEntryId = (items, itemId, variantId = "") => {
   const normalizedItemId = String(itemId || "")
   const safeItems = Array.isArray(items) ? items : []
@@ -178,6 +223,35 @@ export function CartProvider({ children }) {
   const [lastAddEvent, setLastAddEvent] = useState(null)
   // Track last remove event for animation
   const [lastRemoveEvent, setLastRemoveEvent] = useState(null)
+
+  const [bogoOffers, setBogoOffers] = useState([])
+  const currentRestaurantId = cart[0]?.restaurantId
+
+  useEffect(() => {
+    if (currentRestaurantId) {
+        customerAPI.getPublicBogoOffers(currentRestaurantId).then(res => {
+            setBogoOffers(res?.data?.offers || []);
+        }).catch(err => {
+            console.error("Failed to fetch BOGO offers", err);
+            setBogoOffers([]);
+        });
+    } else {
+        setBogoOffers([]);
+    }
+  }, [currentRestaurantId])
+
+  useEffect(() => {
+    if (cart.length === 0) return;
+    const cleanCart = cart.filter(i => !i.isBogoFreeItem);
+    const newCart = applyBogoRules(cleanCart, bogoOffers);
+    
+    const currentStr = JSON.stringify(cart.map(c => ({ id: c.id, q: c.quantity })));
+    const newStr = JSON.stringify(newCart.map(c => ({ id: c.id, q: c.quantity })));
+    
+    if (currentStr !== newStr) {
+        setCart(newCart);
+    }
+  }, [cart, bogoOffers])
 
   // Persist to localStorage whenever cart changes
   useEffect(() => {

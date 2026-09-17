@@ -45,10 +45,64 @@ export async function calculateOrderPricing(userId, dto) {
   }
 
   const items = Array.isArray(dto.items) ? dto.items : [];
-  const subtotal = items.reduce(
-    (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1),
-    0,
-  );
+  
+  let subtotal = 0;
+  let adminSubsidyAmount = 0;
+  const bogoCache = {};
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    let effectivePrice = Number(it.price) || 0;
+    const qty = Number(it.quantity) || 1;
+
+    if (it.isBogoFreeItem && it.bogoOfferId) {
+      if (!bogoCache[it.bogoOfferId]) {
+        bogoCache[it.bogoOfferId] = await mongoose.model('FoodBogoOffer').findById(it.bogoOfferId).lean();
+      }
+      const bogoOffer = bogoCache[it.bogoOfferId];
+      const now = new Date();
+      
+      // Basic validation for pricing (full validation is in createOrder)
+      if (bogoOffer && bogoOffer.status === 'active' &&
+          (!bogoOffer.startDate || now >= new Date(bogoOffer.startDate)) &&
+          (!bogoOffer.endDate || now < new Date(bogoOffer.endDate))) {
+          
+          const originalPrice = effectivePrice;
+          effectivePrice = 0; // Free for customer
+          
+          // Calculate admin subsidy
+          let subsidy = 0;
+          if (bogoOffer.reimbursementType === 'full_price') {
+              subsidy = originalPrice * qty;
+          } else if (bogoOffer.reimbursementType === 'fixed') {
+              subsidy = (Number(bogoOffer.fixedReimbursementAmount) || 0) * qty;
+          } else if (bogoOffer.reimbursementType === 'custom') {
+              const customMap = bogoOffer.customReimbursementConfig || {};
+              const restIdStr = String(dto.restaurantId);
+              if (customMap[restIdStr]) {
+                  subsidy = (Number(customMap[restIdStr]) || 0) * qty;
+              } else {
+                  // Fallback if not configured for this restaurant
+                  subsidy = originalPrice * qty;
+              }
+          }
+          
+          // Must not exceed campaign budget (rough check, strict check in createOrder)
+          const remainingBudget = (Number(bogoOffer.campaignBudget) || 0) - (Number(bogoOffer.usedBudget) || 0);
+          if (remainingBudget >= subsidy) {
+              adminSubsidyAmount += subsidy;
+              it.bogoReimbursementAmount = subsidy; // Store on item
+          } else {
+              // If budget exhausted, they can't get it for free
+              throw new ValidationError(`BOGO Offer '${bogoOffer.name}' budget exhausted.`);
+          }
+      } else {
+          throw new ValidationError('The applied BOGO offer is invalid or expired.');
+      }
+    }
+    
+    subtotal += effectivePrice * qty;
+  }
 
   const feeDoc = await FoodFeeSettings.findOne({ isActive: true })
     .sort({ createdAt: -1 })
@@ -277,6 +331,7 @@ export async function calculateOrderPricing(userId, dto) {
       currency: "INR",
       couponCode: appliedCoupon?.code || codeRaw || null,
       appliedCoupon,
+      adminSubsidyAmount,
     },
   };
 }

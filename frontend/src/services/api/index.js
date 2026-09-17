@@ -24,6 +24,11 @@ export const searchAPI = {
     apiClient.get("/food/search/categories/admin", { params }),
 };
 
+export const customerAPI = {
+  getPublicBogoOffers: (restaurantId) =>
+    apiClient.get("/food/bogo-offers/public", { params: { restaurantId } }),
+};
+
 const createStubAPI = () =>
   new Proxy(
     {},
@@ -690,6 +695,10 @@ export const adminAPI = {
     apiClient.post("/food/admin/offers", body ?? {}, {
       contextModule: "admin",
     }),
+  updateAdminOffer: (offerId, body) =>
+    apiClient.patch(`/food/admin/offers/${String(offerId)}`, body ?? {}, {
+      contextModule: "admin",
+    }),
   updateAdminOfferCartVisibility: (offerId, itemId, showInCart) =>
     apiClient.patch(
       `/food/admin/offers/${String(offerId)}/cart-visibility`,
@@ -704,6 +713,26 @@ export const adminAPI = {
     ),
   deleteAdminOffer: (offerId) =>
     apiClient.delete(`/food/admin/offers/${String(offerId)}`, {
+      contextModule: "admin",
+    }),
+
+  /** BOGO Offers (admin) */
+  getBogoOffers: (params = {}) =>
+    apiClient.get("/food/admin/bogo-offers", { params, contextModule: "admin" }),
+  createBogoOffer: (body) =>
+    apiClient.post("/food/admin/bogo-offers", body ?? {}, {
+      contextModule: "admin",
+    }),
+  getBogoOfferById: (id) =>
+    apiClient.get(`/food/admin/bogo-offers/${String(id)}`, {
+      contextModule: "admin",
+    }),
+  updateBogoOffer: (id, body) =>
+    apiClient.patch(`/food/admin/bogo-offers/${String(id)}`, body ?? {}, {
+      contextModule: "admin",
+    }),
+  deleteBogoOffer: (id) =>
+    apiClient.delete(`/food/admin/bogo-offers/${String(id)}`, {
       contextModule: "admin",
     }),
 

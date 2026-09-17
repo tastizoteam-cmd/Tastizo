@@ -3660,7 +3660,10 @@ export async function getAllOffers(_query = {}) {
             maxDiscount: o.maxDiscount ?? null,
             usageLimit: o.usageLimit ?? null,
             usedCount: o.usedCount ?? 0,
-            restaurantScope: o.restaurantScope
+            restaurantScope: o.restaurantScope,
+            restaurantId: o.restaurantId?._id ? String(o.restaurantId._id) : (o.restaurantId ? String(o.restaurantId) : undefined),
+            startDate: o.startDate || null,
+            perUserLimit: o.perUserLimit || null
         };
     });
 
@@ -3714,6 +3717,43 @@ export async function createAdminOffer(body) {
     }
 
     return doc.toObject();
+}
+
+export async function updateAdminOffer(offerId, body) {
+    if (!offerId || !mongoose.Types.ObjectId.isValid(offerId)) return null;
+
+    const existingOffer = await FoodOffer.findById(offerId);
+    if (!existingOffer) return null;
+
+    if (body.couponCode && body.couponCode !== existingOffer.couponCode) {
+        const conflict = await FoodOffer.findOne({ couponCode: body.couponCode }).lean();
+        if (conflict) {
+            throw new ValidationError('Coupon code already exists on another offer');
+        }
+    }
+
+    if (body.couponCode !== undefined) existingOffer.couponCode = body.couponCode;
+    if (body.couponType !== undefined) existingOffer.couponType = body.couponType || 'delivery';
+    if (body.discountType !== undefined) existingOffer.discountType = body.discountType;
+    if (body.discountValue !== undefined) existingOffer.discountValue = body.discountValue;
+    if (body.customerScope !== undefined) existingOffer.customerScope = body.customerScope;
+    if (body.restaurantScope !== undefined) {
+        existingOffer.restaurantScope = body.restaurantScope;
+        existingOffer.restaurantId = body.restaurantScope === 'selected' ? body.restaurantId : undefined;
+    }
+    if (body.minOrderValue !== undefined) existingOffer.minOrderValue = body.minOrderValue ?? 0;
+    if (body.maxDiscount !== undefined) existingOffer.maxDiscount = body.maxDiscount ?? null;
+    if (body.usageLimit !== undefined) existingOffer.usageLimit = body.usageLimit ?? null;
+    if (body.perUserLimit !== undefined) existingOffer.perUserLimit = body.perUserLimit ?? null;
+    if (body.startDate !== undefined) existingOffer.startDate = body.startDate;
+    if (body.isFirstOrderOnly !== undefined) existingOffer.isFirstOrderOnly = body.isFirstOrderOnly ?? false;
+    if (body.endDate !== undefined) {
+        existingOffer.endDate = body.endDate;
+        existingOffer.status = body.endDate && new Date(body.endDate).getTime() <= Date.now() ? 'inactive' : 'active';
+    }
+
+    await existingOffer.save();
+    return existingOffer.toObject();
 }
 
 export async function updateAdminOfferCartVisibility(offerId, itemId, showInCart) {

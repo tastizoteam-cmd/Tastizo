@@ -368,6 +368,40 @@ export async function createOrder(userId, dto) {
       adminDiscountShare = Number(normalizedPricing.discount || 0);
   }
 
+  // BOGO Budget Validation & Deduction
+  const bogoMap = new Map();
+  let adminSubsidyAmount = 0;
+
+  for (const it of dto.items) {
+      if (it.isBogoFreeItem && it.bogoOfferId && it.bogoReimbursementAmount > 0) {
+          const amt = Number(it.bogoReimbursementAmount) || 0;
+          adminSubsidyAmount += amt;
+          bogoMap.set(it.bogoOfferId, (bogoMap.get(it.bogoOfferId) || 0) + amt);
+      }
+  }
+
+  // Atomically reserve budgets
+  const reservedBogoIds = [];
+  try {
+      for (const [offerId, amount] of bogoMap.entries()) {
+          const bogoOffer = await mongoose.model('FoodBogoOffer').findOneAndUpdate(
+              { _id: offerId, $expr: { $lte: [{ $add: ["$usedBudget", amount] }, "$campaignBudget"] }, status: 'active' },
+              { $inc: { usedBudget: amount } },
+              { new: true }
+          );
+          if (!bogoOffer) {
+              throw new ValidationError(`BOGO Offer budget exhausted or offer inactive.`);
+          }
+          reservedBogoIds.push({ offerId, amount });
+      }
+  } catch (err) {
+      // Rollback reservations if any fail
+      for (const res of reservedBogoIds) {
+          await mongoose.model('FoodBogoOffer').updateOne({ _id: res.offerId }, { $inc: { usedBudget: -res.amount } });
+      }
+      throw err;
+  }
+
   const platformProfit = Math.max(
     0,
     (Number.isFinite(normalizedPricing.deliveryFee) ? normalizedPricing.deliveryFee : 0) +
@@ -375,7 +409,8 @@ export async function createOrder(userId, dto) {
       (Number.isFinite(normalizedPricing.platformFee) ? normalizedPricing.platformFee : 0) +
       restaurantCommission -
       riderEarning -
-      adminDiscountShare,
+      adminDiscountShare -
+      adminSubsidyAmount,
   );
 
   const order = new FoodOrder({
@@ -448,6 +483,7 @@ export async function createOrder(userId, dto) {
     ...(order.toObject?.() || order),
     pricing: normalizedPricing,
     payment,
+    adminSubsidyAmount, // Pass to transaction service
   });
 
   if (paymentMethod === "razorpay" && payment?.razorpay?.orderId) {

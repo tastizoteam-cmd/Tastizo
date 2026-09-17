@@ -2238,34 +2238,60 @@ export default function Cart() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 leading-tight">{item.name}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 leading-tight">
+                                {item.name}
+                            </p>
+                            {item.isBogoFreeItem && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-[#2A9C64] text-white rounded">
+                                    FREE
+                                </span>
+                            )}
+                        </div>
                         {item.variantName ? (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.variantName}</p>
                         ) : null}
+                        {item.isBogoFreeItem && (
+                          <p className="text-xs text-[#2A9C64] mt-1 italic">Auto-added from Offer</p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3 md:gap-4">
                         {/* Quantity controls */}
-                        <div className="flex items-center border border-[#2A9C64] dark:border-[#2A9C64]/50 rounded">
-                          <button
-                            className="px-2 md:px-3 py-1 text-[#2A9C64] dark:text-[#2A9C64] hover:bg-[#2A9C6405] dark:hover:bg-[#2A9C6410]"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3 md:h-4 md:w-4" />
-                          </button>
-                          <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-[#2A9C64] dark:text-[#2A9C64] min-w-[20px] md:min-w-[24px] text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            className="px-2 md:px-3 py-1 text-[#2A9C64] dark:text-[#2A9C64] hover:bg-[#2A9C6405] dark:hover:bg-[#2A9C6410]"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3 md:h-4 md:w-4" />
-                          </button>
-                        </div>
+                        {item.isBogoFreeItem ? (
+                            <div className="flex items-center border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded px-3 py-1 opacity-70">
+                                <span className="text-sm md:text-base font-semibold text-gray-500 dark:text-gray-400 min-w-[20px] text-center">
+                                    {item.quantity}
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center border border-[#2A9C64] dark:border-[#2A9C64]/50 rounded">
+                              <button
+                                className="px-2 md:px-3 py-1 text-[#2A9C64] dark:text-[#2A9C64] hover:bg-[#2A9C6405] dark:hover:bg-[#2A9C6410]"
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3 md:h-4 md:w-4" />
+                              </button>
+                              <span className="px-2 md:px-3 text-sm md:text-base font-semibold text-[#2A9C64] dark:text-[#2A9C64] min-w-[20px] md:min-w-[24px] text-center">
+                                {item.quantity}
+                              </span>
+                              <button
+                                className="px-2 md:px-3 py-1 text-[#2A9C64] dark:text-[#2A9C64] hover:bg-[#2A9C6405] dark:hover:bg-[#2A9C6410]"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                              </button>
+                            </div>
+                        )}
 
                         <p className="text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 min-w-[50px] md:min-w-[70px] text-right">
-                          {RUPEE_SYMBOL}{((item.price || 0) * (item.quantity || 1)).toFixed(0)}
+                          {item.isBogoFreeItem ? (
+                              <span className="text-[#2A9C64] font-bold">
+                                {RUPEE_SYMBOL}0
+                              </span>
+                          ) : (
+                              <>{RUPEE_SYMBOL}{((item.price || 0) * (item.quantity || 1)).toFixed(0)}</>
+                          )}
                         </p>
                       </div>
                     </div>

@@ -122,6 +122,7 @@ export default function OrderDetails() {
           const discount = firstNumber(pricing.discount, order.discount) ?? 0
           const couponDiscount = firstNumber(pricing.couponDiscount, order.couponDiscount) ?? 0
           const referralDiscount = firstNumber(pricing.referralDiscount, order.referralDiscount) ?? 0
+          const adminSubsidyAmount = firstNumber(pricing.adminSubsidyAmount, order.adminSubsidyAmount) ?? 0
 
           const total =
             firstNumber(
@@ -226,7 +227,8 @@ export default function OrderDetails() {
               name: item.name,
               quantity: item.quantity,
               price: item.price,
-              type: item.isVeg ? 'Veg' : 'Non-Veg'
+              type: item.isVeg ? 'Veg' : 'Non-Veg',
+              isBogoFreeItem: Boolean(item.isBogoFreeItem)
             })) || [],
             billing: {
               itemSubtotal,
@@ -237,6 +239,7 @@ export default function OrderDetails() {
               discount,
               couponDiscount,
               referralDiscount,
+              adminSubsidyAmount,
               total,
               paidAmount,
               paymentStatus
@@ -848,8 +851,11 @@ export default function OrderDetails() {
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-semibold text-gray-900">
                       {item.quantity} x {item.name}
+                      {item.isBogoFreeItem && (
+                          <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-[#2A9C64] text-white rounded">FREE</span>
+                      )}
                     </p>
-                    <p className="text-sm font-semibold text-gray-900">{formatMoney(item.price)}</p>
+                    <p className="text-sm font-semibold text-gray-900">{item.isBogoFreeItem ? formatMoney(0) : formatMoney(item.price)}</p>
                   </div>
                   {item.type && (
                     <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -909,6 +915,12 @@ export default function OrderDetails() {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-green-700">Referral discount</span>
                 <span className="text-sm text-green-700">{formatDiscount(orderData.billing.referralDiscount)}</span>
+              </div>
+            )}
+            {Number(orderData.billing.adminSubsidyAmount) > 0 && (
+              <div className="flex items-center justify-between mb-3 bg-[#2A9C64]/10 p-2 rounded">
+                <span className="text-sm text-[#2A9C64] font-medium">Sponsored items (Paid by platform)</span>
+                <span className="text-sm text-[#2A9C64] font-bold">+{formatMoney(orderData.billing.adminSubsidyAmount)}</span>
               </div>
             )}
             <div className="my-3"></div>
