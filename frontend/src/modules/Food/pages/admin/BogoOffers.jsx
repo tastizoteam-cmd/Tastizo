@@ -21,6 +21,24 @@ export default function BogoOffers() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState("")
   const [submitSuccess, setSubmitSuccess] = useState("")
+  const [availableFoods, setAvailableFoods] = useState([])
+  const [foodsLoading, setFoodsLoading] = useState(false)
+
+  useEffect(() => {
+    if (formData.restaurantScope === 'selected' && formData.restaurantIds) {
+      setFoodsLoading(true)
+      const rIds = formData.restaurantIds.split(',').map(s => s.trim()).filter(Boolean)
+      adminAPI.getFoods({ restaurant: rIds[0], limit: 1000 })
+        .then(res => {
+          setAvailableFoods(res?.data?.docs || res?.data?.data?.foods || res?.data?.data || [])
+        })
+        .catch(err => console.error("Failed to load foods", err))
+        .finally(() => setFoodsLoading(false))
+    } else {
+      setAvailableFoods([])
+    }
+  }, [formData.restaurantScope, formData.restaurantIds])
+
 
   const [formData, setFormData] = useState({
     name: "",
@@ -33,6 +51,8 @@ export default function BogoOffers() {
     maxFreeItemsPerOrder: "1",
     maxRedemptions: "",
     maxRedemptionsPerUser: "1",
+    maxDiscountAmount: "",
+    eligibleItemsScope: "all",
     minOrderValue: "0",
     campaignBudget: "",
     reimbursementType: "full_price",
@@ -76,6 +96,8 @@ export default function BogoOffers() {
       maxFreeItemsPerOrder: "1",
       maxRedemptions: "",
       maxRedemptionsPerUser: "1",
+      maxDiscountAmount: "",
+      eligibleItemsScope: "all",
       minOrderValue: "0",
       campaignBudget: "",
       reimbursementType: "full_price",
@@ -100,6 +122,8 @@ export default function BogoOffers() {
       maxFreeItemsPerOrder: offer.maxFreeItemsPerOrder || 1,
       maxRedemptions: offer.maxRedemptions || "",
       maxRedemptionsPerUser: offer.maxRedemptionsPerUser || 1,
+      maxDiscountAmount: offer.maxDiscountAmount || "",
+      eligibleItemsScope: (offer.eligibleItems && offer.eligibleItems.length > 0) ? "selected" : "all",
       minOrderValue: offer.minOrderValue || 0,
       campaignBudget: offer.campaignBudget || "",
       reimbursementType: offer.reimbursementType || "full_price",
@@ -141,6 +165,7 @@ export default function BogoOffers() {
         freeQuantity: Number(formData.freeQuantity),
         maxFreeItemsPerOrder: Number(formData.maxFreeItemsPerOrder),
         minOrderValue: Number(formData.minOrderValue),
+        maxDiscountAmount: formData.maxDiscountAmount ? Number(formData.maxDiscountAmount) : null,
         campaignBudget: Number(formData.campaignBudget),
         reimbursementType: formData.reimbursementType,
       }
@@ -150,7 +175,7 @@ export default function BogoOffers() {
           payload.restaurantIds = []
       }
       
-      payload.eligibleItems = formData.eligibleItems ? formData.eligibleItems.split(',').map(s => s.trim()).filter(Boolean) : []
+      payload.eligibleItems = formData.eligibleItemsScope === 'selected' && formData.eligibleItems ? formData.eligibleItems.split(',').map(s => s.trim()).filter(Boolean) : []
       payload.freeItems = formData.freeItems ? formData.freeItems.split(',').map(s => s.trim()).filter(Boolean) : []
 
       if (formData.maxRedemptions) payload.maxRedemptions = Number(formData.maxRedemptions)
@@ -259,10 +284,42 @@ export default function BogoOffers() {
               </div>
             )}
 
+            
             <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Eligible Item IDs</label>
-              <input type="text" value={formData.eligibleItems} onChange={e => setFormData({...formData, eligibleItems: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Leave empty for ALL items" />
+              <label className="text-sm font-medium text-slate-700">Eligible Items Scope</label>
+              <select value={formData.eligibleItemsScope} onChange={e => setFormData({...formData, eligibleItemsScope: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-purple-50">
+                <option value="all">All Items</option>
+                <option value="selected">Selected Items</option>
+              </select>
             </div>
+            {formData.eligibleItemsScope === 'selected' && (
+              <div className="space-y-1 lg:col-span-2">
+                <label className="text-sm font-medium text-slate-700">Select Eligible Items (Hold Ctrl/Cmd)</label>
+                {foodsLoading ? (
+                  <div className="p-2 text-sm text-slate-500">Loading foods...</div>
+                ) : availableFoods.length > 0 ? (
+                  <select 
+                    multiple
+                    value={formData.eligibleItems ? formData.eligibleItems.split(',').map(s => s.trim()).filter(Boolean) : []}
+                    onChange={e => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setFormData({...formData, eligibleItems: selected.join(', ')});
+                    }}
+                    className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-purple-50 h-32"
+                  >
+                    {availableFoods.map(f => (
+                      <option key={f._id || f.id} value={f._id || f.id}>
+                        {f.name} (₹{f.price})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="p-2 text-sm text-slate-500">No foods available. Select a restaurant first.</div>
+                )}
+                <p className="text-xs text-slate-500">Currently selected IDs: {formData.eligibleItems || "None"}</p>
+              </div>
+            )}
+
             <div className="space-y-1">
               <label className="text-sm font-medium text-slate-700">Specific Free Item IDs</label>
               <input type="text" value={formData.freeItems} onChange={e => setFormData({...formData, freeItems: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Leave empty to give same item free" />
@@ -290,6 +347,10 @@ export default function BogoOffers() {
             <div className="space-y-1">
               <label className="text-sm font-medium text-slate-700">Max Redemptions (Total)</label>
               <input type="number" min="1" value={formData.maxRedemptions} onChange={e => setFormData({...formData, maxRedemptions: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Unlimited if empty" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-slate-700">Max Discount (₹)</label>
+              <input type="number" min="0" value={formData.maxDiscountAmount} onChange={e => setFormData({...formData, maxDiscountAmount: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Unlimited if empty" />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium text-slate-700">Min Order Value (₹)</label>

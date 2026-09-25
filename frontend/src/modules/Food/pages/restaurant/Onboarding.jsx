@@ -2350,62 +2350,6 @@ export default function RestaurantOnboarding() {
           )}
         </div>
 
-        {/* Menu PDF */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium text-gray-700">Menu PDF <span className="text-red-500">*</span></Label>
-          <div className="mt-1 border border-dashed border-gray-300 rounded-md bg-gray-50/70 px-4 py-3 flex items-center justify-between flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-md bg-white flex items-center justify-center">
-                <FileText className="w-5 h-5 text-gray-700" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-gray-900">Upload menu PDF</span>
-                <span className="text-[11px] text-gray-500">PDF only, max 1 file</span>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full text-xs"
-              onClick={() => menuPdfInputRef.current?.click()}
-            >
-              <Upload className="w-4 h-4 mr-1.5" />
-              Upload PDF
-            </Button>
-            <input
-              id="menuPdfInput"
-              type="file"
-              accept={LOCAL_PDF_FILE_ACCEPT}
-              className="hidden"
-              ref={menuPdfInputRef}
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null
-                if (file) {
-                  handleMenuPdfSelected(file)
-                }
-                e.target.value = ""
-              }}
-            />
-          </div>
-          {step2.menuPdf && (
-            <div className="mt-2 flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-gray-600" />
-                <span className="text-xs text-gray-700">
-                  {typeof step2.menuPdf === "object" ? step2.menuPdf.name || "Menu.pdf" : "Menu.pdf"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleRemoveMenuPdf}
-                className="text-xs text-red-600 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
-          )}
-        </div>
-
         {/* Profile image */}
         <div className="space-y-2">
           <Label className="text-xs font-medium text-gray-700">Restaurant profile image</Label>

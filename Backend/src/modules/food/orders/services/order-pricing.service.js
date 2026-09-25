@@ -68,22 +68,32 @@ export async function calculateOrderPricing(userId, dto) {
           (!bogoOffer.endDate || now < new Date(bogoOffer.endDate))) {
           
           const originalPrice = effectivePrice;
-          effectivePrice = 0; // Free for customer
+          const totalValue = originalPrice * qty;
+          let finalPrice = 0;
+          if (bogoOffer.maxDiscountAmount && totalValue > bogoOffer.maxDiscountAmount) {
+              finalPrice = totalValue - bogoOffer.maxDiscountAmount;
+          }
+          effectivePrice = qty > 0 ? (finalPrice / qty) : 0; // Partial cost for customer
+
           
           // Calculate admin subsidy
           let subsidy = 0;
+          const discountGiven = totalValue - finalPrice;
+          
           if (bogoOffer.reimbursementType === 'full_price') {
-              subsidy = originalPrice * qty;
+              subsidy = discountGiven;
           } else if (bogoOffer.reimbursementType === 'fixed') {
               subsidy = (Number(bogoOffer.fixedReimbursementAmount) || 0) * qty;
+              // Cap fixed subsidy to discountGiven to avoid overpaying
+              subsidy = Math.min(subsidy, discountGiven);
           } else if (bogoOffer.reimbursementType === 'custom') {
               const customMap = bogoOffer.customReimbursementConfig || {};
               const restIdStr = String(dto.restaurantId);
               if (customMap[restIdStr]) {
                   subsidy = (Number(customMap[restIdStr]) || 0) * qty;
+                  subsidy = Math.min(subsidy, discountGiven);
               } else {
-                  // Fallback if not configured for this restaurant
-                  subsidy = originalPrice * qty;
+                  subsidy = discountGiven;
               }
           }
           

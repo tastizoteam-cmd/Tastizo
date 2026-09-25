@@ -164,16 +164,26 @@ const applyBogoRules = (cartItems, offers) => {
           ) || eligibleItemsInCart[0];
           
           if (freeItemSource) {
+              const basePrice = Number(freeItemSource.price) || 0;
+              const totalFreeValue = basePrice * totalFreeItems;
+              let finalTotalFreePrice = 0;
+              
+              if (offer.maxDiscountAmount && totalFreeValue > offer.maxDiscountAmount) {
+                  finalTotalFreePrice = totalFreeValue - offer.maxDiscountAmount;
+              }
+              
+              const perItemPrice = totalFreeItems > 0 ? (finalTotalFreePrice / totalFreeItems) : 0;
+
               freeItemsToAdd.push({
                   ...freeItemSource,
                   id: `bogo-free-${offer._id}-${freeItemSource.itemId}`,
                   lineItemId: `bogo-free-${offer._id}-${freeItemSource.itemId}`,
                   quantity: totalFreeItems,
-                  price: 0,
-                  variantPrice: 0,
+                  price: perItemPrice,
+                  variantPrice: perItemPrice,
                   isBogoFreeItem: true,
                   bogoOfferId: offer._id,
-                  name: freeItemSource.name
+                  name: freeItemSource.name + (finalTotalFreePrice > 0 ? " (BOGO)" : " (FREE)")
               });
           }
       }

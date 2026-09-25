@@ -24,6 +24,7 @@ const foodBogoOfferSchema = new mongoose.Schema(
         maxRedemptions: { type: Number, default: null, min: 1 },
         maxRedemptionsPerUser: { type: Number, default: 1, min: 1 },
         minOrderValue: { type: Number, default: 0, min: 0 },
+        maxDiscountAmount: { type: Number, default: null, min: 0 },
         
         // Budget & Liability
         campaignBudget: { type: Number, required: true, min: 0 },
