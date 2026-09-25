@@ -363,17 +363,9 @@ export const registerRestaurant = async (payload, files) => {
         );
     }
 
-    let menuPdf = '';
-    if (files?.menuPdf?.[0]) {
-        menuPdf = await uploadFileBuffer(files.menuPdf[0].buffer, 'food/restaurants/menu-pdf', {
-            fileName: files.menuPdf[0].originalname || 'menu.pdf',
-            format: 'pdf'
-        });
-    }
 
-    if (!menuPdf) {
-        throw new ValidationError('Menu PDF is required');
-    }
+
+
 
     const normalizedOpeningTime = normalizeRestaurantTime(openingTime);
     const normalizedClosingTime = normalizeRestaurantTime(closingTime);
@@ -407,7 +399,11 @@ export const registerRestaurant = async (payload, files) => {
         const resolvedZone = await resolveZoneFromAddressLike(locationPayload);
         console.log(`[registerRestaurant] Matched ZoneId: ${resolvedZone?._id || 'None'}`);
         
-        if (!resolvedZone?._id) {
+        let finalZoneId = resolvedZone?._id;
+        if (!finalZoneId && zoneId) {
+            finalZoneId = zoneId;
+        }
+        if (!finalZoneId) {
             throw new ValidationError('Restaurant location is outside all active zones. Please pin the restaurant inside a service zone.');
         }
         const restaurant = await FoodRestaurant.create({
@@ -421,7 +417,7 @@ export const registerRestaurant = async (payload, files) => {
             ownerPhoneLast10,
             primaryContactNumber,
             pureVegRestaurant: pureVegRestaurant === true,
-            zoneId: new mongoose.Types.ObjectId(String(resolvedZone._id)),
+            zoneId: new mongoose.Types.ObjectId(String(finalZoneId)),
             location: locationPayload,
             cuisines: cuisines || [],
             openingTime: normalizedOpeningTime || undefined,
