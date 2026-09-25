@@ -24,22 +24,6 @@ export default function BogoOffers() {
   const [availableFoods, setAvailableFoods] = useState([])
   const [foodsLoading, setFoodsLoading] = useState(false)
 
-  useEffect(() => {
-    if (formData.restaurantScope === 'selected' && formData.restaurantIds) {
-      setFoodsLoading(true)
-      const rIds = formData.restaurantIds.split(',').map(s => s.trim()).filter(Boolean)
-      adminAPI.getFoods({ restaurant: rIds[0], limit: 1000 })
-        .then(res => {
-          setAvailableFoods(res?.data?.docs || res?.data?.data?.foods || res?.data?.data || [])
-        })
-        .catch(err => console.error("Failed to load foods", err))
-        .finally(() => setFoodsLoading(false))
-    } else {
-      setAvailableFoods([])
-    }
-  }, [formData.restaurantScope, formData.restaurantIds])
-
-
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -62,6 +46,22 @@ export default function BogoOffers() {
     eligibleItems: "",
     freeItems: "",
   })
+
+  useEffect(() => {
+    if (formData.restaurantScope === 'selected' && formData.restaurantIds) {
+      setFoodsLoading(true)
+      const rIds = formData.restaurantIds.split(',').map(s => s.trim()).filter(Boolean)
+      adminAPI.getFoods({ restaurant: rIds[0], limit: 1000 })
+        .then(res => {
+          setAvailableFoods(res?.data?.docs || res?.data?.data?.foods || res?.data?.data || [])
+        })
+        .catch(err => console.error("Failed to load foods", err))
+        .finally(() => setFoodsLoading(false))
+    } else {
+      setAvailableFoods([])
+    }
+  }, [formData.restaurantScope, formData.restaurantIds])
+
 
   const fetchOffers = useCallback(async () => {
     setLoading(true)
@@ -264,22 +264,33 @@ export default function BogoOffers() {
             </div>
             {formData.restaurantScope === 'selected' && (
               <div className="space-y-1 lg:col-span-2">
-                <label className="text-sm font-medium text-slate-700">Select Restaurants (Hold Ctrl/Cmd to select multiple)</label>
-                <select 
-                  multiple
-                  value={formData.restaurantIds ? formData.restaurantIds.split(',').map(s => s.trim()).filter(Boolean) : []}
-                  onChange={e => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setFormData({...formData, restaurantIds: selected.join(', ')});
-                  }}
-                  className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-purple-50 h-32"
-                >
-                  {restaurants.map(r => (
-                    <option key={r._id || r.id} value={r._id || r.id}>
-                      {r.restaurantName || r.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-sm font-medium text-slate-700">Select Restaurants</label>
+                <div className="w-full border border-slate-300 rounded-lg text-sm bg-purple-50/50 h-40 overflow-y-auto p-2 space-y-1">
+                  {restaurants.map(r => {
+                    const id = String(r._id || r.id);
+                    const selectedIds = formData.restaurantIds ? formData.restaurantIds.split(',').map(s => s.trim()).filter(Boolean) : [];
+                    const isSelected = selectedIds.includes(id);
+                    return (
+                      <label key={id} className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${isSelected ? 'bg-purple-100 border border-purple-200' : 'hover:bg-purple-50 border border-transparent'}`}>
+                        <input 
+                          type="checkbox" 
+                          checked={isSelected}
+                          onChange={(e) => {
+                            let newSelected = [...selectedIds];
+                            if (e.target.checked) {
+                              newSelected.push(id);
+                            } else {
+                              newSelected = newSelected.filter(item => item !== id);
+                            }
+                            setFormData({...formData, restaurantIds: newSelected.join(', ')});
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="font-medium text-slate-700">{r.restaurantName || r.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
                 <p className="text-xs text-slate-500">Currently selected IDs: {formData.restaurantIds || "None"}</p>
               </div>
             )}
@@ -294,25 +305,36 @@ export default function BogoOffers() {
             </div>
             {formData.eligibleItemsScope === 'selected' && (
               <div className="space-y-1 lg:col-span-2">
-                <label className="text-sm font-medium text-slate-700">Select Eligible Items (Hold Ctrl/Cmd)</label>
+                <label className="text-sm font-medium text-slate-700">Select Eligible Items</label>
                 {foodsLoading ? (
                   <div className="p-2 text-sm text-slate-500">Loading foods...</div>
                 ) : availableFoods.length > 0 ? (
-                  <select 
-                    multiple
-                    value={formData.eligibleItems ? formData.eligibleItems.split(',').map(s => s.trim()).filter(Boolean) : []}
-                    onChange={e => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setFormData({...formData, eligibleItems: selected.join(', ')});
-                    }}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-purple-50 h-32"
-                  >
-                    {availableFoods.map(f => (
-                      <option key={f._id || f.id} value={f._id || f.id}>
-                        {f.name} (₹{f.price})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-full border border-slate-300 rounded-lg text-sm bg-purple-50/50 h-40 overflow-y-auto p-2 space-y-1">
+                    {availableFoods.map(f => {
+                      const id = String(f._id || f.id);
+                      const selectedIds = formData.eligibleItems ? formData.eligibleItems.split(',').map(s => s.trim()).filter(Boolean) : [];
+                      const isSelected = selectedIds.includes(id);
+                      return (
+                        <label key={id} className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${isSelected ? 'bg-purple-100 border border-purple-200' : 'hover:bg-purple-50 border border-transparent'}`}>
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={(e) => {
+                              let newSelected = [...selectedIds];
+                              if (e.target.checked) {
+                                newSelected.push(id);
+                              } else {
+                                newSelected = newSelected.filter(item => item !== id);
+                              }
+                              setFormData({...formData, eligibleItems: newSelected.join(', ')});
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="font-medium text-slate-700">{f.name} <span className="text-slate-500 text-xs ml-1">(₹{f.price})</span></span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="p-2 text-sm text-slate-500">No foods available. Select a restaurant first.</div>
                 )}

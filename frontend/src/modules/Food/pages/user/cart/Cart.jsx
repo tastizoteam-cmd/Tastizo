@@ -306,19 +306,6 @@ export default function Cart() {
   const { displayBogoOffer, isBogoAppliedState } = useMemo(() => {
     let activeOffers = bogoOffers && bogoOffers.length > 0 ? [...bogoOffers] : [];
     
-    // Fallback dummy offer for UI testing if the database is empty
-    if (activeOffers.length === 0 && (!bogoOffers || bogoOffers.length === 0)) {
-      activeOffers = [{
-        _id: "preview-bogo-123",
-        name: "BOGO Special!",
-        description: "Buy 1 Get 1 FREE on selected items",
-        buyQuantity: 1,
-        freeQuantity: 1,
-        minOrderValue: 300,
-        eligibleItems: [] // Applies to all items so it always shows in preview
-      }];
-    }
-
 
     // Only show BOGO banner if the user has at least one eligible item in their cart
     // (or if the offer applies to all items)

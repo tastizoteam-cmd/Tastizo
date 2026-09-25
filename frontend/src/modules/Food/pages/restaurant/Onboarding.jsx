@@ -650,21 +650,6 @@ export default function RestaurantOnboarding() {
     return name.endsWith(".pdf")
   }
 
-  const handleMenuPdfSelected = async (file) => {
-    if (!file) return
-    if (!isPdfFile(file)) {
-      toast.error("Only PDF files are allowed for menu upload")
-      return
-    }
-    setStep2((prev) => ({ ...prev, menuPdf: file }))
-    await persistMenuPdfToDB(file)
-  }
-
-  const handleRemoveMenuPdf = async () => {
-    setStep2((prev) => ({ ...prev, menuPdf: null }))
-    await persistMenuPdfToDB(null)
-  }
-
   const handleProfileImageSelected = (file) => {
     if (!file) return
     setStep2((prev) => ({
@@ -785,20 +770,6 @@ export default function RestaurantOnboarding() {
     return getPersistedImagePayload(value)
   }
 
-  const resolveMenuPdfForProfileUpdate = async (value) => {
-    if (!value) return null
-
-    if (isUploadableFile(value)) {
-      if (!isPdfFile(value)) {
-        throw new Error("Only PDF files are allowed for menu upload")
-      }
-      const uploaded = await handleFileUpload(value, "food/restaurants/menu-pdf")
-      return uploaded || null
-    }
-
-    return getPersistedImagePayload(value)
-  }
-
   const resolveMenuImagesForProfileUpdate = async (menuImages = []) => {
     const items = Array.isArray(menuImages) ? menuImages : []
     const resolved = await Promise.all(
@@ -879,7 +850,6 @@ export default function RestaurantOnboarding() {
           const restoredPanImage = await getFileFromDB("panImage")
           const restoredGstImage = await getFileFromDB("gstImage")
           const restoredFssaiImage = await getFileFromDB("fssaiImage")
-          const restoredMenuPdf = await getFileFromDB("menuPdf")
           
           const restoredMenuImages = []
           for (let i = 0; i < 10; i++) {
@@ -895,11 +865,6 @@ export default function RestaurantOnboarding() {
             setStep2((prev) => ({
               ...prev,
               menuImages: [...urlMenuImages, ...restoredMenuImages],
-              menuPdf:
-                restoredMenuPdf ||
-                (typeof localData.step2.menuPdf === "string" || localData.step2.menuPdf?.url
-                  ? localData.step2.menuPdf
-                  : null),
               profileImage:
                 restoredProfileImage ||
                 (typeof localData.step2.profileImage === "string" || localData.step2.profileImage?.url
@@ -998,7 +963,6 @@ export default function RestaurantOnboarding() {
       }
       
       await persistMenuImagesToDB(step2.menuImages || [])
-      await persistMenuPdfToDB(step2.menuPdf || null)
     }
     saveFiles()
   }, [isOnboardingHydrated, step1, step2, step3, step])
@@ -1318,18 +1282,6 @@ export default function RestaurantOnboarding() {
       }
     }
 
-    if (!step2.menuPdf) {
-      errors.push("Menu PDF is required")
-    } else {
-      const isValidMenuPdf =
-        isUploadableFile(step2.menuPdf) ||
-        (step2.menuPdf?.url && typeof step2.menuPdf.url === "string") ||
-        (typeof step2.menuPdf === "string" && step2.menuPdf.trim())
-      if (!isValidMenuPdf) {
-        errors.push("Please upload a valid menu PDF")
-      }
-    }
-
     if (!step2.openingTime?.trim()) {
       errors.push("Opening time is required")
     }
@@ -1506,7 +1458,6 @@ export default function RestaurantOnboarding() {
             panImagePayload,
             gstImagePayload,
             fssaiImagePayload,
-            menuPdfPayload,
           ] = await Promise.all([
             resolveMenuImagesForProfileUpdate(step2.menuImages || []),
             resolveImageForProfileUpdate(step2.profileImage, "food/restaurants/profile"),
@@ -1515,7 +1466,6 @@ export default function RestaurantOnboarding() {
               ? resolveImageForProfileUpdate(step3.gstImage, "food/restaurants/gst")
               : Promise.resolve(null),
             resolveImageForProfileUpdate(step3.fssaiImage, "food/restaurants/fssai"),
-            resolveMenuPdfForProfileUpdate(step2.menuPdf),
           ])
 
           const updatePayload = {
@@ -1560,10 +1510,6 @@ export default function RestaurantOnboarding() {
             ifscCode: (step3.ifscCode || "").toUpperCase(),
             accountHolderName: step3.accountHolderName || "",
             accountType: step3.accountType || "",
-          }
-
-          if (menuPdfPayload) {
-            updatePayload.menuPdf = menuPdfPayload
           }
 
           await restaurantAPI.updateProfile(updatePayload)
@@ -1614,11 +1560,6 @@ export default function RestaurantOnboarding() {
           throw new Error("At least one menu image must be uploaded")
         }
         menuFiles.forEach((file) => formData.append("menuImages", file))
-
-        if (!isUploadableFile(step2.menuPdf)) {
-          throw new Error("Menu PDF is required")
-        }
-        formData.append("menuPdf", step2.menuPdf)
 
         if (!isUploadableFile(step2.profileImage)) {
           throw new Error("Restaurant profile image is required")
