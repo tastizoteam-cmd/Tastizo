@@ -62,7 +62,6 @@ let onboardingFileCache = {
   step2: {
     menuImages: [],
     profileImage: null,
-    menuPdf: null,
   },
   step3: {
     panImage: null,
@@ -171,14 +170,6 @@ const persistMenuImagesToDB = async (menuImages = []) => {
   }
 }
 
-const persistMenuPdfToDB = async (menuPdf) => {
-  if (menuPdf && isUploadableFile(menuPdf)) {
-    await saveFileToDB("menuPdf", menuPdf)
-  } else {
-    await deleteFileFromDB("menuPdf")
-  }
-}
-
 const isUploadableFile = (value) => {
   if (!value || typeof value !== "object") return false
 
@@ -245,11 +236,6 @@ const saveOnboardingToLocalStorage = (step1, step2, step3, currentStep) => {
         (step2.profileImage?.url || (typeof step2.profileImage === "string" && step2.profileImage.trim()))
           ? step2.profileImage
           : null,
-      menuPdf:
-        !isUploadableFile(step2.menuPdf) &&
-        (step2.menuPdf?.url || (typeof step2.menuPdf === "string" && step2.menuPdf.trim()))
-          ? step2.menuPdf
-          : null,
     }
 
     const serializableStep3 = {
@@ -309,7 +295,6 @@ const syncOnboardingFileCache = (step2, step3) => {
     step2: {
       menuImages: (step2?.menuImages || []).filter((img) => isUploadableFile(img)),
       profileImage: isUploadableFile(step2?.profileImage) ? step2.profileImage : null,
-      menuPdf: isUploadableFile(step2?.menuPdf) ? step2.menuPdf : null,
     },
     step3: {
       panImage: isUploadableFile(step3?.panImage) ? step3.panImage : null,
@@ -324,7 +309,6 @@ const clearOnboardingFileCache = () => {
     step2: {
       menuImages: [],
       profileImage: null,
-      menuPdf: null,
     },
     step3: {
       panImage: null,
@@ -564,7 +548,6 @@ export default function RestaurantOnboarding() {
 
   const [step2, setStep2] = useState({
     menuImages: [],
-    menuPdf: null,
     profileImage: null,
     cuisines: [],
     estimatedDeliveryTime: "",
@@ -597,8 +580,7 @@ export default function RestaurantOnboarding() {
   const placesAutocompleteRef = useRef(null)
   const mapsScriptLoadedRef = useRef(false)
   const menuImagesInputRef = useRef(null)
-  const menuPdfInputRef = useRef(null)
-  const profileImageInputRef = useRef(null)
+    const profileImageInputRef = useRef(null)
   const panImageInputRef = useRef(null)
   const gstImageInputRef = useRef(null)
   const fssaiImageInputRef = useRef(null)
@@ -1110,7 +1092,6 @@ export default function RestaurantOnboarding() {
                   : (data.menuImages && data.menuImages.length > 0)
                   ? data.menuImages
                   : prev.menuImages,
-              menuPdf: step2Data.menuPdfUrl || data.menuPdf || prev.menuPdf,
               profileImage: step2Data.profileImageUrl || data.profileImage || prev.profileImage,
               cuisines:
                 (step2Data.cuisines && step2Data.cuisines.length > 0)

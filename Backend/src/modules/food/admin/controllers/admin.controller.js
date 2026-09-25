@@ -302,7 +302,7 @@ export async function downloadRestaurantMenuPdf(req, res, next) {
         }
 
         const restaurant = await FoodRestaurant.findById(id)
-            .select('menuPdf restaurantName')
+            .select('restaurantName')
             .lean();
 
         if (!restaurant) {
@@ -312,7 +312,7 @@ export async function downloadRestaurantMenuPdf(req, res, next) {
             });
         }
 
-        if (!restaurant.menuPdf) {
+        if (true) {
             return res.status(404).json({ 
                 success: false, 
                 message: 'Menu PDF not uploaded for this restaurant. Please upload a menu PDF first.'
@@ -321,7 +321,7 @@ export async function downloadRestaurantMenuPdf(req, res, next) {
 
         const signed = await adminService.getRestaurantMenuPdfDownloadUrl(id);
         const primaryUrl = signed?.url || '';
-        const fallbackUrl = restaurant.menuPdf;
+        const fallbackUrl = '';
         const restaurantName = restaurant.restaurantName || 'menu';
 
         // Fetch the PDF from Cloudinary

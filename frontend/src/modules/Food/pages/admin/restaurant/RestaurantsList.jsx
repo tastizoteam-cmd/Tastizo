@@ -1638,7 +1638,7 @@ export default function RestaurantsList() {
                 const hasFlatAddress = r?.addressLine1 || r?.area || r?.city || r?.state || r?.pincode
                 const flatAddress = [r?.addressLine1, r?.addressLine2, r?.area, r?.city, r?.state, r?.pincode, r?.landmark].filter(Boolean).join(", ")
                 const menuImages = Array.isArray(r?.menuImages) ? r.menuImages.map(normalizeImageUrl).filter(Boolean) : []
-                const menuPdfUrl = normalizeFileUrl(r?.menuPdf || r?.onboarding?.step2?.menuPdf)
+                
                 const cuisinesList =
                   (Array.isArray(r?.cuisines) && r.cuisines.length ? r.cuisines : null) ||
                   (Array.isArray(r?.onboarding?.step2?.cuisines) && r.onboarding.step2.cuisines.length ? r.onboarding.step2.cuisines : null) ||
@@ -1871,7 +1871,7 @@ export default function RestaurantsList() {
                   </div>
 
                   {/* Media */}
-                  {(profileImgUrl || coverImages.length > 0 || menuImages.length > 0 || menuPdfUrl) && (
+                  {(profileImgUrl || coverImages.length > 0 || menuImages.length > 0 ) && (
                     <div className="pt-6 border-t border-slate-200">
                       <h4 className="text-lg font-semibold text-slate-900 mb-4">Media</h4>
                       <div className="space-y-4">

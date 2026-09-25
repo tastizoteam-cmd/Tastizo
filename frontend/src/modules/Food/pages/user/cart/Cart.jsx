@@ -131,7 +131,7 @@ export default function Cart() {
     );
   }
 
-  const { cart, updateQuantity, addToCart, getCartCount, clearCart, cleanCartForRestaurant } = cartContext;
+  const { cart, updateQuantity, addToCart, getCartCount, clearCart, cleanCartForRestaurant, bogoOffers } = cartContext;
   const { getDefaultAddress, getDefaultPaymentMethod, setDefaultAddress, addresses, paymentMethods, userProfile } = useProfile()
   const { createOrder } = useOrders()
   const { openLocationSelector } = useLocationSelector()
@@ -243,6 +243,24 @@ export default function Cart() {
     }
   }, [showOrderSuccess])
 
+  const [bogoFired, setBogoFired] = useState(false)
+
+  useEffect(() => {
+    const hasBogoItem = cart.some(item => item.isBogoFreeItem)
+    if (hasBogoItem && !bogoFired) {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#F59E0B', '#FCD34D', '#D97706'],
+        zIndex: 9999
+      })
+      setBogoFired(true)
+    } else if (!hasBogoItem && bogoFired) {
+      setBogoFired(false)
+    }
+  }, [cart, bogoFired])
+
   // Restaurant and pricing state
   const [restaurantData, setRestaurantData] = useState(null)
   const [loadingRestaurant, setLoadingRestaurant] = useState(false)
@@ -259,10 +277,70 @@ export default function Cart() {
   const [userOrderCount, setUserOrderCount] = useState(0)
   const [addressZoneMap, setAddressZoneMap] = useState({})
 
-  const visibleCoupons = useMemo(
-    () => availableCoupons.filter((coupon) => String(coupon?.couponType || "delivery").toLowerCase() !== "dining"),
-    [availableCoupons],
-  )
+  // Calculate subtotal early so useMemos can use it
+  const subtotal = pricing?.subtotal || cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
+
+  const visibleCoupons = useMemo(() => {
+    const regularCoupons = availableCoupons
+      .filter((coupon) => String(coupon?.couponType || "delivery").toLowerCase() !== "dining")
+      .filter((coupon) => subtotal >= (coupon.minOrder || 0));
+    
+    const bogoFormatted = (bogoOffers || [])
+      .filter(bogo => subtotal >= (bogo.minOrderValue || 0))
+      .map(bogo => ({
+        code: bogo.name || "BOGO",
+        isBogoOffer: true,
+        offerId: bogo._id,
+        discountDisplay: `Buy ${bogo.buyQuantity} Get ${bogo.freeQuantity} FREE`,
+        discount: 0,
+        discountPercentage: 0,
+        minOrder: bogo.minOrderValue || 0,
+        description: bogo.description || `Add eligible items to get free items automatically!`,
+        customerGroup: "all",
+        isGlobalCoupon: false,
+      }));
+
+    return [...bogoFormatted, ...regularCoupons];
+  }, [availableCoupons, bogoOffers, subtotal])
+
+  const { displayBogoOffer, isBogoAppliedState } = useMemo(() => {
+    let activeOffers = bogoOffers && bogoOffers.length > 0 ? [...bogoOffers] : [];
+    
+    // Fallback dummy offer for UI testing if the database is empty
+    if (activeOffers.length === 0 && (!bogoOffers || bogoOffers.length === 0)) {
+      activeOffers = [{
+        _id: "preview-bogo-123",
+        name: "BOGO Special!",
+        description: "Buy 1 Get 1 FREE on selected items",
+        buyQuantity: 1,
+        freeQuantity: 1,
+        minOrderValue: 300,
+        eligibleItems: [] // Applies to all items so it always shows in preview
+      }];
+    }
+
+
+    // Only show BOGO banner if the user has at least one eligible item in their cart
+    // (or if the offer applies to all items)
+    activeOffers = activeOffers.filter(offer => {
+      // If no eligibleItems specified, it applies to all items
+      if (!offer.eligibleItems || offer.eligibleItems.length === 0) return true;
+      // Otherwise, check if any item in the cart is in the eligibleItems array
+      return cart.some(item => {
+        const itemId = String(item.itemId || item.productId || item.id || "");
+        return offer.eligibleItems.includes(itemId);
+      });
+    });
+
+    if (activeOffers.length === 0) return { displayBogoOffer: null, isBogoAppliedState: false };
+
+    const appliedItem = cart.find(item => item.isBogoFreeItem);
+    if (appliedItem) {
+      const offer = activeOffers.find(offer => offer._id === appliedItem.bogoOfferId);
+      if (offer) return { displayBogoOffer: offer, isBogoAppliedState: true };
+    }
+    return { displayBogoOffer: activeOffers[0], isBogoAppliedState: false };
+  }, [cart, bogoOffers, subtotal]);
 
   // Fee settings from database (used for platform fee and GST fallback only)
   const [feeSettings, setFeeSettings] = useState({
@@ -1165,7 +1243,15 @@ export default function Cart() {
   }, [])
 
   // Use backend pricing if available, otherwise fallback to database fee settings
-  const subtotal = pricing?.subtotal || cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)
+  // subtotal is declared at the top of the component
+
+  useEffect(() => {
+    if (appliedCoupon && subtotal < (appliedCoupon.minOrder || 0)) {
+      setAppliedCoupon(null)
+      toast.info(`Coupon '${appliedCoupon.code}' removed because cart total is less than ${RUPEE_SYMBOL}${appliedCoupon.minOrder}`)
+    }
+  }, [subtotal, appliedCoupon])
+
   const fallbackDeliveryFee = (() => {
     if (appliedCoupon?.freeDelivery) {
       return 0
@@ -2306,6 +2392,58 @@ export default function Cart() {
                   <Plus className="h-4 w-4 md:h-5 md:w-5" />
                   <span className="text-sm md:text-base font-medium">Add more items</span>
                 </button>
+
+                {/* Eligible BOGO Offer Banner - Zomato Gold Premium Style */}
+                {displayBogoOffer && (
+                  <div className="mt-4 pt-4 border-t border-dashed border-gray-200 dark:border-gray-800">
+                    <div className="bg-gradient-to-br from-[#E5C158] via-[#FCE496] to-[#C79A3B] border border-[#FCE496]/50 rounded-xl p-3 flex items-center justify-between shadow-lg shadow-[#C79A3B]/20 relative overflow-hidden group">
+                      {/* Sweeping gold shine overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -skew-x-12 translate-x-[-150%] animate-[shine_3s_ease-in-out_infinite]" />
+                      
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className="bg-[#1A1A1A] rounded-full p-2 flex-shrink-0 shadow-md">
+                          <Sparkles className="h-4 w-4 text-[#FCE496]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-extrabold text-[#1A1A1A] leading-tight tracking-wide uppercase drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]">
+                            {displayBogoOffer.name || (isBogoAppliedState ? "BOGO OFFER APPLIED" : "BOGO OFFER AVAILABLE")}
+                          </p>
+                          {subtotal < (displayBogoOffer.minOrderValue || 0) ? (
+                            <p className="text-[11px] font-bold text-red-900 mt-1 bg-red-100/50 inline-block px-1.5 py-0.5 rounded shadow-sm">
+                              Add {RUPEE_SYMBOL}{((displayBogoOffer.minOrderValue || 0) - subtotal).toFixed(0)} more to unlock!
+                            </p>
+                          ) : (
+                            <p className="text-xs text-[#1A1A1A]/80 mt-0.5 font-bold">
+                              {displayBogoOffer.description || `Buy ${displayBogoOffer.buyQuantity} Get ${displayBogoOffer.freeQuantity} FREE`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (subtotal < (displayBogoOffer.minOrderValue || 0)) {
+                            toast.error(`Please add ${RUPEE_SYMBOL}${((displayBogoOffer.minOrderValue || 0) - subtotal).toFixed(0)} more to unlock this offer!`);
+                            return;
+                          }
+                          if (!isBogoAppliedState) {
+                            toast.info(`Add items to your cart to apply the ${displayBogoOffer.name} offer!`);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        }}
+                        className={`relative z-10 px-4 py-1.5 rounded-md text-[11px] font-black uppercase tracking-widest shadow-md ml-2 flex-shrink-0 transition-all ${
+                          subtotal < (displayBogoOffer.minOrderValue || 0) 
+                            ? 'bg-[#1A1A1A]/20 text-[#1A1A1A]/50 cursor-not-allowed border-2 border-transparent' 
+                            : isBogoAppliedState 
+                              ? 'bg-[#1A1A1A] text-[#FCE496] cursor-default' 
+                              : 'border-2 border-[#1A1A1A] text-[#1A1A1A] bg-transparent hover:bg-[#1A1A1A] hover:text-[#FCE496] active:scale-95 cursor-pointer'
+                        }`}
+                      >
+                        {subtotal < (displayBogoOffer.minOrderValue || 0) ? "LOCKED" : isBogoAppliedState ? "APPLIED" : "APPLY"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
 
@@ -2392,7 +2530,10 @@ export default function Cart() {
                               </div>
                             </div>
                             <button
-                              onClick={() => {
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 // Use restaurant info from existing cart items to ensure format consistency
                                 const cartRestaurantId = cart[0]?.restaurantId || restaurantId;
                                 const cartRestaurantName = cart[0]?.restaurant || restaurantName;
@@ -2464,11 +2605,11 @@ export default function Cart() {
                     {loadingCoupons ? (
                       <p className="text-sm text-gray-500">Loading offers...</p>
                     ) : visibleCoupons.length > 0 ? (
-                      <div className="flex items-start justify-between w-full">
+                      <div className={`flex items-start justify-between w-full ${visibleCoupons[0].isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === visibleCoupons[0].offerId) ? 'bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800' : ''}`}>
                         <div className="flex items-start gap-3 flex-1">
-                          <Percent className="h-5 w-5 text-gray-700 dark:text-gray-300 mt-0.5" />
+                          <Percent className={`h-5 w-5 mt-0.5 ${visibleCoupons[0].isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === visibleCoupons[0].offerId) ? 'text-amber-500' : 'text-gray-700 dark:text-gray-300'}`} />
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight mb-0.5">
+                            <p className={`text-sm font-semibold leading-tight mb-0.5 ${visibleCoupons[0].isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === visibleCoupons[0].offerId) ? 'text-amber-700 dark:text-amber-400' : 'text-gray-800 dark:text-gray-200'}`}>
                               {visibleCoupons[0].discountDisplay || `Save ${RUPEE_SYMBOL}${visibleCoupons[0].discount}`} with '{visibleCoupons[0].code}'
                             </p>
                             {visibleCoupons[0].customerGroup === "new" ? (
@@ -2485,11 +2626,11 @@ export default function Cart() {
                           </div>
                         </div>
                         <button
-                          className="border border-[#2A9C64] text-[#2A9C64] dark:hover:bg-[#2A9C6410] rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed ml-2 shadow-sm"
-                          onClick={() => handleApplyCoupon(visibleCoupons[0])}
-                          disabled={subtotal < visibleCoupons[0].minOrder || (visibleCoupons[0].customerGroup === "new" && userOrderCount > 0)}
+                          className={visibleCoupons[0].isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === visibleCoupons[0].offerId) ? "bg-amber-500 text-white rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-100 ml-2 shadow-sm" : "border border-[#2A9C64] text-[#2A9C64] dark:hover:bg-[#2A9C6410] rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed ml-2 shadow-sm"}
+                          onClick={() => !visibleCoupons[0].isBogoOffer && handleApplyCoupon(visibleCoupons[0])}
+                          disabled={visibleCoupons[0].isBogoOffer || subtotal < visibleCoupons[0].minOrder || (visibleCoupons[0].customerGroup === "new" && userOrderCount > 0)}
                         >
-                          APPLY
+                          {visibleCoupons[0].isBogoOffer ? (cart.some(i => i.isBogoFreeItem && i.bogoOfferId === visibleCoupons[0].offerId) ? "APPLIED" : "AUTO") : "APPLY"}
                         </button>
                       </div>
                     ) : (
@@ -2519,11 +2660,11 @@ export default function Cart() {
                           </button>
                         </div>
                         {visibleCoupons.slice(1).map((coupon) => (
-                          <div key={coupon.code} className="flex items-start justify-between">
+                          <div key={coupon.code} className={`flex items-start justify-between ${coupon.isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === coupon.offerId) ? 'p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800' : ''}`}>
                             <div className="flex items-start gap-3 flex-1">
-                              <Percent className="h-5 w-5 text-gray-700 dark:text-gray-300 mt-0.5 opacity-50" />
+                              <Percent className={`h-5 w-5 mt-0.5 opacity-50 ${coupon.isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === coupon.offerId) ? 'text-amber-500 opacity-100' : 'text-gray-700 dark:text-gray-300'}`} />
                               <div className="flex-1">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight mb-0.5">
+                                <p className={`text-sm font-semibold leading-tight mb-0.5 ${coupon.isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === coupon.offerId) ? 'text-amber-700 dark:text-amber-400' : 'text-gray-800 dark:text-gray-200'}`}>
                                   {coupon.discountDisplay || `Save ${RUPEE_SYMBOL}${coupon.discount}`} with '{coupon.code}'
                                 </p>
                                 {coupon.customerGroup === "new" ? (
@@ -2536,11 +2677,11 @@ export default function Cart() {
                               </div>
                             </div>
                             <button
-                              className="border border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-400 rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed ml-2"
-                              onClick={() => handleApplyCoupon(coupon)}
-                              disabled={subtotal < coupon.minOrder || (coupon.customerGroup === "new" && userOrderCount > 0)}
+                              className={coupon.isBogoOffer && cart.some(i => i.isBogoFreeItem && i.bogoOfferId === coupon.offerId) ? "bg-amber-500 text-white rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-100 ml-2" : "border border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-400 rounded px-3 py-1.5 text-xs font-semibold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed ml-2"}
+                              onClick={() => !coupon.isBogoOffer && handleApplyCoupon(coupon)}
+                              disabled={coupon.isBogoOffer || subtotal < coupon.minOrder || (coupon.customerGroup === "new" && userOrderCount > 0)}
                             >
-                              APPLY
+                              {coupon.isBogoOffer ? (cart.some(i => i.isBogoFreeItem && i.bogoOfferId === coupon.offerId) ? "APPLIED" : "AUTO") : "APPLY"}
                             </button>
                           </div>
                         ))}

@@ -303,9 +303,6 @@ const restaurantSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
-    menuPdf: {
-      type: String,
-    },
     coverImages: {
       type: [String],
       default: [],

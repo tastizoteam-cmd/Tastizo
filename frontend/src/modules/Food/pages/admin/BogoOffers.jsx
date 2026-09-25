@@ -13,6 +13,7 @@ const formatYMD = (dateString) => {
 
 export default function BogoOffers() {
   const [offers, setOffers] = useState([])
+  const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -38,6 +39,8 @@ export default function BogoOffers() {
     fixedReimbursementAmount: "",
     startDate: "",
     endDate: "",
+    eligibleItems: "",
+    freeItems: "",
   })
 
   const fetchOffers = useCallback(async () => {
@@ -46,8 +49,11 @@ export default function BogoOffers() {
     try {
       const res = await adminAPI.getBogoOffers({ limit: 100 })
       setOffers(res?.data?.docs || [])
+      
+      const restRes = await adminAPI.getRestaurants({ limit: 1000 })
+      setRestaurants(restRes?.data?.data?.restaurants || restRes?.data?.docs || [])
     } catch (err) {
-      setError(err?.message || "Failed to load BOGO offers")
+      setError(err?.message || "Failed to load data")
     } finally {
       setLoading(false)
     }
@@ -76,6 +82,8 @@ export default function BogoOffers() {
       fixedReimbursementAmount: "",
       startDate: "",
       endDate: "",
+      eligibleItems: "",
+      freeItems: "",
     })
   }
 
@@ -98,6 +106,8 @@ export default function BogoOffers() {
       fixedReimbursementAmount: offer.fixedReimbursementAmount || "",
       startDate: formatYMD(offer.startDate),
       endDate: formatYMD(offer.endDate),
+      eligibleItems: offer.eligibleItems?.join(", ") || "",
+      freeItems: offer.freeItems?.join(", ") || "",
     })
     setIsAddOpen(true)
     setSubmitError("")
@@ -139,6 +149,10 @@ export default function BogoOffers() {
       } else {
           payload.restaurantIds = []
       }
+      
+      payload.eligibleItems = formData.eligibleItems ? formData.eligibleItems.split(',').map(s => s.trim()).filter(Boolean) : []
+      payload.freeItems = formData.freeItems ? formData.freeItems.split(',').map(s => s.trim()).filter(Boolean) : []
+
       if (formData.maxRedemptions) payload.maxRedemptions = Number(formData.maxRedemptions)
       if (formData.maxRedemptionsPerUser) payload.maxRedemptionsPerUser = Number(formData.maxRedemptionsPerUser)
       if (formData.reimbursementType === 'fixed') payload.fixedReimbursementAmount = Number(formData.fixedReimbursementAmount)
@@ -214,6 +228,47 @@ export default function BogoOffers() {
               <label className="text-sm font-medium text-slate-700">Description</label>
               <input type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" />
             </div>
+
+            {/* Targeting Configuration */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-slate-700">Restaurant Scope</label>
+              <select value={formData.restaurantScope} onChange={e => setFormData({...formData, restaurantScope: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-purple-50">
+                <option value="all">All Restaurants</option>
+                <option value="selected">Selected Restaurants</option>
+              </select>
+            </div>
+            {formData.restaurantScope === 'selected' && (
+              <div className="space-y-1 lg:col-span-2">
+                <label className="text-sm font-medium text-slate-700">Select Restaurants (Hold Ctrl/Cmd to select multiple)</label>
+                <select 
+                  multiple
+                  value={formData.restaurantIds ? formData.restaurantIds.split(',').map(s => s.trim()).filter(Boolean) : []}
+                  onChange={e => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setFormData({...formData, restaurantIds: selected.join(', ')});
+                  }}
+                  className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-purple-50 h-32"
+                >
+                  {restaurants.map(r => (
+                    <option key={r._id || r.id} value={r._id || r.id}>
+                      {r.restaurantName || r.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500">Currently selected IDs: {formData.restaurantIds || "None"}</p>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-slate-700">Eligible Item IDs</label>
+              <input type="text" value={formData.eligibleItems} onChange={e => setFormData({...formData, eligibleItems: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Leave empty for ALL items" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-slate-700">Specific Free Item IDs</label>
+              <input type="text" value={formData.freeItems} onChange={e => setFormData({...formData, freeItems: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm" placeholder="Leave empty to give same item free" />
+            </div>
+            
+            <div className="col-span-full border-t border-slate-200 my-2"></div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-slate-700">Buy Quantity *</label>

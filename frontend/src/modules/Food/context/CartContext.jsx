@@ -641,8 +641,9 @@ export function CartProvider({ children }) {
       clearCart,
       cleanCartForRestaurant,
       replaceCart,
+      bogoOffers,
     }),
-    [cart, cartForAnimation, lastAddEvent, lastRemoveEvent]
+    [cart, cartForAnimation, lastAddEvent, lastRemoveEvent, bogoOffers]
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

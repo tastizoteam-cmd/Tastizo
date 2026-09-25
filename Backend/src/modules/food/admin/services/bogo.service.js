@@ -55,22 +55,40 @@ export async function getActiveBogoOffersForCustomer(restaurantId) {
     
     const filter = {
         status: 'active',
-        $or: [
-            { startDate: null },
-            { startDate: { $lte: now } }
-        ],
         $and: [
+            { $or: [{ startDate: null }, { startDate: { $lte: now } }] },
             { $or: [{ endDate: null }, { endDate: { $gt: now } }] },
-            { $expr: { $lt: ["$usedBudget", "$campaignBudget"] } }
+            { 
+                $or: [
+                    { campaignBudget: { $exists: false } },
+                    { campaignBudget: null },
+                    { $expr: { $lt: ["$usedBudget", "$campaignBudget"] } }
+                ]
+            }
         ]
     };
     
     if (restaurantId) {
-        filter.$or = [
-            ...(filter.$or || []),
-            { restaurantScope: 'all' },
-            { restaurantScope: 'selected', restaurantIds: new mongoose.Types.ObjectId(restaurantId) }
-        ];
+        let restaurantMatch = { restaurantScope: 'all' };
+        
+        if (mongoose.Types.ObjectId.isValid(restaurantId)) {
+            restaurantMatch = {
+                $or: [
+                    { restaurantScope: 'all' },
+                    { restaurantScope: 'selected', restaurantIds: new mongoose.Types.ObjectId(restaurantId) }
+                ]
+            };
+        } else {
+            // If it's not a valid ObjectId (e.g., custom ID), we either fall back to 'all' or try matching as string
+            // depending on schema. Here we just use 'all' or let it fail gracefully.
+            restaurantMatch = {
+                $or: [
+                    { restaurantScope: 'all' }
+                ]
+            };
+        }
+
+        filter.$and.push(restaurantMatch);
     }
     
     const offers = await FoodBogoOffer.find(filter).lean();

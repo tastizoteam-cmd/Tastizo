@@ -295,12 +295,7 @@ export async function calculateOrderPricing(userId, dto) {
             });
             platformCommission = commissionSnapshot?.commissionAmount || 0;
             
-            if (calculatedDiscount > platformCommission) {
-                discount = platformCommission;
-                isCapped = true;
-            } else {
-                discount = calculatedDiscount;
-            }
+            discount = calculatedDiscount;
         }
 
         appliedCoupon = {

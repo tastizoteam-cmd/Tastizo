@@ -442,7 +442,6 @@ export const registerRestaurant = async (payload, files) => {
             accountHolderName,
             accountType,
             menuImages,
-            menuPdf,
             ...images
         });
         console.log(`[registerRestaurant] Saved Restaurant ZoneId: ${restaurant.zoneId}`);
@@ -1005,10 +1004,6 @@ export const updateRestaurantProfile = async (restaurantId, body = {}) => {
             .filter(Boolean)
             .slice(0, 20);
         update.menuImages = urls;
-    }
-
-    if (body.menuPdf !== undefined) {
-        update.menuPdf = toUrl(body.menuPdf) || '';
     }
 
     if (body.coverImages !== undefined) {

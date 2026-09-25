@@ -332,7 +332,7 @@ export async function getRestaurants(query) {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select('restaurantName location area city profileImage coverImages menuImages menuPdf status isAdminApproved approvedAt rejectedAt rejectionReason ownerName ownerPhone zoneId')
+            .select('restaurantName location area city profileImage coverImages menuImages status isAdminApproved approvedAt rejectedAt rejectionReason ownerName ownerPhone zoneId')
             .populate('zoneId', 'name zoneName')
             .lean(),
         FoodRestaurant.countDocuments(filter)
@@ -358,12 +358,12 @@ export async function getRestaurantMenuPdfDownloadUrl(restaurantId) {
     }
 
     const restaurant = await FoodRestaurant.findById(restaurantId)
-        .select('menuPdf restaurantName')
+        .select('restaurantName')
         .lean();
 
-    if (!restaurant || !restaurant.menuPdf) return null;
+    if (!restaurant) return null;
 
-    const url = buildRawDownloadUrlFromFileUrl(restaurant.menuPdf, { fileName: 'menu.pdf' });
+    const url = buildRawDownloadUrlFromFileUrl('', { fileName: 'menu.pdf' });
     return { url };
 }
 
