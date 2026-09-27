@@ -94,13 +94,9 @@ export default function Coupons() {
   const validateForm = (draft) => {
     const e = {}
     const f = draft || formData
-    const pct = f.discountType === "percentage"
     const value = Number(f.discountValue)
     if (!String(f.couponCode || "").trim()) e.couponCode = "Coupon code is required"
     if (!Number.isFinite(value) || value <= 0) e.discountValue = "Discount must be greater than 0"
-    if (pct && (f.maxDiscount === "" || f.maxDiscount === null || f.maxDiscount === undefined)) {
-      e.maxDiscount = "Max discount is required for percentage coupons"
-    }
     if (f.minOrderValue !== "" && Number(f.minOrderValue) < 0) e.minOrderValue = "Min order cannot be negative"
     if (f.usageLimit !== "" && Number(f.usageLimit) < 1) e.usageLimit = "Usage limit must be at least 1"
     if (f.perUserLimit !== "" && Number(f.perUserLimit) < 1) e.perUserLimit = "Per user limit must be at least 1"

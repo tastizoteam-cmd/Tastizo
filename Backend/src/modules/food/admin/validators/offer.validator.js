@@ -63,16 +63,16 @@ export const validateCreateOfferDto = (body) => {
     if (endDate && endDate.getTime() <= Date.now()) {
         throw new ValidationError('endDate must be a future date');
     }
-    // Business rule: percentage coupon must have maxDiscount; flat ignores it
     let maxDiscount = result.data.maxDiscount;
     if (result.data.discountType === 'percentage') {
-        if (maxDiscount === undefined || maxDiscount === null || Number.isNaN(Number(maxDiscount))) {
-            throw new ValidationError('maxDiscount is required for percentage coupons');
+        if (maxDiscount !== undefined && maxDiscount !== null && !Number.isNaN(Number(maxDiscount))) {
+            maxDiscount = Math.max(0, Number(maxDiscount));
+        } else {
+            maxDiscount = undefined;
         }
-        maxDiscount = Math.max(0, Number(maxDiscount) || 0);
     } else {
         maxDiscount = undefined; // ignore for flat-price
-     }
+    }
 
     return {
         couponCode: result.data.couponCode.trim().toUpperCase(),
