@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { ArrowLeft, Star, Clock, Bookmark, BadgePercent } from "lucide-react"
+import { ArrowLeft, Star, Clock, Bookmark, BadgePercent, ChefHat } from "lucide-react"
 import { Button } from "@food/components/ui/button"
-import { Card, CardContent } from "@food/components/ui/card"
 import api from "@food/api"
 import useAppBackNavigation from "@food/hooks/useAppBackNavigation"
 import { toast } from "sonner"
@@ -12,12 +11,9 @@ import { RestaurantGridSkeleton } from "@food/components/ui/loading-skeletons"
 import { useDelayedLoading } from "@food/hooks/useDelayedLoading"
 import { useLocation } from "@food/hooks/useLocation"
 
-// Import banner
-import gourmetBanner from "@food/assets/groumetpagebanner.webp"
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
 const debugError = (...args) => {}
-
 
 export default function Gourmet() {
   const navigate = useNavigate()
@@ -77,58 +73,60 @@ export default function Gourmet() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
-      {/* Banner Section */}
-      <div className="relative w-full overflow-hidden min-h-[25vh] md:min-h-[30vh]">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
+      {/* Minimal Header Section */}
+      <div className="relative w-full pt-16 pb-10 flex flex-col items-center justify-center bg-white dark:bg-[#111] border-b border-gray-200 dark:border-gray-800 shadow-sm">
         {/* Back Button */}
         <button
           onClick={goBack}
-          className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-10 h-10 md:w-12 md:h-12 bg-gray-800/60 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-gray-800/80 transition-colors"
+          className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-gray-50 dark:bg-[#1a1a1a] dark:hover:bg-gray-900 rounded-full flex items-center justify-center transition-colors border border-gray-200 dark:border-gray-800"
         >
-          <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-white" />
+          <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-gray-700 dark:text-gray-300" />
         </button>
 
-        {/* Banner Image */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={gourmetBanner}
-            alt="Gourmet Dining"
-            className="w-full h-full object-cover"
-          />
+        {/* Header Content */}
+        <div className="relative z-10 text-center px-4 space-y-3">
+          <div className="mx-auto bg-gray-50 dark:bg-gray-900 w-12 h-12 rounded-full flex items-center justify-center border border-gray-100 dark:border-gray-800 mb-2">
+             <ChefHat className="w-6 h-6 text-gray-800 dark:text-gray-200" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase">
+            Gourmet
+          </h1>
+          <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium tracking-[0.2em] uppercase">
+            Premium Dining Experiences
+          </p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 lg:py-10 space-y-4 md:space-y-6">
-        <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
-          {/* Header */}
-          <div className="mb-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Premium Gourmet Restaurants</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Exquisite dining experiences delivered to your doorstep</p>
+      <div className="px-4 sm:px-6 md:px-8 lg:px-10 py-8 md:py-10 space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+             <p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-gray-500 tracking-widest uppercase">
+               {showGourmetSkeleton ? '...' : gourmetRestaurants.length} Restaurants Available
+             </p>
           </div>
-
-          {/* Restaurant Count */}
-          <p className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-gray-500 tracking-widest uppercase">
-            {showGourmetSkeleton ? '...' : gourmetRestaurants.length} GOURMET RESTAURANTS
-          </p>
 
           {/* Loading State */}
           {showGourmetSkeleton && <RestaurantGridSkeleton count={4} />}
 
           {/* Error State */}
           {error && !loading && (
-            <div className="flex flex-col items-center justify-center py-20">
+            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#111] rounded-xl border border-gray-200 dark:border-gray-800">
               <p className="text-red-500 dark:text-red-400 text-center">{error}</p>
-              <Button onClick={() => window.location.reload()} className="mt-4">Retry</Button>
+              <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">Try Again</Button>
             </div>
           )}
 
           {/* Restaurant Cards */}
           {!showGourmetSkeleton && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {gourmetRestaurants.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400">No Gourmet restaurants available at the moment</p>
+                <div className="col-span-full text-center py-20 bg-white dark:bg-[#111] rounded-xl border border-gray-200 dark:border-gray-800">
+                  <ChefHat className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
+                  <p className="text-lg font-medium text-gray-900 dark:text-white">No Gourmet Restaurants</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please check back later for premium options.</p>
                 </div>
               ) : (
                 gourmetRestaurants.map((item) => {
@@ -137,9 +135,9 @@ export default function Gourmet() {
                   const restaurantId = restaurant._id || restaurant.restaurantId || restaurant.id
                   const isFavorite = favorites.has(restaurantId)
 
-                  // Calculate distance if coordinates are available
+                  // Calculate distance
                   const calculateDistance = (lat1, lng1, lat2, lng2) => {
-                    const R = 6371; // Earth's radius in kilometers
+                    const R = 6371; 
                     const dLat = ((lat2 - lat1) * Math.PI) / 180;
                     const dLng = ((lng2 - lng1) * Math.PI) / 180;
                     const a =
@@ -149,7 +147,7 @@ export default function Gourmet() {
                         Math.sin(dLng / 2) *
                         Math.sin(dLng / 2);
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                    return R * c; // Distance in kilometers
+                    return R * c; 
                   };
 
                   let distanceStr = '1.2 km'
@@ -163,7 +161,6 @@ export default function Gourmet() {
                     distanceStr = restaurant.distance
                   }
 
-                  // Get restaurant cover image with priority: coverImages > menuImages > profileImage
                   const coverImages = restaurant.coverImages && restaurant.coverImages.length > 0
                     ? restaurant.coverImages.map(img => img.url || img).filter(Boolean)
                     : []
@@ -183,70 +180,71 @@ export default function Gourmet() {
 
                   return (
                     <Link key={restaurantId} to={`/user/restaurants/${restaurantSlug}`}>
-                      <Card className="overflow-hidden cursor-pointer border-0 group bg-white dark:bg-[#1a1a1a] shadow-md hover:shadow-xl transition-all duration-300 py-0 rounded-2xl mb-4">
+                      <div className="group bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col h-full">
                         {/* Image Section */}
-                        <div className="relative h-44 sm:h-52 md:h-56 w-full overflow-hidden rounded-t-2xl">
+                        <div className="relative h-48 w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
                           {restaurantImage ? (
                             <OptimizedImage
                               src={restaurantImage}
                               alt={restaurant.restaurantName || restaurant.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
                           ) : (
-                            <div className="w-full h-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
-                              <span className="text-slate-600 dark:text-slate-300 text-sm font-semibold">
-                                No image
+                            <div className="w-full h-full flex flex-col items-center justify-center">
+                              <ChefHat className="w-8 h-8 text-gray-300 dark:text-gray-700 mb-2" />
+                              <span className="text-gray-400 dark:text-gray-600 text-xs font-medium uppercase tracking-widest">
+                                No Image
                               </span>
                             </div>
                           )}
 
-                          {/* Bookmark Icon - Top Right */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-3 right-3 h-9 w-9 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition-colors"
+                          {/* Bookmark Icon */}
+                          <button
+                            className="absolute top-3 right-3 h-8 w-8 bg-white/90 dark:bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
                               toggleFavorite(restaurantId)
                             }}
                           >
-                            <Bookmark className={`h-5 w-5 ${isFavorite ? "fill-gray-800 dark:fill-gray-200 text-gray-800 dark:text-gray-200" : "text-gray-600 dark:text-gray-400"}`} strokeWidth={2} />
-                          </Button>
+                            <Bookmark className={`h-4 w-4 ${isFavorite ? "fill-gray-900 text-gray-900 dark:fill-white dark:text-white" : "text-gray-500 dark:text-gray-400"}`} strokeWidth={2} />
+                          </button>
                         </div>
 
                         {/* Content Section */}
-                        <CardContent className="p-3 sm:p-4">
-                          {/* Restaurant Name & Rating */}
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 line-clamp-1">
-                                {restaurant.restaurantName || restaurant.name}
-                              </h3>
-                            </div>
-                            <div className="flex-shrink-0 bg-green-600 text-white px-2 py-1 rounded-lg flex items-center gap-1">
-                              <span className="text-sm font-bold">{restaurant.rating?.toFixed(1) || '0.0'}</span>
-                              <Star className="h-3 w-3 fill-white text-white" />
+                        <div className="p-5 flex flex-col flex-1">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1 flex-1">
+                              {restaurant.restaurantName || restaurant.name}
+                            </h3>
+                            <div className="flex-shrink-0 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-2 py-1 rounded flex items-center gap-1">
+                              <span className="text-xs font-bold">{restaurant.rating?.toFixed(1) || '0.0'}</span>
+                              <Star className="h-3 w-3 fill-current" />
                             </div>
                           </div>
 
-                          {/* Delivery Time & Distance */}
-                          <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mb-2">
-                            <Clock className="h-4 w-4" strokeWidth={1.5} />
-                            <span className="font-medium">{restaurant.estimatedDeliveryTime || '25-30 mins'}</span>
-                            <span className="mx-1">|</span>
-                            <span className="font-medium">{distanceStr}</span>
+                          <div className="flex items-center gap-3 text-xs font-medium text-gray-500 dark:text-gray-400 mb-4 tracking-wide uppercase">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>{restaurant.estimatedDeliveryTime || '25-30 mins'}</span>
+                            </div>
+                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                            <span>{distanceStr}</span>
                           </div>
 
-                          {/* Offer Badge */}
-                          {restaurant.offer && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <BadgePercent className="h-4 w-4 text-[#2A9C64] dark:text-[#2A9C64]" strokeWidth={2} />
-                              <span className="text-gray-700 dark:text-gray-300 font-medium">{restaurant.offer}</span>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
+                          {/* Push offer to bottom */}
+                          <div className="mt-auto">
+                            {restaurant.offer ? (
+                              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700 dark:text-green-500 bg-green-50 dark:bg-green-900/20 px-2.5 py-1.5 rounded-md border border-green-100 dark:border-green-900/30 uppercase tracking-wider">
+                                <BadgePercent className="h-3.5 w-3.5" />
+                                <span>{restaurant.offer}</span>
+                              </div>
+                            ) : (
+                              <div className="h-[28px]"></div> /* Placeholder for alignment */
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </Link>
                   )
                 })
@@ -258,5 +256,3 @@ export default function Gourmet() {
     </div>
   )
 }
-
-
