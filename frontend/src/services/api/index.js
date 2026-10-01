@@ -27,6 +27,8 @@ export const searchAPI = {
 export const customerAPI = {
   getPublicBogoOffers: (restaurantId) =>
     apiClient.get("/food/bogo-offers/public", { params: { restaurantId } }),
+  getPublicB1G1Foods: (params = {}) =>
+    apiClient.get("/food/restaurant/b1g1-foods/public", { params }),
 };
 
 const createStubAPI = () =>

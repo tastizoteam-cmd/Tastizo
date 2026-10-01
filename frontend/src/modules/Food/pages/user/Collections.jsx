@@ -60,28 +60,30 @@ export default function Collections() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
-      {/* Back Button */}
-      <button
-        onClick={goBack}
-        className="fixed top-4 left-4 z-20 w-10 h-10 bg-gray-800/60 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-gray-800/80 transition-colors"
-      >
-        <ArrowLeft className="h-5 w-5 text-white" />
-      </button>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
+      {/* Minimal Banner Section */}
+      <div className="relative w-full pt-16 pb-8 md:pt-20 md:pb-10 flex flex-col items-center justify-center bg-white dark:bg-[#111] border-b border-gray-200 dark:border-gray-800">
+        {/* Back Button */}
+        <button
+          onClick={goBack}
+          className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-10 h-10 md:w-12 md:h-12 bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-gray-700 dark:text-gray-300" />
+        </button>
 
-      {/* Banner Section - Clean without dark overlay */}
-      <div className="relative w-full overflow-hidden min-h-[25vh] md:min-h-[30vh] bg-gradient-to-b from-amber-50 to-white">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={collectionsBanner}
-            alt="Your Collections"
-            className="w-full h-full object-cover"
-          />
+        {/* Banner Content */}
+        <div className="relative z-10 text-center px-4 space-y-2">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+            Collections
+          </h1>
+          <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 font-medium max-w-lg mx-auto">
+            Discover curated places and dishes
+          </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-0 bg-white dark:bg-[#1a1a1a] z-10 border-b dark:border-gray-800">
+      <div className="sticky top-0 bg-white dark:bg-[#111] z-10 border-b border-gray-200 dark:border-gray-800">
         <div className="flex">
           <button
             onClick={() => setActiveTab("delivery")}

@@ -3239,6 +3239,11 @@ export default function Home() {
               opacity: 1;
             }
           }
+          @keyframes shine {
+            100% {
+              left: 125%;
+            }
+          }
           .animate-slide-down-sticky {
             animation: slideDownSticky 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           }
@@ -3419,27 +3424,31 @@ export default function Home() {
                       </div>
                     </Link>
 
-                    {/* Card 2: Favorites */}
+                    {/* Card 2: B1G1 (Redesigned & Animated) */}
                     <Link
-                      to="/food/user/profile/favorites"
-                      className="flex-shrink-0 flex items-center justify-between p-3 sm:p-4 rounded-3xl bg-gradient-to-br from-[#E2F7F2] to-[#CCF2E8] dark:from-teal-950/40 dark:to-teal-900/40 border border-[#A6E6D6]/60 dark:border-teal-800/50 min-w-[260px] shadow-sm active:scale-[0.98] transition-all"
+                      to="/food/user/b1g1-offers"
+                      className="relative overflow-hidden group flex-shrink-0 flex items-center justify-between p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-teal-400 to-emerald-600 dark:from-teal-900 dark:to-emerald-950 min-w-[260px] shadow-lg shadow-teal-500/20 active:scale-[0.97] transition-all duration-300 border border-teal-300/50 dark:border-teal-700/50"
                     >
-                      <div className="text-[13px] font-bold text-slate-500 dark:text-slate-400 leading-snug">
-                        {favorites?.length > 0 ? (
-                          <>
-                            Your <span className="text-slate-800 dark:text-white text-base font-black">{favorites.length} favourite</span> <br/>
-                            brands in one place
-                          </>
-                        ) : (
-                          <>
-                            All your <br/>
-                            <span className="text-slate-800 dark:text-white text-base font-black">favourite brands</span> <br/>
-                            in one place
-                          </>
-                        )}
+                      {/* Animated Glow Background */}
+                      <div className="absolute -inset-10 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-25deg] group-hover:animate-[shine_1.5s_ease-in-out_infinite] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      {/* Text Content */}
+                      <div className="relative z-10 flex flex-col gap-0.5">
+                        <span className="text-teal-50 dark:text-teal-200 text-xs font-bold uppercase tracking-widest mb-1 opacity-90">Limited Time</span>
+                        <span className="text-white text-2xl font-black tracking-tight drop-shadow-md">
+                          B1G1 Free
+                        </span>
+                        <span className="text-teal-100 dark:text-teal-300 text-sm font-medium leading-snug mt-0.5">
+                          On select top brands
+                        </span>
                       </div>
-                      <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] flex items-center justify-center shadow-sm ml-4 border border-teal-50 dark:border-teal-900/30">
-                        <Heart className="w-6 h-6 text-[#2ba396] fill-[#2ba396]/10" />
+
+                      {/* Animated Badge */}
+                      <div className="relative z-10 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-white/30 rounded-full blur-md animate-pulse"></div>
+                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500 border-[3px] border-teal-100">
+                          <span className="bg-gradient-to-br from-teal-500 to-emerald-600 bg-clip-text text-transparent font-black text-[15px] tracking-tighter">B1G1</span>
+                        </div>
                       </div>
                     </Link>
                   </div>

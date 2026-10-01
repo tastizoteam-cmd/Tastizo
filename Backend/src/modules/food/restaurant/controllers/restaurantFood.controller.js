@@ -1,5 +1,6 @@
 import { sendResponse, sendError } from '../../../../utils/response.js';
 import { createRestaurantFood, updateRestaurantFood, deleteRestaurantFood } from '../services/restaurantFood.service.js';
+import { FoodItem } from '../../admin/models/food.model.js';
 
 export const createRestaurantFoodController = async (req, res, next) => {
     try {
@@ -33,3 +34,18 @@ export const deleteRestaurantFoodController = async (req, res, next) => {
     }
 };
 
+export const getPublicB1G1FoodsController = async (req, res, next) => {
+    try {
+        const foods = await FoodItem.find({ 
+            isB1G1: true, 
+            isAvailable: true, 
+            approvalStatus: 'approved' 
+        })
+        .populate('restaurantId', 'name image isVerified rating location')
+        .lean();
+        
+        return sendResponse(res, 200, 'B1G1 foods retrieved', { foods });
+    } catch (error) {
+        next(error);
+    }
+};

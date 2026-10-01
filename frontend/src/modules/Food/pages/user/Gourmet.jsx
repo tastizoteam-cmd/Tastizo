@@ -74,25 +74,22 @@ export default function Gourmet() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
-      {/* Minimal Header Section */}
-      <div className="relative w-full pt-16 pb-10 flex flex-col items-center justify-center bg-white dark:bg-[#111] border-b border-gray-200 dark:border-gray-800 shadow-sm">
+      {/* Minimal Banner Section */}
+      <div className="relative w-full pt-16 pb-8 md:pt-20 md:pb-10 flex flex-col items-center justify-center bg-white dark:bg-[#111] border-b border-gray-200 dark:border-gray-800">
         {/* Back Button */}
         <button
           onClick={goBack}
-          className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-10 h-10 md:w-12 md:h-12 bg-white hover:bg-gray-50 dark:bg-[#1a1a1a] dark:hover:bg-gray-900 rounded-full flex items-center justify-center transition-colors border border-gray-200 dark:border-gray-800"
+          className="absolute top-4 left-4 md:top-6 md:left-6 z-20 w-10 h-10 md:w-12 md:h-12 bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors"
         >
           <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-gray-700 dark:text-gray-300" />
         </button>
 
-        {/* Header Content */}
-        <div className="relative z-10 text-center px-4 space-y-3">
-          <div className="mx-auto bg-gray-50 dark:bg-gray-900 w-12 h-12 rounded-full flex items-center justify-center border border-gray-100 dark:border-gray-800 mb-2">
-             <ChefHat className="w-6 h-6 text-gray-800 dark:text-gray-200" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white tracking-widest uppercase">
+        {/* Banner Content */}
+        <div className="relative z-10 text-center px-4 space-y-2">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Gourmet
           </h1>
-          <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium tracking-[0.2em] uppercase">
+          <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 font-medium max-w-lg mx-auto">
             Premium Dining Experiences
           </p>
         </div>

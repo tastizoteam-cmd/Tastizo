@@ -23,6 +23,7 @@ const foodSchema = new mongoose.Schema(
         foodType: { type: String, enum: ['Veg', 'Non-Veg'], default: 'Non-Veg' },
         isAvailable: { type: Boolean, default: true, index: true },
         isSpicy: { type: Boolean, default: false },
+        isB1G1: { type: Boolean, default: false, index: true },
         preparationTime: { type: String, trim: true, default: '' },
         approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved', index: true },
         rejectionReason: { type: String, trim: true, default: '' },
