@@ -69,8 +69,8 @@ const normalizeCartData = (rawCart) => {
 
       const normalizedRestaurantPublicId =
         item.restaurantPublicId ||
-        (!isMongoObjectId(item.restaurantId) ? item.restaurantId : null) ||
-        (!isMongoObjectId(item.restaurant_id) ? item.restaurant_id : null) ||
+        (!isMongoObjectId(item.restaurantId) ? (typeof item.restaurantId === 'string' ? item.restaurantId : item.restaurantId?._id) : null) ||
+        (!isMongoObjectId(item.restaurant_id) ? (typeof item.restaurant_id === 'string' ? item.restaurant_id : item.restaurant_id?._id) : null) ||
         item.restaurant?.restaurantId ||
         null
 
@@ -183,7 +183,7 @@ const applyBogoRules = (cartItems, offers) => {
                   variantPrice: perItemPrice,
                   isBogoFreeItem: true,
                   bogoOfferId: offer._id,
-                  name: freeItemSource.name + (finalTotalFreePrice > 0 ? " (BOGO)" : " (FREE)")
+                  name: freeItemSource.name
               });
           }
       }
@@ -235,12 +235,12 @@ export function CartProvider({ children }) {
   const [lastRemoveEvent, setLastRemoveEvent] = useState(null)
 
   const [bogoOffers, setBogoOffers] = useState([])
-  const currentRestaurantId = cart[0]?.restaurantId
+  const currentRestaurantId = cart[0] ? (typeof cart[0].restaurantId === 'string' ? cart[0].restaurantId : (cart[0].restaurantId?._id || cart[0].restaurantObjectId || cart[0].restaurant?._id)) : null;
 
   useEffect(() => {
-    if (currentRestaurantId) {
+    if (currentRestaurantId && typeof currentRestaurantId === 'string') {
         customerAPI.getPublicBogoOffers(currentRestaurantId).then(res => {
-            setBogoOffers(res?.data?.offers || []);
+            setBogoOffers(res?.data?.data?.offers || res?.data?.offers || []);
         }).catch(err => {
             console.error("Failed to fetch BOGO offers", err);
             setBogoOffers([]);

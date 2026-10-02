@@ -44,7 +44,8 @@ import {
     createRestaurantFoodController,
     updateRestaurantFoodController,
     deleteRestaurantFoodController,
-    getPublicB1G1FoodsController
+    getPublicB1G1FoodsController,
+    getPublicBogoOffersController
 } from '../controllers/restaurantFood.controller.js';
 import {
     listAddonsController,
@@ -92,6 +93,7 @@ router.get('/categories/public', cacheResponse(600, 'categories'), listCategorie
 
 // Public: B1G1 Foods
 router.get('/b1g1-foods/public', getPublicB1G1FoodsController);
+router.get('/bogo-offers/public', getPublicBogoOffersController);
 
 // Restaurant dashboard/profile (Bearer token + RESTAURANT role)
 router.get('/current', authMiddleware, requireRestaurant, getCurrentRestaurantController);

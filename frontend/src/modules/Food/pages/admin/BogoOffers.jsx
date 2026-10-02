@@ -68,7 +68,7 @@ export default function BogoOffers() {
     setError(null)
     try {
       const res = await adminAPI.getBogoOffers({ limit: 100 })
-      setOffers(res?.data?.docs || [])
+      setOffers(res?.data?.data?.data || res?.data?.data?.docs || res?.data?.docs || [])
       
       const restRes = await adminAPI.getRestaurants({ limit: 1000 })
       setRestaurants(restRes?.data?.data?.restaurants || restRes?.data?.docs || [])
@@ -384,7 +384,6 @@ export default function BogoOffers() {
               <select value={formData.reimbursementType} onChange={e => setFormData({...formData, reimbursementType: e.target.value})} className="w-full p-2 border border-slate-300 rounded-lg text-sm">
                 <option value="full_price">Full Item Price</option>
                 <option value="fixed">Fixed Amount</option>
-                <option value="custom">Custom (JSON Map)</option>
               </select>
             </div>
             {formData.reimbursementType === 'fixed' && (
